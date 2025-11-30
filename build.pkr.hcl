@@ -20,54 +20,27 @@ build {
     ]
   }
 
+  provisioner "file" {
+    source      = "scripts/cleanup-user.sh"
+    destination = "/home/${var.username}/cleanup-user.sh"
+  }
 
-  provisioner "shell" {
-    inline = [
-      "set -eux",
-
-      # cloud-init: clean instance state so Proxmox cloud-init treats it as fresh
-      "sudo cloud-init clean --logs",
-      "sudo rm -rf /var/lib/cloud/*",
-
-      # reset machine-id so each clone gets a unique one
-      "sudo truncate -s 0 /etc/machine-id",
-      "sudo rm -f /var/lib/dbus/machine-id",
-
-      # remove SSH host keys so they regenerate on first boot
-      "sudo rm -f /etc/ssh/ssh_host_*",
-
-      # scrub logs/tmp (optional, but nice)
-      "sudo rm -rf /var/log/* /var/tmp/* /tmp/* || true",
-    ]
+  provisioner "file" {
+    source      = "scripts/cleanup-image.sh"
+    destination = "/tmp/cleanup-image.sh"
   }
 
   provisioner "shell" {
     inline = [
       "set -eux",
+      "chmod 700 /tmp/cleanup-image.sh",
+      "chmod 700 /home/${var.username}/cleanup-user.sh",
 
-      # drop from sudo and sudoers
-      "sudo deluser ${var.username} sudo",
-      "sudo rm /etc/sudoers.d/${var.username}",
-      "sudo rm /etc/sudoers.d/90-cloud-init-users",
-      "sudo sed -i '/^${var.username} ALL=.*/d' /etc/sudoers || true",
+      "sudo /tmp/cleanup-image.sh",
+      "sudo /home/${var.username}/cleanup-user.sh \"${var.username}\"",
 
-      # remove SSH keys and history
-      "sudo rm -rf /home/${var.username}/.ssh || true",
-      "sudo rm -f /home/${var.username}/.bash_history || true",
-
-
-      # disable interactive shell
-      "if [ -x /usr/sbin/nologin ]; then",
-      "  sudo usermod -s /usr/sbin/nologin ${var.username} || true",
-      "else",
-      "  sudo usermod -s /bin/false ${var.username} || true",
-      "fi",
-
-      # wipe home contents but keep dir
-      "find /home/${var.username} -mindepth 1 -maxdepth 1 -exec rm -rf {} +",
-
-      # lock + expire account
-      "sudo usermod -Le 1  ${var.username}",
+      "rm -f /tmp/cleanup-image.sh",
+      "rm -f /home/${var.username}/cleanup-user.sh",
     ]
   }
 
