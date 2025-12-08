@@ -32,7 +32,14 @@ variable "image_format" {
   type = string
 }
 
-
 variable "output_directory" {
+  type = string
+}
+
+variable "minio_client" {
+  type = string
+}
+
+variable "minio_publish_path" {
   type = string
 }

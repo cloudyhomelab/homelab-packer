@@ -30,4 +30,4 @@ fi
 find /home/$PACKER_USER -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 
 # lock + expire account
-usermod -Le 1  $PACKER_USER
+# usermod -Le 1  $PACKER_USER
