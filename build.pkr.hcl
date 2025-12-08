@@ -9,17 +9,6 @@ build {
     ]
   }
 
-  provisioner "shell" {
-    environment_vars = [
-      "DEBIAN_FRONTEND=noninteractive",
-    ]
-    inline = [
-      "set -eux",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get update",
-      "sudo DEBIAN_FRONTEND=noninteractive apt-get install -y curl vim htop qemu-guest-agent",
-    ]
-  }
-
   provisioner "file" {
     source      = "scripts/cleanup-user.sh"
     destination = "/home/${var.username}/cleanup-user.sh"
