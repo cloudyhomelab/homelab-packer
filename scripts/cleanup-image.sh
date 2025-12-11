@@ -7,6 +7,9 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+apt-get clean
+apt-get autoremove --purge
+
 # cloud-init: clean instance state so Proxmox cloud-init treats it as fresh
 cloud-init clean --logs
 rm -rf /var/lib/cloud/*
@@ -20,3 +23,7 @@ rm -f /etc/ssh/ssh_host_*
 
 # scrub logs/tmp (optional, but nice)
 rm -rf /var/log/* /var/tmp/* /tmp/*
+
+dd if=/dev/zero of=/var/tmp/bigfile bs=1M || true
+rm /var/tmp/bigfile
+sync

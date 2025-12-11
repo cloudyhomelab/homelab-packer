@@ -86,4 +86,4 @@ write_files:
 
 runcmd:
   - systemctl daemon-reload
-  - systemctl enable --now cloudyhome-provision@packer.service
+  - systemctl start cloudyhome-provision@packer.service

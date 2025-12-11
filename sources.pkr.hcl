@@ -5,7 +5,7 @@ source "qemu" "debian-cloud" {
   use_backing_file = false
 
   format      = var.image_format
-  disk_size   = "5G"
+  disk_size   = "3G"
   accelerator = var.accelerator
   headless    = true
 
