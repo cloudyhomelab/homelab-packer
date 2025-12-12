@@ -3,11 +3,6 @@ password = "packer"
 
 accelerator = "none"
 
-base_packages = [
-  "qemu-guest-agent",
-  "curl",
-]
-
 output_directory            = "build"
 image_name                  = "debian-custom-trixie"
 image_format                = "qcow2"

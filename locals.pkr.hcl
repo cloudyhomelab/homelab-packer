@@ -1,4 +1,6 @@
 locals {
+  ansible_repo_path = "${path.root}/tmp_ansible_checkout"
+
   image_path    = "${var.output_directory}/${var.image_name}.${var.image_format}"
   checksum_path = "${var.output_directory}/${var.image_name}.${var.image_format}.sha512"
 

@@ -12,10 +12,6 @@ variable "accelerator" {
   type = string
 }
 
-variable "base_packages" {
-  type = list(string)
-}
-
 variable "debian_cloud_image_url" {
   type = string
 }

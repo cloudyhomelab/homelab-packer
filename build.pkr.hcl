@@ -9,6 +9,11 @@ build {
     ]
   }
 
+  provisioner "ansible" {
+    playbook_file = "${local.ansible_repo_path}/packer.yml"
+    user          = "${var.username}"
+  }
+
   provisioner "file" {
     source      = "scripts/cleanup-user.sh"
     destination = "/home/${var.username}/cleanup-user.sh"

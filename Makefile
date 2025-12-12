@@ -5,6 +5,9 @@ IMAGENAME = debian-custom-trixie
 IMAGEFORMAT = qcow2
 BUILDFLAGS = -var output_directory=$(OUTDIR) -var image_name=$(IMAGENAME) -var image_format=$(IMAGEFORMAT)
 IMAGEPATH = $(OUTDIR)/$(IMAGENAME).$(IMAGEFORMAT)
+ANSIBLE_REPOPATH = tmp_ansible_checkout
+ANSIBLE_REPO = https://github.com/binarycodes/homelab-self-provisioner.git
+ANSIBLE_REPOBRANCH = main
 
 .PHONY: help init fmt validate build clean docker qemu
 
@@ -21,13 +24,14 @@ help:
 	@echo "Vars:"
 	@echo "  TEMPLATE=path/to/file.pkr.hcl or dir (default: .)"
 
-init:
+init: clean
 	$(PACKER) init $(TEMPLATE)
+	git clone -b $(ANSIBLE_REPOBRANCH) --single-branch $(ANSIBLE_REPO) $(ANSIBLE_REPOPATH)
 
 fmt: init
 	$(PACKER) fmt -recursive .
 
-validate: init fmt clean
+validate: init fmt
 	$(PACKER) validate $(TEMPLATE)
 
 build: validate
@@ -43,3 +47,4 @@ check:
 
 clean:
 	rm -rf $(OUTDIR)/
+	rm -rf $(ANSIBLE_REPOPATH)
