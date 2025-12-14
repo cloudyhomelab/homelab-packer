@@ -3,7 +3,7 @@ TEMPLATE ?= .
 OUTDIR = build
 IMAGENAME = debian-custom-trixie
 IMAGEFORMAT = qcow2
-BUILDFLAGS = -var output_directory=$(OUTDIR) -var image_name=$(IMAGENAME) -var image_format=$(IMAGEFORMAT)
+BUILDFLAGS = -var output_directory=$(OUTDIR) -var image_name=$(IMAGENAME) -var image_format=$(IMAGEFORMAT) -color=false
 IMAGEPATH = $(OUTDIR)/$(IMAGENAME).$(IMAGEFORMAT)
 ANSIBLE_REPOPATH = tmp_ansible_checkout
 ANSIBLE_REPO = https://github.com/binarycodes/homelab-self-provisioner.git
