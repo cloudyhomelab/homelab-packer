@@ -1,4 +1,5 @@
 source "qemu" "debian-cloud" {
+  vm_name          = local.vm_name
   disk_image       = true
   iso_url          = var.debian_cloud_image_url
   iso_checksum     = var.debian_cloud_image_checksum

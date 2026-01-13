@@ -1,8 +1,12 @@
 locals {
-  ansible_repo_path = "${path.root}/tmp_ansible_checkout"
+  build_stamp         = formatdate("YYYYMMDD-HHmm", timestamp())
+  ansible_repo        = "https://github.com/binarycodes/homelab-self-provisioner.git"
+  ansible_repo_path   = "${path.root}/tmp_ansible_checkout"
+  ansible_repo_branch = "main"
 
-  image_path    = "${var.output_directory}/${var.image_name}.${var.image_format}"
-  checksum_path = "${var.output_directory}/${var.image_name}.${var.image_format}.sha512"
+  vm_name       = "${var.image_name}-${local.build_stamp}.${var.image_format}"
+  image_path    = "${var.output_directory}/${local.vm_name}"
+  checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
 
   user_data = templatefile("${path.root}/cloud-init/user-data.pkrtpl.yml", {
     build_username = var.username
