@@ -1,5 +1,5 @@
 locals {
-  build_stamp         = formatdate("YYYYMMDD-HHmm", timestamp())
+  build_stamp         = formatdate("YYYYMMDD-hhmm", timestamp())
   ansible_repo        = "https://github.com/binarycodes/homelab-self-provisioner.git"
   ansible_repo_path   = "${path.root}/tmp_ansible_checkout"
   ansible_repo_branch = "main"
