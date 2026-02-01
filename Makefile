@@ -2,9 +2,7 @@ PACKER = packer
 TEMPLATE = .
 
 OUTDIR = build
-
 BUILDFLAGS = -color=false -on-error=ask
-IMAGEPATH = $(OUTDIR)/$(IMAGENAME).$(IMAGEFORMAT)
 
 .PHONY: help init fmt validate build build-kvm clean
 

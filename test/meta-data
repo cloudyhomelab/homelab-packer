@@ -1,0 +1,2 @@
+instance-id: debian-test
+local-hostname: debian-packer-test

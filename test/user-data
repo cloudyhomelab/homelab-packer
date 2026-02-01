@@ -1,0 +1,18 @@
+#cloud-config
+
+users:
+  - name: test
+    uid: 10001
+    groups:
+      - sudo
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: test
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+ssh_pwauth: true
+disable_root: true
+
+package_update: false
+package_upgrade: false
+package_reboot_if_required: false
