@@ -4,7 +4,8 @@ TEMPLATE = .
 OUTDIR = build
 BUILDFLAGS = -color=false -on-error=ask
 
-.PHONY: help init fmt validate build build-kvm clean
+.ONESHELL: # Applies to every targets in the file!
+.PHONY: help init fmt validate build build-kvm clean test
 
 help:
 	@echo "Targets:"
@@ -14,6 +15,7 @@ help:
 	@echo "  make build                 - packer build TEMPLATE (default: .)"
 	@echo "  make build-kvm             - packer build TEMPLATE (default: .) with kvm accelerator"
 	@echo "  make clean                 - remove output directory"
+	@echo "  make test                	- test the generated image"
 	@echo
 
 init: clean
@@ -33,3 +35,8 @@ build-kvm: validate
 
 clean:
 	rm -rf $(OUTDIR)/
+
+test:
+	cd test
+	chmod +x start-qemu.sh
+	./start-qemu.sh

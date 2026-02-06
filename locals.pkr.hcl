@@ -7,6 +7,7 @@ locals {
   vm_name       = "${var.image_name}-${local.build_stamp}.${var.image_format}"
   image_path    = "${var.output_directory}/${local.vm_name}"
   checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
+  manifest_path = "${var.output_directory}/packer-manifest.json"
 
   user_data = templatefile("${path.root}/cloud-init/user-data.pkrtpl.yml", {
     build_username = var.username

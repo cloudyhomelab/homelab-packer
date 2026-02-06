@@ -1,12 +1,12 @@
 #!/usr/bin/env sh
 
-DOWNLOAD_FILE_NAME="debian-trixie-packer-20260129-0849.qcow2"
-DEBIAN_IMAGE_NAME="debian-trixie-packer.qcow2"
+DOWNLOAD_FILE_NAME=$(jq -r ".builds[0].files[0].name" ../build/packer-manifest.json)
 CLOUD_INIT_FILE="seed.iso"
 
-if ! [ -f ${DEBIAN_IMAGE_NAME} ]; then
+if ! [ -f ${DOWNLOAD_FILE_NAME} ]; then
+    rm *.qcow2
     curl -L http://moria.ip.cloudyhome.net:9000/os-image/debian/${DOWNLOAD_FILE_NAME} \
-         --output ${DEBIAN_IMAGE_NAME}
+         --output ${DOWNLOAD_FILE_NAME}
 fi
 
 if ! [ -f ${CLOUD_INIT_FILE} ]; then
@@ -19,7 +19,7 @@ qemu-system-x86_64 \
   -m 2048 \
   -smp 2 \
   -enable-kvm \
-  -drive file=${DEBIAN_IMAGE_NAME},if=virtio,index=0 \
+  -drive file=${DOWNLOAD_FILE_NAME},if=virtio,index=0 \
   -drive file=${CLOUD_INIT_FILE},format=raw,if=virtio,index=1 \
   -nic user,model=virtio \
   -nographic \

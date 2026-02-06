@@ -82,4 +82,9 @@ build {
       "${var.minio_client} cp ${local.checksum_path} ${var.minio_publish_path}/",
     ]
   }
+
+  post-processor "manifest" {
+    output     = local.manifest_path
+    strip_path = true
+  }
 }
