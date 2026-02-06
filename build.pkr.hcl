@@ -73,7 +73,7 @@ build {
   post-processor "shell-local" {
     inline = [
       "set -euxo pipefail",
-      "sha512sum ${local.image_path} > ${local.checksum_path}",
+      "( cd ${var.output_directory} && sha512sum ${local.vm_name} ) > ${local.checksum_path}",
       "qemu-img info ${local.image_path}",
       "qemu-img check ${local.image_path}",
       "${var.minio_client} mb --ignore-existing ${var.minio_publish_path}",

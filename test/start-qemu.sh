@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 
-DOWNLOAD_FILE_NAME=$(jq -r ".builds[0].files[0].name" ../build/packer-manifest.json)
+DOWNLOAD_FILE_NAME="debian-trixie-packer-20260206-1216.qcow2"
 CLOUD_INIT_FILE="seed.iso"
 
 if ! [ -f ${DOWNLOAD_FILE_NAME} ]; then

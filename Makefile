@@ -2,10 +2,17 @@ PACKER = packer
 TEMPLATE = .
 
 OUTDIR = build
+TESTDIR = test
+TESTSCRIPT = start-qemu.sh
 BUILDFLAGS = -color=false -on-error=ask
 
 .ONESHELL: # Applies to every targets in the file!
 .PHONY: help init fmt validate build build-kvm clean test
+
+define POST_BUILD_TASK
+	image_name=$$(jq -r ".builds[0].files[0].name" $(OUTDIR)/packer-manifest.json)
+	sed -i "s/DOWNLOAD_FILE_NAME=.*/DOWNLOAD_FILE_NAME=\"$$image_name\"/" $(TESTDIR)/$(TESTSCRIPT)
+endef
 
 help:
 	@echo "Targets:"
@@ -29,14 +36,15 @@ validate: init fmt
 
 build: validate
 	$(PACKER) build $(BUILDFLAGS) $(TEMPLATE)
+	$(POST_BUILD_TASK)
 
 build-kvm: validate
 	$(PACKER) build $(BUILDFLAGS) -var accelerator=kvm $(TEMPLATE)
+	$(POST_BUILD_TASK)
 
 clean:
 	rm -rf $(OUTDIR)/
 
 test:
-	cd test
-	chmod +x start-qemu.sh
-	./start-qemu.sh
+	cd $(TESTDIR)
+	./$(TESTSCRIPT)
