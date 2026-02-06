@@ -1,11 +1,11 @@
 #!/usr/bin/env sh
 
-DOWNLOAD_FILE_NAME="debian-trixie-packer-20260206-1216.qcow2"
+DOWNLOAD_FILE_NAME="debian-trixie-packer-latest.qcow2"
 CLOUD_INIT_FILE="seed.iso"
 
 if ! [ -f ${DOWNLOAD_FILE_NAME} ]; then
     rm *.qcow2
-    curl -L http://moria.ip.cloudyhome.net:9000/os-image/debian/${DOWNLOAD_FILE_NAME} \
+    curl -L http://moria.ip.cloudyhome.net:9000/os-image/debian/latest/${DOWNLOAD_FILE_NAME} \
          --output ${DOWNLOAD_FILE_NAME}
 fi
 

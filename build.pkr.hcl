@@ -80,11 +80,18 @@ build {
       "${var.minio_client} anonymous -r set download ${var.minio_publish_path}",
       "${var.minio_client} cp ${local.image_path} ${var.minio_publish_path}/",
       "${var.minio_client} cp ${local.checksum_path} ${var.minio_publish_path}/",
+      # latest
+      "${var.minio_client} cp ${local.image_path} ${local.latest_minio_publish_path}/${local.latest_vm_name}",
+      "${var.minio_client} cp ${local.checksum_path} ${local.latest_minio_publish_path}/${local.latest_checksum_name}",
     ]
   }
 
   post-processor "manifest" {
     output     = local.manifest_path
     strip_path = true
+    custom_data = {
+      image_path    = "${var.minio_publish_path}/${local.image_path}",
+      checksum_path = "${var.minio_publish_path}/${local.checksum_path}"
+    }
   }
 }

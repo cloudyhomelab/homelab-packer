@@ -9,6 +9,10 @@ locals {
   checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
   manifest_path = "${var.output_directory}/packer-manifest.json"
 
+  latest_vm_name            = "${var.image_name}-latest.${var.image_format}"
+  latest_checksum_name      = "${local.latest_vm_name}.sha512"
+  latest_minio_publish_path = "${var.minio_publish_path}/latest"
+
   user_data = templatefile("${path.root}/cloud-init/user-data.pkrtpl.yml", {
     build_username = var.username
     build_password = var.password
