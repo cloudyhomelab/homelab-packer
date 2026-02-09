@@ -7,10 +7,12 @@ locals {
   vm_name       = "${var.image_name}-${local.build_stamp}.${var.image_format}"
   image_path    = "${var.output_directory}/${local.vm_name}"
   checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
-  manifest_path = "${var.output_directory}/packer-manifest.json"
 
-  latest_vm_name            = "${var.image_name}-latest.${var.image_format}"
-  latest_checksum_name      = "${local.latest_vm_name}.sha512"
+  latest_vm_name       = "${var.image_name}-latest.${var.image_format}"
+  latest_image_path    = "${var.output_directory}/${local.latest_vm_name}"
+  latest_checksum_path = "${var.output_directory}/${local.latest_vm_name}.sha512"
+
+  manifest_path             = "${var.output_directory}/packer-manifest.json"
   latest_minio_publish_path = "${var.minio_publish_path}/latest"
 
   user_data = templatefile("${path.root}/cloud-init/user-data.pkrtpl.yml", {

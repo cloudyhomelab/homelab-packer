@@ -73,16 +73,22 @@ build {
   post-processor "shell-local" {
     inline = [
       "set -euxo pipefail",
+      "cp ${local.image_path} ${local.latest_image_path}",
+
       "( cd ${var.output_directory} && sha512sum ${local.vm_name} ) > ${local.checksum_path}",
+      "( cd ${var.output_directory} && sha512sum ${local.latest_vm_name} ) > ${local.latest_checksum_path}",
+
       "qemu-img info ${local.image_path}",
       "qemu-img check ${local.image_path}",
+
       "${var.minio_client} mb --ignore-existing ${var.minio_publish_path}",
       "${var.minio_client} anonymous -r set download ${var.minio_publish_path}",
+
       "${var.minio_client} cp ${local.image_path} ${var.minio_publish_path}/",
       "${var.minio_client} cp ${local.checksum_path} ${var.minio_publish_path}/",
-      # latest
-      "${var.minio_client} cp ${local.image_path} ${local.latest_minio_publish_path}/${local.latest_vm_name}",
-      "${var.minio_client} cp ${local.checksum_path} ${local.latest_minio_publish_path}/${local.latest_checksum_name}",
+
+      "${var.minio_client} cp ${local.latest_image_path} ${local.latest_minio_publish_path}/",
+      "${var.minio_client} cp ${local.latest_checksum_path} ${local.latest_minio_publish_path}/",
     ]
   }
 
