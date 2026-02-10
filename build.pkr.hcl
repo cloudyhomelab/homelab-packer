@@ -36,68 +36,47 @@ build {
     user          = "${var.username}"
   }
 
-  provisioner "file" {
-    source      = "scripts/cleanup-user.sh"
-    destination = "/home/${var.username}/cleanup-user.sh"
-  }
-
-  provisioner "file" {
-    source      = "scripts/cleanup-image.sh"
-    destination = "/tmp/cleanup-image.sh"
-  }
-
   provisioner "shell" {
-    inline = [
-      "set -euxo pipefail",
-      "chmod 700 /tmp/cleanup-image.sh",
-      "chmod 700 /home/${var.username}/cleanup-user.sh",
-
-      "sudo /tmp/cleanup-image.sh",
-      "sudo /home/${var.username}/cleanup-user.sh \"${var.username}\"",
-
-      "rm -f /tmp/cleanup-image.sh",
-      "rm -f /home/${var.username}/cleanup-user.sh",
+    execute_command = "sudo bash -x -c '{{ .Vars }} {{ .Path }}'"
+    environment_vars = [
+      "PACKER_USER=${var.username}"
+    ]
+    scripts = [
+      "scripts/cleanup-image.sh",
+      "scripts/cleanup-user.sh"
     ]
   }
 
-  provisioner "shell" {
-    expect_disconnect = true
+  post-processors {
+    post-processor "shell-local" {
+      inline = [
+        "set -euxo pipefail",
+        "cp ${local.image_path} ${local.latest_image_path}",
 
-    execute_command = "echo '${var.password}' | sudo -S bash -x {{ .Path }}"
-    inline = [
-      "set -euxo pipefail",
-      "userdel -fr ${var.username} || true"
-    ]
-  }
+        "( cd ${var.output_directory} && sha512sum ${local.vm_name} ) > ${local.checksum_path}",
+        "( cd ${var.output_directory} && sha512sum ${local.latest_vm_name} ) > ${local.latest_checksum_path}",
 
-  post-processor "shell-local" {
-    inline = [
-      "set -euxo pipefail",
-      "cp ${local.image_path} ${local.latest_image_path}",
+        "qemu-img info ${local.image_path}",
+        "qemu-img check ${local.image_path}",
 
-      "( cd ${var.output_directory} && sha512sum ${local.vm_name} ) > ${local.checksum_path}",
-      "( cd ${var.output_directory} && sha512sum ${local.latest_vm_name} ) > ${local.latest_checksum_path}",
+        "${var.minio_client} mb --ignore-existing ${var.minio_publish_path}",
+        "${var.minio_client} anonymous -r set download ${var.minio_publish_path}",
 
-      "qemu-img info ${local.image_path}",
-      "qemu-img check ${local.image_path}",
+        "${var.minio_client} cp ${local.image_path} ${var.minio_publish_path}/",
+        "${var.minio_client} cp ${local.checksum_path} ${var.minio_publish_path}/",
 
-      "${var.minio_client} mb --ignore-existing ${var.minio_publish_path}",
-      "${var.minio_client} anonymous -r set download ${var.minio_publish_path}",
+        "${var.minio_client} cp ${local.latest_image_path} ${local.latest_minio_publish_path}/",
+        "${var.minio_client} cp ${local.latest_checksum_path} ${local.latest_minio_publish_path}/",
+      ]
+    }
 
-      "${var.minio_client} cp ${local.image_path} ${var.minio_publish_path}/",
-      "${var.minio_client} cp ${local.checksum_path} ${var.minio_publish_path}/",
-
-      "${var.minio_client} cp ${local.latest_image_path} ${local.latest_minio_publish_path}/",
-      "${var.minio_client} cp ${local.latest_checksum_path} ${local.latest_minio_publish_path}/",
-    ]
-  }
-
-  post-processor "manifest" {
-    output     = local.manifest_path
-    strip_path = true
-    custom_data = {
-      image_path    = "${var.minio_publish_path}/${local.image_path}",
-      checksum_path = "${var.minio_publish_path}/${local.checksum_path}"
+    post-processor "manifest" {
+      output     = local.manifest_path
+      strip_path = true
+      custom_data = {
+        image_path    = "${var.minio_publish_path}/${local.image_path}",
+        checksum_path = "${var.minio_publish_path}/${local.checksum_path}"
+      }
     }
   }
 }

@@ -28,6 +28,7 @@ fmt: init
 
 validate: init fmt
 	$(PACKER) validate $(TEMPLATE)
+	shellcheck scripts/*
 
 build: validate
 	$(PACKER) build $(BUILDFLAGS) $(TEMPLATE)

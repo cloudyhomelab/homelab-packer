@@ -8,18 +8,9 @@ jobs:
     runs-on: [self-hosted]
 
     steps:
-      - name: Show runner info
-        run: |
-          echo "Runner hostname: $(hostname)"
-          echo "Runner labels: $RUNNER_LABELS"
-          echo "Current user: $(whoami)"
-          echo "OS: $(uname -a)"
+      - name: checkout repository
+        uses: actions/checkout@v4
 
-      - name: Check tools
+      - name: validate
         run: |
-          git --version
-          jq --version
-          echo "All good."
-
-      - name: Echo success
-        run: echo "🎉 Runner test completed successfully!"
+          make validate

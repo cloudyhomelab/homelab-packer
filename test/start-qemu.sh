@@ -1,7 +1,5 @@
 #!/usr/bin/env sh
 
-set -x
-
 BASE_URL="http://moria.ip.cloudyhome.net:9000"
 BASE_IMAGE_PATH="os-image/debian"
 
@@ -30,8 +28,6 @@ redownload_required() {
 
     sha512sum --status -c ${CHECKSUM_FILE_NAME}
     SHA512_MATCH=$?
-
-    echo "matched = $SHA512_MATCH"
 
     if [ ${SHA512_MATCH} -ne 0 ]; then
         return 0;
