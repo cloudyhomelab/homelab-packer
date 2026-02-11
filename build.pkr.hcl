@@ -38,9 +38,9 @@ build {
 
   provisioner "shell" {
     execute_command = "sudo bash -x -c '{{ .Vars }} {{ .Path }}'"
-    environment_vars = [
-      "PACKER_USER=${var.username}"
-    ]
+    env = {
+      PACKER_USER = var.username
+    }
     scripts = [
       "scripts/cleanup-image.sh",
       "scripts/cleanup-user.sh"
