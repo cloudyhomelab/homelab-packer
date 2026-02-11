@@ -7,8 +7,12 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
-apt-get autoremove --purge
-apt-get clean
+export DEBIAN_FRONTEND=noninteractive
+
+apt-get -f -y install
+apt-get -y autoremove --purge
+apt-get -y clean
+rm -rf /var/lib/apt/lists/*
 
 cloud-init clean --logs
 rm -rf /var/lib/cloud/*
@@ -18,6 +22,7 @@ rm -f /var/lib/dbus/machine-id
 
 rm -f /etc/ssh/ssh_host_*
 
+journalctl --rotate && journalctl --vacuum-time=1s
 rm -rf /var/log/* /var/tmp/* /tmp/*
 
 dd if=/dev/zero of=/var/tmp/bigfile bs=1M || true

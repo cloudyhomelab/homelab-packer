@@ -39,3 +39,7 @@ variable "minio_client" {
 variable "minio_publish_path" {
   type = string
 }
+
+variable "git_commit_ref" {
+  type = string
+}

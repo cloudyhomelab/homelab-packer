@@ -1,12 +1,17 @@
-PACKER = packer
-TEMPLATE = .
+PACKER ?= packer
+TEMPLATE ?= .
 
-OUTDIR = build
-TESTDIR = test
-TESTSCRIPT = start-qemu.sh
-BUILDFLAGS = -color=false -on-error=ask
+GIT_COMMIT_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+OUTDIR ?= build
+TESTDIR ?= test
+BUILDFLAGS = -color=false -on-error=abort
 
-.ONESHELL: # Applies to every targets in the file!
+ACCELERATOR = none
+COMMONVARS = -var git_commit_ref=$(GIT_COMMIT_REF) -var accelerator=$(ACCELERATOR)
+
+SHELL := /bin/bash
+.SHELLFLAGS := -euo pipefail -c
+.ONESHELL:
 .PHONY: help init fmt validate build build-kvm clean test
 
 help:
@@ -17,28 +22,28 @@ help:
 	@echo "  make build                 - packer build TEMPLATE (default: .)"
 	@echo "  make build-kvm             - packer build TEMPLATE (default: .) with kvm accelerator"
 	@echo "  make clean                 - remove output directory"
-	@echo "  make test                	- test the generated image"
+	@echo "  make test                  - test the generated image"
 	@echo
 
-init: clean
+init:
 	$(PACKER) init $(TEMPLATE)
 
-fmt: init
+fmt:
 	$(PACKER) fmt -recursive .
 
 validate: init fmt
-	$(PACKER) validate $(TEMPLATE)
-	shellcheck scripts/*
+	$(PACKER) validate $(COMMONVARS) $(TEMPLATE)
+	find ./scripts -type f -name '*.sh' -print0 | xargs -0r shellcheck
 
-build: validate
-	$(PACKER) build $(BUILDFLAGS) $(TEMPLATE)
+build: clean validate
+	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
 
-build-kvm: validate
-	$(PACKER) build $(BUILDFLAGS) -var accelerator=kvm $(TEMPLATE)
+build-kvm: ACCELERATOR:=kvm
+build-kvm: clean validate
+	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
 
 clean:
 	rm -rf $(OUTDIR)/
 
 test:
-	cd $(TESTDIR)
-	./$(TESTSCRIPT)
+	cd $(TESTDIR) && ./start-qemu.sh

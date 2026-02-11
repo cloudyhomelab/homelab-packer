@@ -37,11 +37,16 @@ build {
   }
 
   provisioner "shell" {
-    execute_command = "sudo bash -x -c '{{ .Vars }} {{ .Path }}'"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash -euxo pipefail {{ .Path }}"
     env = {
-      PACKER_USER = var.username
+      BASE_IMAGE_URL  = var.debian_cloud_image_url
+      BUILD_TIMESTAMP = local.build_timestamp
+      GIT_COMMIT_REF  = var.git_commit_ref
+      PACKER_USER     = var.username
+      VM_NAME         = local.vm_name
     }
     scripts = [
+      "scripts/create-image-metadata.sh",
       "scripts/cleanup-image.sh",
       "scripts/cleanup-user.sh"
     ]
@@ -50,28 +55,23 @@ build {
   post-processors {
     post-processor "shell-local" {
       env = {
+        BASE_IMAGE_URL            = var.debian_cloud_image_url
+        BUILD_TIMESTAMP           = local.build_timestamp
         BUILD_VERSION             = local.build_version
         CHECKSUM_PATH             = local.checksum_path
+        GIT_COMMIT_REF            = var.git_commit_ref
         IMAGE_PATH                = local.image_path
         LATEST_CHECKSUM_PATH      = local.latest_checksum_path
         LATEST_IMAGE_PATH         = local.latest_image_path
         LATEST_MINIO_PUBLISH_PATH = local.latest_minio_publish_path
         LATEST_VM_NAME            = local.latest_vm_name
+        METADATA_PATH             = local.metadata_path
         MINIO_CLIENT              = var.minio_client
         MINIO_PUBLISH_PATH        = var.minio_publish_path
         OUTPUT_DIRECTORY          = var.output_directory
         VM_NAME                   = local.vm_name
       }
       script = "scripts/publish-image.sh"
-    }
-
-    post-processor "manifest" {
-      output     = local.manifest_path
-      strip_path = true
-      custom_data = {
-        image_path    = "${var.minio_publish_path}/${local.image_path}",
-        checksum_path = "${var.minio_publish_path}/${local.checksum_path}"
-      }
     }
   }
 }
