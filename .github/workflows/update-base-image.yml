@@ -1,0 +1,30 @@
+name: update base image
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: update base image
+        run: |
+          ./update-debian-cloud-image.sh
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: bump Debian cloud image"
+          title: "chore: bump Debian cloud image"
+          body: |
+            Automated update of Debian cloud image.
+          branch: chore/debian-image-bump
+          delete-branch: true
