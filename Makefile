@@ -31,7 +31,7 @@ init:
 fmt:
 	$(PACKER) fmt -recursive .
 
-validate: init fmt
+validate: clean init fmt
 	$(PACKER) validate $(COMMONVARS) $(TEMPLATE)
 	find ./scripts -type f -name '*.sh' -print0 | xargs -0r shellcheck
 
