@@ -55,21 +55,18 @@ build {
   post-processors {
     post-processor "shell-local" {
       env = {
-        BASE_IMAGE_URL            = var.debian_cloud_image_url
-        BUILD_TIMESTAMP           = local.build_timestamp
-        BUILD_VERSION             = local.build_version
-        CHECKSUM_PATH             = local.checksum_path
-        GIT_COMMIT_REF            = var.git_commit_ref
-        IMAGE_PATH                = local.image_path
-        LATEST_CHECKSUM_PATH      = local.latest_checksum_path
-        LATEST_IMAGE_PATH         = local.latest_image_path
-        LATEST_MINIO_PUBLISH_PATH = local.latest_minio_publish_path
-        LATEST_VM_NAME            = local.latest_vm_name
-        METADATA_PATH             = local.metadata_path
-        MINIO_CLIENT              = var.minio_client
-        MINIO_PUBLISH_PATH        = var.minio_publish_path
-        OUTPUT_DIRECTORY          = var.output_directory
-        VM_NAME                   = local.vm_name
+        ALL_METADATA_NAME   = local.all_metadata_name
+        BASE_IMAGE_URL      = var.debian_cloud_image_url
+        BUILD_TIMESTAMP     = local.build_timestamp
+        BUILD_VERSION       = local.build_version
+        CHECKSUM_PATH       = local.checksum_path
+        GIT_COMMIT_REF      = var.git_commit_ref
+        IMAGE_METADATA_NAME = local.image_metadata_name
+        IMAGE_PATH          = local.image_path
+        MINIO_CLIENT        = var.minio_client
+        MINIO_PUBLISH_PATH  = var.minio_publish_path
+        OUTPUT_DIRECTORY    = var.output_directory
+        VM_NAME             = local.vm_name
       }
       script = "scripts/publish-image.sh"
     }
