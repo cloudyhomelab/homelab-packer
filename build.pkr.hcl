@@ -41,6 +41,7 @@ build {
     env = {
       BASE_IMAGE_URL  = var.debian_cloud_image_url
       BUILD_TIMESTAMP = local.build_timestamp
+      BUILD_VERSION   = local.build_version
       GIT_COMMIT_REF  = var.git_commit_ref
       PACKER_USER     = var.username
       VM_NAME         = local.vm_name

@@ -14,6 +14,7 @@ cat > "${METADATA_PATH}" <<EOF
 {
   "IMAGE_NAME":         "${VM_NAME}",
   "SHA512_CHECKSUM":    "${SHA512_CHECKSUM}",
+  "BUILD_VERSION":      "${BUILD_VERSION}",
   "BUILD_DATE":         "${BUILD_TIMESTAMP}",
   "BASE_IMAGE":         "${BASE_IMAGE_URL}",
   "PACKER_GIT_COMMIT":  "${GIT_COMMIT_REF}"

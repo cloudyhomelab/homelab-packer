@@ -1,43 +1,32 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 BASE_URL="http://moria.ip.cloudyhome.net:9000"
 BASE_IMAGE_PATH="os-image/debian"
-
-DOWNLOAD_FILE_NAME="debian-trixie-packer-latest.qcow2"
-CHECKSUM_FILE_NAME="debian-trixie-packer-latest.qcow2.sha512"
+METADATA_FILENAME="metadata_all.json"
 CLOUD_INIT_FILE="seed.iso"
 
 
-download_vm_image() {
+curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${METADATA_FILENAME}"
+IMAGE_NAME=$(jq -r 'max_by(.BUILD_DATE).IMAGE_NAME // empty' "${METADATA_FILENAME}")
+IMAGE_CHECKSUM=$(jq -r 'max_by(.BUILD_DATE).SHA512_CHECKSUM // empty' "${METADATA_FILENAME}")
+BUILD_VERSION=$(jq -r 'max_by(.BUILD_DATE).BUILD_VERSION // empty' "${METADATA_FILENAME}")
+
+
+: "${IMAGE_NAME:?Image name is empty or unset}"
+: "${IMAGE_CHECKSUM:?Image checksum is empty or unset}"
+: "${BUILD_VERSION:?Build version is empty or unset}"
+
+if [ ! -f "${IMAGE_NAME}" ]; then
     rm -f --preserve-root=all --one-file-system ./*.qcow2
-    curl -L ${BASE_URL}/${BASE_IMAGE_PATH}/latest/${DOWNLOAD_FILE_NAME} --output ${DOWNLOAD_FILE_NAME}
-}
+    curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${BUILD_VERSION}/${IMAGE_NAME}" --output "${IMAGE_NAME}"
 
-redownload_required() {
-    if [ ! -f ${CHECKSUM_FILE_NAME} ]; then
-        curl -L ${BASE_URL}/${BASE_IMAGE_PATH}/latest/${CHECKSUM_FILE_NAME} --output ${CHECKSUM_FILE_NAME}
-        return 0;
+    if ! printf '%s  %s\n' "${IMAGE_CHECKSUM}" "${IMAGE_NAME}" | sha512sum -c - >/dev/null; then
+        rm -f -- "${IMAGE_NAME}"
+        echo "Checksum mismatch ${IMAGE_CHECKSUM} - deleted ${IMAGE_NAME}"
+        exit 1
     fi
-
-    # download the latest checksum regardless
-    curl -L ${BASE_URL}/${BASE_IMAGE_PATH}/latest/${CHECKSUM_FILE_NAME} --output ${CHECKSUM_FILE_NAME}
-
-    if ! [ -f ${DOWNLOAD_FILE_NAME} ]; then
-        return 0;
-    fi
-
-    sha512sum --status -c ${CHECKSUM_FILE_NAME}
-    SHA512_MATCH=$?
-
-    if [ ${SHA512_MATCH} -ne 0 ]; then
-        return 0;
-    fi
-
-    return 1;
-}
-
-if redownload_required ; then
-    download_vm_image
 fi
 
 if ! [ -f ${CLOUD_INIT_FILE} ]; then
@@ -46,11 +35,12 @@ if ! [ -f ${CLOUD_INIT_FILE} ]; then
                 user-data meta-data network-config
 fi
 
+
 qemu-system-x86_64 \
   -m 2048 \
   -smp 2 \
   -enable-kvm \
-  -drive file="${DOWNLOAD_FILE_NAME}",if=virtio,index=0 \
+  -drive file="${IMAGE_NAME}",if=virtio,index=0 \
   -drive file="${CLOUD_INIT_FILE}",format=raw,if=virtio,index=1 \
   -nic user,model=virtio \
   -nographic \
