@@ -23,7 +23,7 @@ if [ ! -f "${IMAGE_NAME}" ]; then
     curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${BUILD_VERSION}/${IMAGE_NAME}" --output "${IMAGE_NAME}"
 
     if ! printf '%s  %s\n' "${IMAGE_CHECKSUM}" "${IMAGE_NAME}" | sha512sum -c - >/dev/null; then
-        rm -f -- "${IMAGE_NAME}"
+        rm -f --preserve-root=all --one-file-system -- "${IMAGE_NAME}"
         echo "Checksum mismatch ${IMAGE_CHECKSUM} - deleted ${IMAGE_NAME}"
         exit 1
     fi

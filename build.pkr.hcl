@@ -23,16 +23,8 @@ build {
     ]
   }
 
-  provisioner "shell-local" {
-    inline = [
-      "set -euxo pipefail",
-      "rm -r '${local.ansible_repo_path}'",
-      "git clone -b '${local.ansible_repo_branch}' --single-branch '${local.ansible_repo}' '${local.ansible_repo_path}'",
-    ]
-  }
-
   provisioner "ansible" {
-    playbook_file = "${local.ansible_repo_path}/packer.yml"
+    playbook_file = "${var.ansible_repo_path}/packer.yml"
     user          = "${var.username}"
   }
 

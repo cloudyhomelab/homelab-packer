@@ -43,3 +43,7 @@ variable "minio_publish_path" {
 variable "git_commit_ref" {
   type = string
 }
+
+variable "ansible_repo_path" {
+  type = string
+}
