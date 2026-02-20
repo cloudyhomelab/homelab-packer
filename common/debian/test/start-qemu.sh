@@ -2,21 +2,45 @@
 
 set -euo pipefail
 
+TEST_IMAGE_NAME="$1"
+: "${TEST_IMAGE_NAME:?Test image name is empty or unset}"
+
 BASE_URL="http://moria.ip.cloudyhome.net:9000"
 BASE_IMAGE_PATH="os-image/debian"
 METADATA_FILENAME="metadata_all.json"
 CLOUD_INIT_FILE="seed.iso"
 
 
+find_image(){
+    jq -r --arg prefix "${TEST_IMAGE_NAME}-" '
+    map(select(.IMAGE_NAME | startswith($prefix)))
+      | max_by(.BUILD_DATE)
+      | .IMAGE_NAME // empty
+    '
+}
+find_image() {
+  local field="$1" # "IMAGE_NAME", "SHA512_CHECKSUM", "BUILD_VERSION", etc
+  local prefix="${TEST_IMAGE_NAME}"
+  local json_file="${METADATA_FILENAME}"
+
+  jq -r --arg prefix "${prefix}-" --arg field "$field" '
+     map(select(.IMAGE_NAME | startswith($prefix)))
+     | max_by(.BUILD_DATE)
+     | .[$field] // empty
+     ' "$json_file"
+}
+
+
 curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${METADATA_FILENAME}"
-IMAGE_NAME=$(jq -r 'max_by(.BUILD_DATE).IMAGE_NAME // empty' "${METADATA_FILENAME}")
-IMAGE_CHECKSUM=$(jq -r 'max_by(.BUILD_DATE).SHA512_CHECKSUM // empty' "${METADATA_FILENAME}")
-BUILD_VERSION=$(jq -r 'max_by(.BUILD_DATE).BUILD_VERSION // empty' "${METADATA_FILENAME}")
+IMAGE_NAME=$(find_image "IMAGE_NAME")
+IMAGE_CHECKSUM=$(find_image "SHA512_CHECKSUM")
+BUILD_VERSION=$(find_image "BUILD_VERSION")
 
 
 : "${IMAGE_NAME:?Image name is empty or unset}"
 : "${IMAGE_CHECKSUM:?Image checksum is empty or unset}"
 : "${BUILD_VERSION:?Build version is empty or unset}"
+
 
 if [ ! -f "${IMAGE_NAME}" ]; then
     rm -f --preserve-root=all --one-file-system ./*.qcow2
@@ -34,7 +58,6 @@ if ! [ -f ${CLOUD_INIT_FILE} ]; then
                 -volid cidata -joliet -rock \
                 user-data meta-data network-config
 fi
-
 
 qemu-system-x86_64 \
   -m 2048 \

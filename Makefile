@@ -1,67 +1,53 @@
-PACKER ?= packer
-TEMPLATE ?= .
-
-GIT_COMMIT_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-OUTDIR ?= build
-TESTDIR ?= test
-BUILDFLAGS = -color=false -on-error=abort
-
+WORKDIR := "./workspace"
 PROJECT_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-ANSIBLE_REPO = "https://github.com/binarycodes/homelab-self-provisioner.git"
-ANSIBLE_REPO_PATH = "$(PROJECT_ROOT)/tmp_ansible_checkout"
+ALLOWED_OS_ROLE := debian-base debian-container debian-kubernetes
 
-ACCELERATOR = none
-COMMONVARS = -var ansible_repo_path=$(ANSIBLE_REPO_PATH) -var git_commit_ref=$(GIT_COMMIT_REF) -var accelerator=$(ACCELERATOR)
+empty :=
+space := $(empty) $(empty)
+TOKENS = $(subst -, ,$@)
+OS = $(word 1,$(TOKENS))
+ROLE = $(word 2,$(TOKENS))
+ACTION_TOKENS = $(wordlist 3,$(words $(TOKENS)),$(TOKENS))
+ACTION = $(subst $(space),-,$(strip $(ACTION_TOKENS)))
 
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 .ONESHELL:
-.PHONY: help init fmt validate build build-kvm clean test ansible-checkout
+.PHONY: help clean ansible-checkout deb-base
 .SILENT:
 
+
 help:
+	echo "Available OS-ROLE combinations are $(ALLOWED_OS_ROLE)"
+	echo
 	echo "Targets:"
-	echo "  make init                  - packer init (plugins, etc.)"
-	echo "  make fmt                   - packer format recursively"
-	echo "  make validate              - packer validate project"
-	echo "  make build                 - packer build without kvm"
-	echo "  make build-kvm             - packer build with kvm accelerator"
-	echo "  make clean                 - remove output directory"
-	echo "  make test                  - test the generated image"
-	echo "  make ansible-checkout      - locally checkout the ansible repository"
+	echo "  make *-fmt                   - packer format recursively"
+	echo "  make *-validate              - packer validate project"
+	echo "  make *-build                 - packer build without kvm"
+	echo "  make *-build-kvm             - packer build with kvm accelerator"
+	echo "  make *-test                  - test the generated image"
 	echo
 
-init:
-	echo "initializing packer project ..."
-	$(PACKER) init $(TEMPLATE)
+%-fmt %-validate %-build %-build-kvm %-test: clean
+	echo "preparing workspace for: os - $(OS), role - $(ROLE), action - $(ACTION) ..."
 
-fmt:
-	echo "formatting everything recursively ..."
-	$(PACKER) fmt -recursive .
+	if ! echo " $(ALLOWED_OS_ROLE) " | grep -q " $(OS)-$(ROLE) "; then
+	  echo "error: unsupported os-role '$(OS)-$(ROLE)' in target '$@'"
+	  exit 2
+	fi
 
-validate: clean init fmt ansible-checkout
-	echo "running validations ..."
-	$(PACKER) validate $(COMMONVARS) $(TEMPLATE)
-	find ./scripts -type f -name '*.sh' -print0 | xargs -0r shellcheck
+	cd $(WORKDIR)
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/images/$(ROLE)/* ./
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/packer/* ./
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/vars/* ./
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/scripts ./
+	ln -snf $(PROJECT_ROOT)/common/Makefile ./
+	ln -snf $(PROJECT_ROOT)/common/*.hcl ./
+	ln -snf $(PROJECT_ROOT)/common/cloud-init ./
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/test ./
 
-build: clean validate
-	echo "builing without kvm ..."
-	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
-
-build-kvm: ACCELERATOR:=kvm
-build-kvm: clean validate
-	echo "building with kvm accelerator ..."
-	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
+	$(MAKE) --no-print-directory $(ACTION) TEST_IMAGE_NAME=$(OS)-$(ROLE)
 
 clean:
-	echo "cleaning up output directory ..."
-	rm -rf --preserve-root=all --one-file-system $(OUTDIR)/
-
-ansible-checkout:
-	echo "cloning the ansible repository locally ..."
-	rm -rf --preserve-root=all --one-file-system $(ANSIBLE_REPO_PATH)
-	git clone --quiet -b main --single-branch "$(ANSIBLE_REPO)" "$(ANSIBLE_REPO_PATH)"
-
-test:
-	echo "runnnig tests ..."
-	cd $(TESTDIR) && ./start-qemu.sh
+	rm -rf --preserve-root=all --one-file-system "$(PROJECT_ROOT)/$(WORKDIR)"
+	mkdir "$(PROJECT_ROOT)/$(WORKDIR)"

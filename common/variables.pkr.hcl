@@ -12,11 +12,19 @@ variable "accelerator" {
   type = string
 }
 
-variable "debian_cloud_image_url" {
+variable "source_cloud_image_url" {
   type = string
 }
 
-variable "debian_cloud_image_checksum" {
+variable "source_cloud_image_checksum" {
+  type = string
+}
+
+variable "disk_size" {
+  type = string
+}
+
+variable "playbook_name" {
   type = string
 }
 
@@ -47,3 +55,7 @@ variable "git_commit_ref" {
 variable "ansible_repo_path" {
   type = string
 }
+
+variable "ssh_user_ca_file" { type = string }
+variable "ssh_private_key_file" { type = string }
+variable "ssh_certificate_file" { type = string }

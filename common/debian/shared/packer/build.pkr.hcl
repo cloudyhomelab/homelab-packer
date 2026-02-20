@@ -24,14 +24,14 @@ build {
   }
 
   provisioner "ansible" {
-    playbook_file = "${var.ansible_repo_path}/packer.yml"
+    playbook_file = "${var.ansible_repo_path}/${var.playbook_name}.yml"
     user          = "${var.username}"
   }
 
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash -euxo pipefail {{ .Path }}"
     env = {
-      BASE_IMAGE_URL  = var.debian_cloud_image_url
+      BASE_IMAGE_URL  = var.source_cloud_image_url
       BUILD_TIMESTAMP = local.build_timestamp
       BUILD_VERSION   = local.build_version
       GIT_COMMIT_REF  = var.git_commit_ref
@@ -49,7 +49,7 @@ build {
     post-processor "shell-local" {
       env = {
         ALL_METADATA_NAME   = local.all_metadata_name
-        BASE_IMAGE_URL      = var.debian_cloud_image_url
+        BASE_IMAGE_URL      = var.source_cloud_image_url
         BUILD_TIMESTAMP     = local.build_timestamp
         BUILD_VERSION       = local.build_version
         CHECKSUM_PATH       = local.checksum_path

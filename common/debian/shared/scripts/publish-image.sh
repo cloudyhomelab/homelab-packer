@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -euo pipefail
 
 qemu-img info "${IMAGE_PATH}"
 qemu-img check "${IMAGE_PATH}"

@@ -4,7 +4,6 @@ password = "packerpassword"
 accelerator = "none"
 
 output_directory = "build"
-image_name       = "debian-trixie-packer"
 image_format     = "qcow2"
 
 minio_client       = "mcli"

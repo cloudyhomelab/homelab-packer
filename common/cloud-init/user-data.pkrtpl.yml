@@ -1,0 +1,35 @@
+#cloud-config
+
+users:
+  - name: ${build_username}
+    uid: 9999
+    groups:
+      - sudo
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: ${build_password}
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+ssh_pwauth: true
+disable_root: true
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+write_files:
+  - path: /etc/ssh/packer_user_ca.pub
+    owner: root:root
+    permissions: '0400'
+    content: |
+      ${ca_user_public_key}
+
+  - path: /etc/ssh/sshd_config.d/0000_packer.conf
+    owner: root:root
+    permissions: '0400'
+    content: |
+      TrustedUserCAKeys /etc/ssh/packer_user_ca.pub
+      HostKeyAlgorithms ssh-ed25519
+
+runcmd:
+  - systemctl restart sshd

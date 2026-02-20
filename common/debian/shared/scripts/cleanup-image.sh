@@ -9,6 +9,7 @@ fi
 
 export DEBIAN_FRONTEND=noninteractive
 
+dpkg --configure -a
 apt-get -f -y install
 apt-get -y autoremove --purge
 apt-get -y clean
@@ -21,6 +22,8 @@ truncate -s 0 /etc/machine-id
 rm -f /var/lib/dbus/machine-id
 
 rm -f /etc/ssh/ssh_host_*
+rm -f /etc/ssh/sshd_config.d/0000_packer.conf
+rm -f /etc/ssh/packer_user_ca.pub
 
 journalctl --rotate && journalctl --vacuum-time=1s
 rm -rf /var/log/* /var/tmp/* /tmp/*
