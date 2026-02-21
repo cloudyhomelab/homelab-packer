@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  update:
+  debian-cloud-update:
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,9 +15,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: update base image
+      - name: update cloud image source
         run: |
-          ./.github/workflows/scripts/update-debian-cloud-image.sh
+          ./.github/workflows/scripts/check-debian-cloud-image-update.sh
 
       - name: create pr
         uses: peter-evans/create-pull-request@v6
@@ -26,5 +26,28 @@ jobs:
           title: "chore: bump Debian cloud image"
           body: |
             Automated update of Debian cloud image.
-          branch: chore/debian-image-bump
+          branch: chore/debian-cloud-image-bump
+          delete-branch: true
+
+  debian-base-update:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: update base image source
+        run: |
+          ./.github/workflows/scripts/check-debian-base-image-update.sh
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "chore: bump Debian base image"
+          title: "chore: bump Debian base image"
+          body: |
+            Automated update of Debian base image.
+          branch: chore/debian-base-image-bump
           delete-branch: true

@@ -10,14 +10,6 @@ BASE_IMAGE_PATH="os-image/debian"
 METADATA_FILENAME="metadata_all.json"
 CLOUD_INIT_FILE="seed.iso"
 
-
-find_image(){
-    jq -r --arg prefix "${TEST_IMAGE_NAME}-" '
-    map(select(.IMAGE_NAME | startswith($prefix)))
-      | max_by(.BUILD_DATE)
-      | .IMAGE_NAME // empty
-    '
-}
 find_image() {
   local field="$1" # "IMAGE_NAME", "SHA512_CHECKSUM", "BUILD_VERSION", etc
   local prefix="${TEST_IMAGE_NAME}"

@@ -1,4 +1,4 @@
-name: runner sanity test
+name: run packer build
 
 on:
   workflow_dispatch:
