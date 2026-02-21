@@ -21,7 +21,7 @@ CHECKSUM=$(curl -fsSL "${BASE_URL}/${LATEST_DIR}/SHA512SUMS" \
                | grep "${IMAGE_NAME}" \
                | awk '{print $1}')
 
-TARGET_FILE="./common/debian/images/base/base-image.auto.pkrvars.hcl"
+TARGET_FILE="./common/debian/images/base/source-image.auto.pkrvars.hcl"
 if [ ! -f "${TARGET_FILE}" ]; then
     touch "${TARGET_FILE}"
 fi
