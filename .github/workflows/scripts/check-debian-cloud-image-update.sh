@@ -26,7 +26,7 @@ if [ ! -f "${TARGET_FILE}" ]; then
     touch "${TARGET_FILE}"
 fi
 
-CURRENT_URL=$(grep "${URL_KEY}" "${TARGET_FILE}" | cut -d'"' -f2)
+CURRENT_URL=$(grep -F "${URL_KEY}" "${TARGET_FILE}" | cut -d'"' -f2)
 
 if [ "${IMAGE_URL}" = "${CURRENT_URL}" ]; then
   echo "No new Debian cloud image"

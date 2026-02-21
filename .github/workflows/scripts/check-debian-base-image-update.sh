@@ -32,22 +32,25 @@ check_update_source_image() {
 
     : "${role:?Argument for role is empty or unset}"
 
-    local metadata_filepath=$(mktemp)
+    local metadata_filepath
+    metadata_filepath=$(mktemp)
 
     curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${metadata_filepath}"
-    local image_name=$(find_image "IMAGE_NAME" "${role}" "${metadata_filepath}")
-    local image_checksum=$(find_image "SHA512_CHECKSUM" "${role}" "${metadata_filepath}")
-    local build_version=$(find_image "BUILD_VERSION" "${role}" "${metadata_filepath}")
+
+    local image_name image_checksum build_version
+    image_name=$(find_image "IMAGE_NAME" "${role}" "${metadata_filepath}")
+    image_checksum=$(find_image "SHA512_CHECKSUM" "${role}" "${metadata_filepath}")
+    build_version=$(find_image "BUILD_VERSION" "${role}" "${metadata_filepath}")
 
     local image_url="${BASE_URL}/${BASE_IMAGE_PATH}/${build_version}/${image_name}"
-
 
     local target_file="./common/${OS}/images/${role}/source-image.auto.pkrvars.hcl"
     if [ ! -f "${target_file}" ]; then
         touch "${target_file}"
     fi
 
-    local current_url=$(grep "${URL_KEY}" "${target_file}" | cut -d'"' -f2)
+    local current_url
+    current_url=$(grep -F "${URL_KEY}" "${target_file}" | cut -d'"' -f2)
 
     if [ "${image_url}" = "${current_url}" ]; then
         echo "No update required"
