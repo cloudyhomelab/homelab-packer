@@ -17,7 +17,7 @@ jobs:
 
       - name: update base image
         run: |
-          ./scripts/update-debian-cloud-image.sh
+          ./.github/workflows/scripts/update-debian-cloud-image.sh
 
       - name: create pr
         uses: peter-evans/create-pull-request@v6

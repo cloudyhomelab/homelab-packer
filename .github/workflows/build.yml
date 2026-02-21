@@ -22,3 +22,4 @@ jobs:
           make debian-base-validate
           make debian-container-validate
           make debian-kubernetes-validate
+          shellcheck ./.github/workflows/scripts/*
