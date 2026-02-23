@@ -1,4 +1,4 @@
-name: run packer build
+name: run validations
 
 on:
   workflow_dispatch:
