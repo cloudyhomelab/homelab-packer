@@ -15,6 +15,7 @@ SHELL := /bin/bash
 .ONESHELL:
 .PHONY: help clean ansible-checkout deb-base
 .SILENT:
+DEFAULT: help
 
 
 help:
