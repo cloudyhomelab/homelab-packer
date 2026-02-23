@@ -5,7 +5,7 @@ set -euo pipefail
 TEST_IMAGE_NAME="$1"
 : "${TEST_IMAGE_NAME:?Test image name is empty or unset}"
 
-BASE_URL="http://moria.ip.cloudyhome.net:9000"
+BASE_URL="https://s3-api.cloudyhome.net"
 BASE_IMAGE_PATH="os-image/debian"
 METADATA_FILENAME="metadata_all.json"
 CLOUD_INIT_FILE="seed.iso"

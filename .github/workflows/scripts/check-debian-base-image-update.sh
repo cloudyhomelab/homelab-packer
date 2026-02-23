@@ -6,7 +6,7 @@ URL_KEY="source_cloud_image_url"
 CHECKSUM_KEY="source_cloud_image_checksum"
 
 OS="debian"
-BASE_URL="http://moria.ip.cloudyhome.net:9000"
+BASE_URL="https://s3-api.cloudyhome.net"
 BASE_IMAGE_PATH="os-image/${OS}"
 METADATA_FILENAME="metadata_all.json"
 
