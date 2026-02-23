@@ -18,6 +18,7 @@ jobs:
       - name: update cloud image source
         run: |
           ./.github/workflows/scripts/check-debian-cloud-image-update.sh
+          make debian-base-validate
 
       - name: create pr
         uses: peter-evans/create-pull-request@v6
@@ -41,6 +42,8 @@ jobs:
       - name: update base image source
         run: |
           ./.github/workflows/scripts/check-debian-base-image-update.sh
+          make debian-container-validate
+          make debian-kubernetes-validate
 
       - name: create pr
         uses: peter-evans/create-pull-request@v6

@@ -7,7 +7,7 @@ build {
     expect_disconnect   = true
 
     inline = [
-      "set -euxo pipefail",
+      "set -euo pipefail",
       "cloud-init status --wait",
     ]
   }
@@ -16,7 +16,7 @@ build {
     start_retry_timeout = "5m"
     pause_before        = "30s"
     inline = [
-      "set -euxo pipefail",
+      "set -euo pipefail",
       "cloud-init status --wait",
       "cloud-init status --long || true",
       "test -f /var/lib/cloud/instance/boot-finished",
@@ -29,7 +29,7 @@ build {
   }
 
   provisioner "shell" {
-    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash -euxo pipefail {{ .Path }}"
+    execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash -euo pipefail {{ .Path }}"
     env = {
       BASE_IMAGE_URL  = var.source_cloud_image_url
       BUILD_TIMESTAMP = local.build_timestamp
