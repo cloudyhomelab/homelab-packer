@@ -3,6 +3,8 @@ TEMPLATE ?= .
 TEST_IMAGE_NAME ?=
 
 GIT_COMMIT_REF := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GIT_REMOTE_URL := $(shell git config --get remote.origin.url || echo "unknown")
+
 OUTDIR ?= build
 TESTDIR ?= test
 BUILDFLAGS = -color=false -on-error=abort
@@ -19,6 +21,7 @@ SSH_CERTIFICATE_FILE = "$(PROJECT_ROOT)/id_ed25519-cert.pub"
 ACCELERATOR = none
 COMMONVARS = \
 	-var ansible_repo_path=$(ANSIBLE_REPO_PATH) \
+	-var git_remote_url=$(GIT_REMOTE_URL) \
 	-var git_commit_ref=$(GIT_COMMIT_REF) \
 	-var accelerator=$(ACCELERATOR) \
 	-var username=$(USERNAME) \

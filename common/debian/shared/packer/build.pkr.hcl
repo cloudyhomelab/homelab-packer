@@ -34,6 +34,7 @@ build {
       BASE_IMAGE_URL  = var.source_cloud_image_url
       BUILD_TIMESTAMP = local.build_timestamp
       BUILD_VERSION   = local.build_version
+      GIT_REMOTE_URL  = var.git_remote_url
       GIT_COMMIT_REF  = var.git_commit_ref
       PACKER_USER     = var.username
       VM_NAME         = local.vm_name
@@ -53,6 +54,7 @@ build {
         BUILD_TIMESTAMP     = local.build_timestamp
         BUILD_VERSION       = local.build_version
         CHECKSUM_PATH       = local.checksum_path
+        GIT_REMOTE_URL      = var.git_remote_url
         GIT_COMMIT_REF      = var.git_commit_ref
         IMAGE_METADATA_NAME = local.image_metadata_name
         IMAGE_PATH          = local.image_path
