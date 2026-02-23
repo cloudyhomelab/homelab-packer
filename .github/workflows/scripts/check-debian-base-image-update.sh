@@ -13,8 +13,8 @@ METADATA_FILENAME="metadata_all.json"
 
 find_image() {
   local field="${1}" # "IMAGE_NAME", "SHA512_CHECKSUM", "BUILD_VERSION", etc
-  local prefix="${OS}-${2}"
-  local json_file="${3}"
+  local prefix="${OS}-base"
+  local json_file="${2}"
 
   : "${field:?field value is required}"
   : "${prefix:?prefix value is required}"
@@ -38,9 +38,9 @@ check_update_source_image() {
     curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${metadata_filepath}"
 
     local image_name image_checksum build_version
-    image_name=$(find_image "IMAGE_NAME" "${role}" "${metadata_filepath}")
-    image_checksum=$(find_image "SHA512_CHECKSUM" "${role}" "${metadata_filepath}")
-    build_version=$(find_image "BUILD_VERSION" "${role}" "${metadata_filepath}")
+    image_name=$(find_image "IMAGE_NAME" "${metadata_filepath}")
+    image_checksum=$(find_image "SHA512_CHECKSUM" "${metadata_filepath}")
+    build_version=$(find_image "BUILD_VERSION" "${metadata_filepath}")
 
     local image_url="${BASE_URL}/${BASE_IMAGE_PATH}/${build_version}/${image_name}"
 

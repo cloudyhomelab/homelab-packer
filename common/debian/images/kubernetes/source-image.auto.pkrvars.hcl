@@ -1,2 +1,2 @@
-source_cloud_image_url          = "http://moria.ip.cloudyhome.net:9000/os-image/debian/20260220-1227/debian-kubernetes-20260220-1227.qcow2"
-source_cloud_image_checksum     = "sha512:d7a34fb7132420cf01378a2e0ab1011716c12f2a55e232230164bbd03dccd1d49d6bec92acbb09ecea4ffb8e686fadaee61a3e4050a517970c09def5fd63077a"
+source_cloud_image_url          = "http://moria.ip.cloudyhome.net:9000/os-image/debian/20260223-1036/debian-base-20260223-1036.qcow2"
+source_cloud_image_checksum     = "sha512:8b426b18b91fc27d0edab5f04e4531fd352e479d997d4335621221acd5a9cc7eb8f0f84e2eb6ea785022538bb50ba32641072faaa3d9d06a36346a35d5172a5c"
