@@ -1,4 +1,4 @@
-name: update base image
+name: update source image
 
 on:
   schedule:
