@@ -14,9 +14,6 @@ jobs:
       - name: checkout repository
         uses: actions/checkout@v4
 
-      - name: setup packer
-        uses: hashicorp/setup-packer@main
-
       - name: validate
         run: |
           make debian-base-validate
