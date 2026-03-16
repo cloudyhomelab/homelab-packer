@@ -10,12 +10,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 jobs:
-  test-runner:
+  validate:
     runs-on: [self-hosted]
 
     steps:
       - name: checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6.0.2
 
       - name: validate
         run: |
