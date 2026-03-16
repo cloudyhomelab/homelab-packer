@@ -16,7 +16,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: update cloud image source
         run: |
@@ -24,12 +24,12 @@ jobs:
           make debian-base-validate
 
       - name: create pr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8.1.0
         with:
-          commit-message: "chore: bump Debian cloud image"
-          title: "chore: bump Debian cloud image"
+          commit-message: "chore: bump debian cloud image"
+          title: "chore: bump debian cloud image"
           body: |
-            Automated update of Debian cloud image.
+            automated update of debian cloud image.
           branch: chore/debian-cloud-image-bump
           delete-branch: true
 
@@ -40,7 +40,7 @@ jobs:
       pull-requests: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.2
 
       - name: update base image source
         run: |
@@ -49,11 +49,11 @@ jobs:
           make debian-kubernetes-validate
 
       - name: create pr
-        uses: peter-evans/create-pull-request@v6
+        uses: peter-evans/create-pull-request@v8.1.0
         with:
-          commit-message: "chore: bump Debian base image"
-          title: "chore: bump Debian base image"
+          commit-message: "chore: bump debian base image"
+          title: "chore: bump debian base image"
           body: |
-            Automated update of Debian base image.
+            automated update of debian base image.
           branch: chore/debian-base-image-bump
           delete-branch: true
