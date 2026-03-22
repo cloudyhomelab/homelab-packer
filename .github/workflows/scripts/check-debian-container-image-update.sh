@@ -13,7 +13,7 @@ METADATA_FILENAME="metadata_all.json"
 
 find_image() {
   local field="${1}" # "IMAGE_NAME", "SHA512_CHECKSUM", "BUILD_VERSION", etc
-  local prefix="${OS}-base"
+  local prefix="${OS}-container"
   local json_file="${2}"
 
   : "${field:?field value is required}"
@@ -63,5 +63,4 @@ EOF
     fi
 }
 
-check_update_source_image "container"
-check_update_source_image "kubernetes"
+check_update_source_image "edge"

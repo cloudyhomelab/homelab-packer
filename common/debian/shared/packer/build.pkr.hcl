@@ -62,6 +62,7 @@ build {
         MINIO_PUBLISH_PATH  = var.minio_publish_path
         OUTPUT_DIRECTORY    = var.output_directory
         VM_NAME             = local.vm_name
+        IMAGE_TYPE          = var.image_name
       }
       script = "scripts/publish-image.sh"
     }

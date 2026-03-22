@@ -1,6 +1,6 @@
-WORKDIR := "./workspace"
+WORKDIR := workspace
 PROJECT_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-ALLOWED_OS_ROLE := debian-base debian-container debian-kubernetes
+ALLOWED_OS_ROLE := debian-base debian-container debian-kubernetes debian-edge
 
 empty :=
 space := $(empty) $(empty)
@@ -37,7 +37,7 @@ help:
 	  exit 2
 	fi
 
-	cd $(WORKDIR)
+	cd "$(PROJECT_ROOT)/$(WORKDIR)"
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/images/$(ROLE)/* ./
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/packer/* ./
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/vars/* ./
