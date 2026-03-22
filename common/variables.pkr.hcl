@@ -26,6 +26,7 @@ variable "output_directory" { type = string }
 variable "s3_user" {
   type      = string
   sensitive = true
+  default   = "<REDACTED>"
 }
 variable "s3_endpoint" { type = string }
 variable "s3_aws_sigv4" { type = string }
