@@ -4,12 +4,13 @@ locals {
 
   ssh_user_ca_public_key = file("${var.ssh_user_ca_file}.pub")
 
-  vm_name       = "${var.image_name}-${local.build_version}.${var.image_format}"
-  image_path    = "${var.output_directory}/${local.vm_name}"
-  checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
-
   image_metadata_name = "metadata.json"
   all_metadata_name   = "metadata_all.json"
+
+  vm_name             = "${var.image_name}-${local.build_version}.${var.image_format}"
+  image_path          = "${var.output_directory}/${local.vm_name}"
+  image_checksum_path = "${var.output_directory}/${local.vm_name}.sha512"
+  image_metadata_path = "${var.output_directory}/${local.image_metadata_name}"
 
   user_data = templatefile("${path.root}/cloud-init/user-data.pkrtpl.yml", {
     build_username     = var.username

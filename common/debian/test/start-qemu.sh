@@ -25,18 +25,16 @@ find_image() {
 
 curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${METADATA_FILENAME}"
 IMAGE_NAME=$(find_image "IMAGE_NAME")
+IMAGE_URL=$(find_image "IMAGE_URL")
 IMAGE_CHECKSUM=$(find_image "SHA512_CHECKSUM")
-BUILD_VERSION=$(find_image "BUILD_VERSION")
-
 
 : "${IMAGE_NAME:?Image name is empty or unset}"
 : "${IMAGE_CHECKSUM:?Image checksum is empty or unset}"
-: "${BUILD_VERSION:?Build version is empty or unset}"
-
+: "${IMAGE_URL:?Image URL is empty or unset}"
 
 if [ ! -f "${IMAGE_NAME}" ]; then
     rm -f --preserve-root=all --one-file-system ./*.qcow2
-    curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${BUILD_VERSION}/${IMAGE_NAME}" --output "${IMAGE_NAME}"
+    curl -fsSL "${IMAGE_URL}" --output "${IMAGE_NAME}"
 
     if ! printf '%s  %s\n' "${IMAGE_CHECKSUM}" "${IMAGE_NAME}" | sha512sum -c - >/dev/null; then
         rm -f --preserve-root=all --one-file-system -- "${IMAGE_NAME}"

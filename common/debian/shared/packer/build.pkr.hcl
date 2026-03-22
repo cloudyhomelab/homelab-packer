@@ -53,16 +53,19 @@ build {
         BASE_IMAGE_URL      = var.source_cloud_image_url
         BUILD_TIMESTAMP     = local.build_timestamp
         BUILD_VERSION       = local.build_version
-        CHECKSUM_PATH       = local.checksum_path
         GIT_REMOTE_URL      = var.git_remote_url
         GIT_COMMIT_REF      = var.git_commit_ref
-        IMAGE_METADATA_NAME = local.image_metadata_name
         IMAGE_PATH          = local.image_path
-        MINIO_CLIENT        = var.minio_client
-        MINIO_PUBLISH_PATH  = var.minio_publish_path
+        IMAGE_CHECKSUM_PATH = local.image_checksum_path
+        IMAGE_METADATA_PATH = local.image_metadata_path
         OUTPUT_DIRECTORY    = var.output_directory
         VM_NAME             = local.vm_name
         IMAGE_TYPE          = var.image_name
+        S3_USER             = var.s3_user
+        S3_ENDPOINT         = var.s3_endpoint
+        S3_AWS_SIGV4        = var.s3_aws_sigv4
+        S3_BUCKET_NAME      = var.s3_bucket_name
+        S3_PREFIX           = var.s3_prefix
       }
       script = "scripts/publish-image.sh"
     }

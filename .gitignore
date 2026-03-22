@@ -1,3 +1,4 @@
 /build/
 /tmp_ansible_checkout/
 /workspace/
+*secret*

@@ -37,13 +37,9 @@ check_update_source_image() {
 
     curl -fsSL "${BASE_URL}/${BASE_IMAGE_PATH}/${METADATA_FILENAME}" --output "${metadata_filepath}"
 
-    local image_name image_type image_checksum build_version
-    image_name=$(find_image "IMAGE_NAME" "${metadata_filepath}")
-    image_type=$(find_image "IMAGE_TYPE" "${metadata_filepath}")
+    local image_url image_checksum
+    image_url=$(find_image "IMAGE_URL" "${metadata_filepath}")
     image_checksum=$(find_image "SHA512_CHECKSUM" "${metadata_filepath}")
-    build_version=$(find_image "BUILD_VERSION" "${metadata_filepath}")
-
-    local image_url="${BASE_URL}/${BASE_IMAGE_PATH}/${image_type}/${build_version}/${image_name}"
 
     local target_file="./common/${OS}/images/${role}/source-image.auto.pkrvars.hcl"
     if [ ! -f "${target_file}" ]; then

@@ -26,12 +26,12 @@ jobs:
       - name: create pr
         uses: peter-evans/create-pull-request@v8.1.0
         with:
+          sign-commits: true
           commit-message: "chore: bump debian cloud image"
           title: "chore: bump debian cloud image"
           body: |
             automated update of debian cloud image.
           branch: chore/debian-cloud-image-bump
-          delete-branch: true
 
   debian-base-update:
     runs-on: self-hosted
@@ -51,9 +51,33 @@ jobs:
       - name: create pr
         uses: peter-evans/create-pull-request@v8.1.0
         with:
+          sign-commits: true
           commit-message: "chore: bump debian base image"
           title: "chore: bump debian base image"
           body: |
             automated update of debian base image.
           branch: chore/debian-base-image-bump
-          delete-branch: true
+
+  debian-container-update:
+    runs-on: self-hosted
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: update container image source
+        run: |
+          ./.github/workflows/scripts/check-debian-container-image-update.sh
+          make debian-edge-validate
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@v8.1.0
+        with:
+          sign-commits: true
+          commit-message: "chore: bump debian container image"
+          title: "chore: bump debian container image"
+          body: |
+            automated update of debian container image.
+          branch: chore/debian-container-image-bump
