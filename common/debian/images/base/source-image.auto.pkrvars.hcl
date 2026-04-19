@@ -1,2 +1,2 @@
-source_cloud_image_url      = "https://cdimage.debian.org/images/cloud/trixie/20260402-2435/debian-13-genericcloud-amd64-20260402-2435.qcow2"
-source_cloud_image_checksum = "sha512:df0f1b09350658b0f42b83337682f36d7b821ea3a438d8257906e25350d2f92b0dcce810b0e6958887fb5210fd48625b8330339673df1ded127ffc0a969c12e5"
+source_cloud_image_url      = "https://cdimage.debian.org/images/cloud/trixie/20260413-2447/debian-13-genericcloud-amd64-20260413-2447.qcow2"
+source_cloud_image_checksum = "sha512:3d020c868339c8387f6f40f63e6b5ccb6174e6f2963510cb51cacfd6618244e96549d1b60b3d629df3963cb5350c6dfaf5cf34998301aa578b9d455a76d3c434"
