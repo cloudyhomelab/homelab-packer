@@ -1,0 +1,40 @@
+name: check for debian image updates
+
+on:
+  schedule:
+      #      ┌───────────── minute (0 - 59)
+      #      │ ┌───────────── hour (0 - 23)
+      #      │ │ ┌───────────── day of the month (1 - 31)
+      #      │ │ │ ┌───────────── month (1 - 12 or JAN-DEC)
+      #      │ │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
+      #      │ │ │ │ │
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+
+jobs:
+  debian-cloud-update:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6.0.2
+
+      - name: update cloud image source
+        run: |
+          ./.github/workflows/scripts/check-debian-cloud-image-update.sh
+          make debian-base-validate
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@v8.1.0
+        with:
+          sign-commits: true
+          commit-message: "chore: bump debian cloud image"
+          title: "chore: bump debian cloud image"
+          body: |
+            automated update of debian cloud image.
+          branch: chore/debian-cloud-image-bump
