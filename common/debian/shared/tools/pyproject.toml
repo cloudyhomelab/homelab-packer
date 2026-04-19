@@ -1,0 +1,7 @@
+[project]
+name = "image-preflight"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "python-hcl2>=8.1.2",
+]

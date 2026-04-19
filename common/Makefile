@@ -32,7 +32,7 @@ COMMONVARS = \
 SHELL := /bin/bash
 .SHELLFLAGS := -euo pipefail -c
 .ONESHELL:
-.PHONY: help init fmt validate build build-kvm clean test ansible-checkout generate-user-ca
+.PHONY: help init fmt validate required _build build build-kvm clean test ansible-checkout generate-user-ca
 .SILENT:
 
 help:
@@ -60,14 +60,38 @@ validate: clean init fmt ansible-checkout generate-user-ca
 	$(PACKER) validate $(COMMONVARS) $(TEMPLATE)
 	find ./scripts -type f -name '*.sh' -print0 | xargs -0r shellcheck
 
-build: clean validate
-	echo "builing without kvm ..."
-	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
+required: validate
+	echo "checking if build is required ..."
+	if uv run preflight.py ; then
+		echo "build required"
+	else
+		rc=$$?;
+		if [ $$rc -eq 10 ]; then
+			echo "build not required ...";
+		else
+			echo "error in require check ..."
+			exit $$rc;
+		fi
+	fi
+
+build: ACCELERATOR = none
+build: _build
 
 build-kvm: ACCELERATOR:=kvm
-build-kvm: clean validate
-	echo "building with kvm accelerator ..."
-	$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
+build-kvm: _build
+
+_build: clean validate
+	if uv run preflight.py; then
+		echo "building with accelerator=$(ACCELERATOR) ..."
+		$(PACKER) build $(BUILDFLAGS) $(COMMONVARS) $(TEMPLATE)
+	else
+		rc=$$?;
+		if [ $$rc -eq 10 ]; then
+			echo "build not required, skipping";
+		else
+			exit $$rc;
+		fi
+	fi
 
 clean:
 	echo "cleaning up output directory ..."

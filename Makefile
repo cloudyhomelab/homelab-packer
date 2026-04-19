@@ -24,12 +24,13 @@ help:
 	echo "Targets:"
 	echo "  make *-fmt                   - packer format recursively"
 	echo "  make *-validate              - packer validate project"
+	echo "  make *-required              - check if packer build is required"
 	echo "  make *-build                 - packer build without kvm"
 	echo "  make *-build-kvm             - packer build with kvm accelerator"
 	echo "  make *-test                  - test the generated image"
 	echo
 
-%-fmt %-validate %-build %-build-kvm %-test: clean
+%-fmt %-validate %-required %-build %-build-kvm %-test: clean
 	echo "preparing workspace for: os - $(OS), role - $(ROLE), action - $(ACTION) ..."
 
 	if ! echo " $(ALLOWED_OS_ROLE) " | grep -q " $(OS)-$(ROLE) "; then
@@ -42,6 +43,7 @@ help:
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/packer/* ./
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/vars/* ./
 	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/scripts ./
+	ln -snf $(PROJECT_ROOT)/common/$(OS)/shared/tools/* ./
 	ln -snf $(PROJECT_ROOT)/common/Makefile ./
 	ln -snf $(PROJECT_ROOT)/common/*.hcl ./
 	ln -snf $(PROJECT_ROOT)/common/cloud-init ./
