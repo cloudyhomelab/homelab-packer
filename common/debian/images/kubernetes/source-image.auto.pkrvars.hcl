@@ -1,2 +1,2 @@
-source_cloud_image_url      = "https://s3-api.cloudyhome.net/os-image/debian/debian-base/20260622-1040/debian-base-20260622-1040.qcow2"
-source_cloud_image_checksum = "sha512:7552fc0737cfa82b6f63e7a81080ab6975d30bdd228b479da95b17d327fee054b0114a05fa6327a18c99be520fade3fa4db8630610b10f7e794ab286b727b130"
+source_cloud_image_url      = "https://s3-api.cloudyhome.net/os-image/debian/debian-base/20260622-1329/debian-base-20260622-1329.qcow2"
+source_cloud_image_checksum = "sha512:832eae131fb432a1883192a88a282468d1814605a6b243df754e7f4c7bac3bdeaadae099d37f2f10ede3447447bb38596b913966654f772ae3b756364b474ee7"
