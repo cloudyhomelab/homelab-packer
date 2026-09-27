@@ -2,6 +2,9 @@
 
 Builds the homelab VM images (Debian and Fedora) with Packer and Ansible, and publishes them to S3.
 
+The images are for ephemeral VMs: a VM is replaced from a newer image, never upgraded in place. A
+change to an image does not need to stay compatible with earlier builds or clean up after them.
+
 - `images.yml`: global config and the image tree. Every image builds on its parent's latest
   published build; top-level images build on an upstream cloud image.
 - `upstream.yml`: the upstream cloud images and their pinned versions.
