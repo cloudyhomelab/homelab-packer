@@ -10,13 +10,18 @@ ContainerName=bind9
 Image=docker.io/ubuntu/bind9:latest
 Network=host
 Environment=BIND9_USER=root
-Environment=TZ={{ app.bind9_timezone }}
-Volume={{ application_root }}/{{ app.name }}/config:/etc/bind
-Volume={{ application_root }}/{{ app.name }}/cache:/var/cache/bind
-Volume={{ application_root }}/{{ app.name }}/records:/var/lib/bind
+Environment=TZ=Europe/Helsinki
+# decrypted on the VM from private/
+Volume=/run/app/bind9-master/private/named.conf:/etc/bind/named.conf:ro
+Volume=/run/app/bind9-master/private/tsig.keys:/etc/bind/tsig.keys:ro
+Volume=/run/app/bind9-master/private/zone-master.conf:/etc/bind/zone-master.conf:ro
+Volume=/var/app/bind9-master/cache:/var/cache/bind
+Volume=/var/app/bind9-master/records:/var/lib/bind
 LogDriver=journald
 
 [Service]
+# seed zone files once; after that bind owns them (dynamic updates, journals)
+ExecStartPre=/bin/sh -c 'for f in /run/app/bind9-master/private/zones/*.zone; do cp --update=none "$$f" /var/app/bind9-master/records/; done'
 Restart=always
 RestartSec=5
 
