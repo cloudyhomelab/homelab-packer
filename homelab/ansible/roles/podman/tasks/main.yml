@@ -8,6 +8,7 @@
   loop:
     - /etc/containers
     - /etc/containers/containers.conf.d
+    - /etc/containers/systemd
 
 - name: change default subnet configuration
   ansible.builtin.template:

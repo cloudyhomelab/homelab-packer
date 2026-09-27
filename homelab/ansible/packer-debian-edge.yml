@@ -13,9 +13,10 @@
 - name: configure edge server
   hosts: all
   become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
   roles:
-    - role: application
-      applications:
-        - name: haproxy-edge
-          quadlet_units:
-            - haproxy-edge
+    # no systemd_app_enable_units: the Quadlet [Install] starts it at boot, not during the build
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: haproxy-edge
