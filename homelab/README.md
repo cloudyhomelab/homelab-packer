@@ -10,7 +10,7 @@ change to an image does not need to stay compatible with earlier builds or clean
 - `upstream.yml`: the upstream cloud images and their pinned versions.
 - `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
 - `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
-- `ansible/`: the playbooks (`packer-<os>-<image>.yml`) and roles.
+- `ansible/`: the playbooks (`packer-<os>-<image>.yml`), roles, and container apps (`apps/`).
 - `src/imagectl/`: the driver.
 
 ## Host tools
@@ -41,6 +41,51 @@ uv run pytest
 
 Add its name under its parent's `children:` in `images.yml` and write
 `ansible/packer-<os>-<name>.yml`. Settings not given come from `defaults`, never from the parent.
+
+## Apps and secrets
+
+A container app lives in `ansible/apps/<app>/` and is installed by the
+[`binarycodes.homelab.systemd_app`](https://galaxy.ansible.com/ui/repo/published/binarycodes/homelab/)
+role:
+
+- `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`
+- `unit/`: plain systemd units, installed to `/etc/systemd/system/`
+- `config/`: config files, installed to `/var/app/<app>/config/`
+- `private/`: encrypted files, see below
+
+An image's playbook deploys it:
+
+```yaml
+- hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: myapp
+```
+
+Leave `systemd_app_enable_units` unset: the role would start those units during the build, where
+there is no key to decrypt with. A Quadlet's `[Install]` section starts it at boot instead; a plain
+unit is enabled from the playbook with `ansible.builtin.systemd` and `enabled: true`, without a
+`state`.
+
+An app's files are part of `CHECK_HASH` for every image whose playbook deploys it
+(`ansible/apps/{apps}/**` in `.check_hash`), so a change to them rebuilds those images.
+
+Secrets never go in `config/`, a Quadlet or a playbook, and nothing is decrypted while Ansible runs.
+They go in `private/`, encrypted:
+
+- key-value and YAML files as `<name>.sops.env` or `<name>.sops.yml`, encrypted with `sops -e -i`
+  (`ansible/.sops.yaml` has the rule for `apps/*/private/`)
+- anything else as `<name>.age`, encrypted with `age` to the same recipient
+
+They are baked into the image still encrypted. On the VM, before any of the app's units start,
+`homelab-private-decrypt@<app>.service` decrypts them with `/etc/homelab/age.key` into
+`/run/app/<app>/private/<name>` (the `.sops` or `.age` marker dropped), where units and Quadlets
+reference them (`EnvironmentFile=`, `Volume=`). The VM has to get the key at boot; nothing in this
+repo provisions it, and without it the app does not start.
 
 ## Publishing
 
