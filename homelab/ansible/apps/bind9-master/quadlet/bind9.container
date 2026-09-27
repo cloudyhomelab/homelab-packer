@@ -7,7 +7,7 @@ StartLimitIntervalSec=300
 
 [Container]
 ContainerName=bind9
-Image=docker.io/ubuntu/bind9:latest
+Image=bind9.image
 Network=host
 Environment=BIND9_USER=root
 Environment=TZ=Europe/Helsinki

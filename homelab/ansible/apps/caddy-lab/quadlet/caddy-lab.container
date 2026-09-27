@@ -7,7 +7,7 @@ StartLimitIntervalSec=300
 
 [Container]
 ContainerName=caddy-lab
-Image=docker.io/binarycodes/caddy-porkbun:2.11
+Image=caddy-lab.image
 Network=caddy-lab.network
 Volume=/var/app/caddy-lab/config/Caddyfile:/etc/caddy/Caddyfile:ro
 # PORKBUN_API_KEY and PORKBUN_API_SECRET_KEY, decrypted on the VM from private/porkbun.sops.env

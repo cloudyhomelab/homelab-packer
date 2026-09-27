@@ -52,7 +52,8 @@ A container app lives in `ansible/apps/<app>/` and is installed by the
 [`binarycodes.homelab.systemd_app`](https://galaxy.ansible.com/ui/repo/published/binarycodes/homelab/)
 role:
 
-- `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`
+- `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`. Each `<name>.container`
+  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it
 - `unit/`: plain systemd units, installed to `/etc/systemd/system/`
 - `config/`: config files, installed to `/var/app/<app>/config/`
 - `private/`: encrypted files, see below

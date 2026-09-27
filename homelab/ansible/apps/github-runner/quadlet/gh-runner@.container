@@ -7,7 +7,7 @@ StartLimitIntervalSec=300
 
 [Container]
 ContainerName=gh-runner-%i
-Image=docker.io/binarycodes/github-runner:latest
+Image=gh-runner.image
 EnvironmentFile=/var/app/github-runner/config/runner.env
 EnvironmentFile=/run/app/github-runner/private/runner.env
 Volume=/run/app/github-runner/private/app.private-key.pem:/etc/github-runner/app.private-key.pem:ro,Z

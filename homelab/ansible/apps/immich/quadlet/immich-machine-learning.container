@@ -3,7 +3,7 @@ Description=Immich Machine Learning
 
 [Container]
 ContainerName=immich_machine_learning
-Image=ghcr.io/immich-app/immich-machine-learning:${IMMICH_VERSION}
+Image=immich-machine-learning.image
 Network=immich.network
 NetworkAlias=immich-machine-learning
 Volume=immich-model-cache.volume:/cache

@@ -7,7 +7,7 @@ StartLimitIntervalSec=300
 
 [Container]
 ContainerName=unifi-os-server
-Image=ghcr.io/lemker/unifi-os-server:latest
+Image=unifi-os-server.image
 AddCapability=NET_RAW NET_ADMIN
 AddHost=host.docker.internal:host-gateway
 Tmpfs=/run:exec

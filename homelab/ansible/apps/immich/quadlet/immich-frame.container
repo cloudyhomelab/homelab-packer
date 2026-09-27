@@ -5,7 +5,7 @@ After=immich-server.service
 
 [Container]
 ContainerName=immichframe
-Image=ghcr.io/immichframe/immichframe:latest
+Image=immich-frame.image
 Network=immich.network
 Volume=/run/app/immich/private/Settings.yml:/app/Config/Settings.yml:ro
 PublishPort=8080:8080

@@ -6,7 +6,7 @@ StartLimitBurst=5
 StartLimitIntervalSec=300
 
 [Container]
-Image=docker.io/library/haproxy:2.9
+Image=haproxy-edge.image
 Network=host
 Volume=/var/app/haproxy-edge/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
 ReadOnly=true

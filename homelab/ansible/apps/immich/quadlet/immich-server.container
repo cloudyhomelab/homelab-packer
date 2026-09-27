@@ -6,7 +6,7 @@ Wants=immich-machine-learning.service
 
 [Container]
 ContainerName=immich_server
-Image=ghcr.io/immich-app/immich-server:${IMMICH_VERSION}
+Image=immich-server.image
 Network=immich.network
 Volume=${UPLOAD_LOCATION}:/data
 Volume=/etc/localtime:/etc/localtime:ro
