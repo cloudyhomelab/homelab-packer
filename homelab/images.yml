@@ -25,6 +25,11 @@ images:
             disk_size: 3G
             children:
               - edge
+              - bootstrap
+              - media
+              - dns-primary
+              - dns-secondary
+              - runner
   - base:
       from: fedora-cloud
       disk_size: 5G
