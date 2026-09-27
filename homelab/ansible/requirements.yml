@@ -5,7 +5,5 @@ collections:
     version: "5.0.1"
   - name: ansible.posix
     version: "2.1.0"
-  - name: kpfleming.powerdns_auth
-    version: "25.2.0"
   - name: community.sops
     version: "2.2.7"

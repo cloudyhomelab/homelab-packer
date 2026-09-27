@@ -1,6 +1,0 @@
-- name: restart caddy
-  community.docker.docker_compose_v2:
-    project_src: /etc/docker/caddy
-    wait: true
-    wait_timeout: 300
-    state: restarted

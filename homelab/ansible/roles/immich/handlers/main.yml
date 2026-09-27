@@ -1,6 +1,0 @@
-- name: restart immich
-  community.docker.docker_compose_v2:
-    project_src: /etc/docker/immich
-    wait: true
-    wait_timeout: 300
-    state: restarted
