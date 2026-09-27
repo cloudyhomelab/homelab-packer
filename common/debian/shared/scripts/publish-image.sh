@@ -11,12 +11,20 @@ ensure_bucket() {
         --aws-sigv4 "${S3_AWS_SIGV4}" \
         --head "${bucket_url}")
 
-    if [[ "${http_code}" == "200" ]]; then
-        printf 'Bucket '\''%s'\'' already exists.\n' "${S3_BUCKET_NAME}"
-        return 0
-    fi
-
-    printf 'Bucket '\''%s'\'' not found (HTTP %s). Creating...\n' "${S3_BUCKET_NAME}" "${http_code}"
+    case "${http_code}" in
+        200)
+            printf 'Bucket '\''%s'\'' already exists.\n' "${S3_BUCKET_NAME}"
+            return 0
+            ;;
+        404)
+            printf 'Bucket '\''%s'\'' not found. Creating...\n' "${S3_BUCKET_NAME}"
+            ;;
+        *)
+            # anything else (auth, server error) must not fall through to create and reset the policy
+            printf 'Unable to check bucket '\''%s'\'' (HTTP %s).\n' "${S3_BUCKET_NAME}" "${http_code}" >&2
+            return 1
+            ;;
+    esac
 
     curl -fsSL -X PUT \
         --user "${S3_USER}" \
