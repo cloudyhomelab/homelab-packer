@@ -15,15 +15,15 @@ Tmpfs=/run/lock
 Tmpfs=/tmp:exec
 Tmpfs=/var/lib/journal
 Tmpfs=/var/opt/unifi/tmp:size=64m
-Environment=UOS_SYSTEM_IP={{ app.unifi_system_ip }}
+Environment=UOS_SYSTEM_IP=uos.ip.cloudyhome.net
 Volume=/sys/fs/cgroup:/sys/fs/cgroup:rw
-Volume={{ application_root }}/{{ app.name }}/persistent:/persistent
-Volume={{ application_root }}/{{ app.name }}/var-log:/var/log
-Volume={{ application_root }}/{{ app.name }}/data:/data
-Volume={{ application_root }}/{{ app.name }}/srv:/srv
-Volume={{ application_root }}/{{ app.name }}/var-lib-unifi:/var/lib/unifi
-Volume={{ application_root }}/{{ app.name }}/var-lib-mongodb:/var/lib/mongodb
-Volume={{ application_root }}/{{ app.name }}/etc-rabbitmq-ssl:/etc/rabbitmq/ssl
+Volume=/var/app/unifi-server-os/persistent:/persistent
+Volume=/var/app/unifi-server-os/var-log:/var/log
+Volume=/var/app/unifi-server-os/data:/data
+Volume=/var/app/unifi-server-os/srv:/srv
+Volume=/var/app/unifi-server-os/var-lib-unifi:/var/lib/unifi
+Volume=/var/app/unifi-server-os/var-lib-mongodb:/var/lib/mongodb
+Volume=/var/app/unifi-server-os/etc-rabbitmq-ssl:/etc/rabbitmq/ssl
 PublishPort=11443:443
 PublishPort=8080:8080
 PublishPort=3478:3478/udp
