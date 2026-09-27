@@ -16,13 +16,9 @@
   vars:
     systemd_app_apps_dir: "{{ playbook_dir }}/apps"
   roles:
-    - role: application
-      applications:
-        - name: caddy-mgmt
-          quadlet_units:
-            - caddy-mgmt
-          caddy_porkbun_api_key: "{{ sops_dns.porkbun_api_key }}"
-          caddy_porkbun_secret_api_key: "{{ sops_dns.porkbun_secret_api_key }}"
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: caddy-mgmt
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

@@ -14,8 +14,8 @@ proxmox.cloudyhome.net {
     }
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -24,8 +24,8 @@ s3.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:9002
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -34,8 +34,8 @@ s3-api.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:9000
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -44,8 +44,8 @@ nas.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:80
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -59,8 +59,8 @@ gateway.cloudyhome.net {
 
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -73,8 +73,8 @@ sw1.cloudyhome.net {
     }
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
@@ -87,8 +87,8 @@ uos.cloudyhome.net {
     }
     tls {
         dns porkbun {
-            api_key {{ app.caddy_porkbun_api_key }}
-            api_secret_key {{ app.caddy_porkbun_secret_api_key }}
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
         }
     }
 }
