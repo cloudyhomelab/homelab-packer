@@ -40,12 +40,10 @@ jobs:
             echo '```'
             cat plan.txt
             echo '```'
-            if [ "$status" -ne 0 ]; then
-              echo "imagectl plan exited with $status; publish fails on the same errors."
-            fi
           } >> "$GITHUB_STEP_SUMMARY"
-          # the line imagectl plan prints when the set is empty. A plan error does not stop
-          # publish, which builds the rest and fails on the error at the end.
+          # summary first, so a failed plan still shows why
+          [ "$status" -eq 0 ] || exit "$status"
+          # the line imagectl plan prints when the set is empty
           if grep -qx 'nothing is due' plan.txt; then
             echo "due=false" >> "$GITHUB_OUTPUT"
           else
