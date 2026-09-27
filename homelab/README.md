@@ -28,13 +28,16 @@ Run from the project root:
 uv run imagectl list                          # the image tree
 uv run imagectl validate [IMAGE...]           # templates, scripts, driver, playbooks
 uv run imagectl plan                          # images that are due, and why
-uv run imagectl build --now --keep IMAGE      # local build, never published
+uv run imagectl build --now [--keep] IMAGE    # local build, never published; --keep keeps the build dir
 uv run imagectl build --plan [-j N]           # build and publish everything due (CI), needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
 uv run imagectl upstream [UPSTREAM...]        # newer upstream releases, writes nothing
+uv run imagectl upstream --update [UPSTREAM...]  # move the pins in upstream.yml (CI)
 uv run pytest
 ```
+
+`-v` before the command (`imagectl -v build ...`) streams Packer output while building.
 
 `build --now` of a child needs its parent published; it builds on the parent's `latest.json`.
 
