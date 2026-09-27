@@ -7,7 +7,8 @@ Image=ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf6
 Network=immich.network
 NetworkAlias=database
 Volume=${DB_DATA_LOCATION}:/var/lib/postgresql/data
-EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+EnvironmentFile=/var/app/immich/config/immich.env
+EnvironmentFile=/run/app/immich/private/db.env
 ShmSize=128m
 HealthCmd=/bin/sh -c 'pg_isready --dbname="$${DB_DATABASE_NAME}" --username="$${DB_USERNAME}" || exit 1'
 HealthInterval=10s
@@ -16,7 +17,7 @@ HealthRetries=10
 Notify=healthy
 
 [Service]
-EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+EnvironmentFile=/var/app/immich/config/immich.env
 ExecStartPre=/usr/bin/mkdir -p ${DB_DATA_LOCATION}
 Restart=always
 

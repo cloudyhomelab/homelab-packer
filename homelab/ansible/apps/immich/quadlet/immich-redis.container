@@ -11,7 +11,7 @@ HealthInterval=10s
 HealthStartPeriod=10s
 HealthRetries=10
 Notify=healthy
-EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+EnvironmentFile=/var/app/immich/config/immich.env
 
 [Service]
 Restart=always

@@ -22,19 +22,9 @@
       nfs_server: "{{ sops_app.immich_nfs_server }}"
       nfs_export: "{{ sops_app.immich_nfs_export }}"
 
-    - role: application
-      applications:
-        - name: immich
-          quadlet_units:
-            - immich-database
-            - immich-frame
-            - immich-machine-learning
-            - immich-redis
-            - immich-server
-          immich_db_password: "{{ sops_app.immich_db_password }}"
-          immich_timezone: "{{ sops_general.timezone }}"
-          immich_server_url: "{{ sops_app.immich_server_url }}"
-          immich_frame_api_key: "{{ sops_app.immich_frame_api_key }}"
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: immich
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
