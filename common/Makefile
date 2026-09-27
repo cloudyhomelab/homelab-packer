@@ -55,8 +55,9 @@ fmt:
 	echo "formatting everything recursively ..."
 	$(PACKER) fmt -recursive .
 
-validate: clean init fmt ansible-checkout generate-user-ca
+validate: clean init ansible-checkout generate-user-ca
 	echo "running validations ..."
+	$(PACKER) fmt -check -diff -recursive .
 	$(PACKER) validate $(COMMONVARS) $(TEMPLATE)
 	find ./scripts -type f -name '*.sh' -print0 | xargs -0r shellcheck
 
