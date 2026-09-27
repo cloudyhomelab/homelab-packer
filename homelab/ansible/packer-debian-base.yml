@@ -14,10 +14,8 @@
       system_timezone: "Europe/Helsinki"
       system_install_packages:
         - age
-        - ansible-core
         - bind9-dnsutils
         - curl
-        - git
         - gpg
         - net-tools
         - nfs-common
