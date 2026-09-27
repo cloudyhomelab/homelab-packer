@@ -96,9 +96,11 @@ repo provisions it, and without it the app does not start.
 
 CI is the only publisher:
 
-- `build-and-publish-images` runs `imagectl publish` on every push to `main` and hourly. It builds
-  what is due (inputs changed, source changed, or aged out) and the descendants of anything it
-  rebuilds, parents first, then publishes each build and prunes old ones.
+- `build-and-publish-images` runs on every push to `main` and hourly. Its `plan` job writes
+  `imagectl plan` to the run summary; when something is due, its `publish` job waits for approval
+  in the `publish` environment, then runs `imagectl publish`. That builds what is due (inputs
+  changed, source changed, or aged out) and the descendants of anything it rebuilds, parents
+  first, then publishes each build and prunes old ones.
 - `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin
   moves. The pull request is opened by the cloudyhome bot GitHub App (secrets
   `CLOUDYHOME_BOT_CLIENT_ID` and `CLOUDYHOME_BOT_PRIVATE_KEY`), so `validate` runs on it.

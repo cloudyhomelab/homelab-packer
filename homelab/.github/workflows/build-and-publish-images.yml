@@ -16,7 +16,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  # outside the publish environment, so the approver sees the plan in the summary before approving
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      due: ${{ steps.plan.outputs.due }}
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: plan
+        id: plan
+        run: |
+          status=0
+          uv run imagectl plan > plan.txt 2>&1 || status=$?
+          {
+            echo '### Images this run will build and publish'
+            echo '```'
+            cat plan.txt
+            echo '```'
+            if [ "$status" -ne 0 ]; then
+              echo "imagectl plan exited with $status; publish fails on the same errors."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          # the line imagectl plan prints when the set is empty. A plan error does not stop
+          # publish, which builds the rest and fails on the error at the end.
+          if grep -qx 'nothing is due' plan.txt; then
+            echo "due=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "due=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: plan
+    # nothing due means no approval request on the hourly runs
+    if: needs.plan.outputs.due == 'true'
     runs-on: self-hosted
     timeout-minutes: 360
     environment: publish
