@@ -1,68 +1,119 @@
-# Packer Image Builds for Homelab
+# homelab images
 
-A Debian Linux image building and distribution system for the CloudyHome homelab infrastructure. It uses [HashiCorp Packer](https://www.packer.io/) to create customized, reproducible Debian cloud images and publishes them to a S3 bucket.
+Builds the homelab VM images (Debian and Fedora) with Packer and Ansible, and publishes them to S3.
 
-## Objective
+The images are for ephemeral VMs: a VM is replaced from a newer image, never upgraded in place. A
+change to an image does not need to stay compatible with earlier builds or clean up after them.
 
-Build role-specific Debian VM images optimized for different workloads:
+- `images.yml`: global config and the image tree. Every image builds on its parent's latest
+  published build; top-level images build on an upstream cloud image.
+- `upstream.yml`: the upstream cloud images and their pinned versions.
+- `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
+- `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
+- `ansible/`: the playbooks (`packer-<os>-<image>.yml`), roles, and container apps (`apps/`).
+- `src/imagectl/`: the driver.
 
-| Role | Purpose |
-|------|---------|
-| **debian-base** | Foundation image with basic system setup |
-| **debian-container** | Optimized for container runtimes |
-| **debian-kubernetes** | Kubernetes node deployment |
+## Host tools
 
-## How It Works
+- [uv](https://docs.astral.sh/uv/) (installs Python, Ansible and the driver's dependencies)
+- Packer, in the range the templates' `required_version` allows
+- QEMU (`qemu-system-x86_64`, `qemu-img`), with `/dev/kvm` for acceleration
+- `ssh-keygen` (OpenSSH), `shellcheck`, `xorriso`, `git`
 
-1. **Source** - Downloads the official Debian cloud image.
-2. **Provision** - Boots the image with cloud-init, then runs a role-specific Ansible playbook (from [homelab-self-provisioner](https://github.com/cloudyhomelab/homelab-self-provisioner)).
-3. **Clean up** - Removes build-time users, SSH keys, apt caches, and logs; zeros free space for compression.
-4. **Publish** - Generates a SHA-512 checksum and JSON metadata, then uploads the QCOW2 image to S3 bucket.
+## Usage
 
-CI is handled by two GitHub Actions workflows:
-
-- **validate.yml** - Runs Packer validation and shellcheck on every push to `main`.
-- **update-source-image.yml** - Checks daily for newer upstream Debian images and opens a PR when one is available.
-
-## How to Use
-
-### Prerequisites
-
-- Packer (>= 1.8)
-- Ansible
-- QEMU / KVM
-- jq, curl, git, ssh-keygen
-
-### Build an image
+Run from the project root:
 
 ```bash
-# With KVM acceleration (recommended)
-make debian-base-build-kvm
-
-# Without KVM
-make debian-container-build
+uv run imagectl list                          # the image tree
+uv run imagectl validate [IMAGE...]           # templates, scripts, driver, playbooks
+uv run imagectl plan                          # images that are due, and why
+uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
+uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
+uv run imagectl test IMAGE --local            # boot the newest kept local build
+uv run imagectl test IMAGE                    # boot the latest published build
+uv run imagectl upstream [UPSTREAM...]        # newer upstream releases, writes nothing
+uv run imagectl upstream --update [UPSTREAM...]  # move the pins in upstream.yml (CI)
+uv run pytest
 ```
 
-Each target follows the pattern `<os>-<role>-<action>`:
+`-v` on `build` and `publish` streams Packer output while building.
 
-```bash
-make debian-base-fmt            # Format Packer files
-make debian-base-validate       # Validate configuration
-make debian-base-build          # Build image
-make debian-base-build-kvm      # Build with KVM
-make debian-base-test           # Boot the image in QEMU for testing
+`build` of a child needs its parent published; it builds on the parent's `latest.json`.
+
+## Adding an image
+
+Add its name under its parent's `children:` in `images.yml` and write
+`ansible/packer-<os>-<name>.yml`. Settings not given come from `defaults`, never from the parent.
+
+## Apps and secrets
+
+A container app lives in `ansible/apps/<app>/` and is installed by the
+[`binarycodes.homelab.systemd_app`](https://galaxy.ansible.com/ui/repo/published/binarycodes/homelab/)
+role:
+
+- `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`. Each `<name>.container`
+  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it
+- `unit/`: plain systemd units, installed to `/etc/systemd/system/`
+- `config/`: config files, installed to `/var/app/<app>/config/`
+- `private/`: encrypted files, see below
+
+An image's playbook deploys it:
+
+```yaml
+- hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: myapp
 ```
 
-### Test a built image
+Leave `systemd_app_enable_units` unset: the role would start those units during the build, where
+there is no key to decrypt with. A Quadlet's `[Install]` section starts it at boot instead; a plain
+unit is enabled from the playbook with `ansible.builtin.systemd` and `enabled: true`, without a
+`state`.
 
-```bash
-make debian-base-test
-```
+An app's files are part of `CHECK_HASH` for every image whose playbook deploys it
+(`ansible/apps/{apps}/**` in `.check_hash`), so a change to them rebuilds those images.
 
-This downloads the latest matching image from S3 bucket, verifies its checksum, and boots it in QEMU with a serial console.
+Secrets never go in `config/`, a Quadlet or a playbook, and nothing is decrypted while Ansible runs.
+They go in `private/`, encrypted:
 
-### Output
+- key-value and YAML files as `<name>.sops.env` or `<name>.sops.yml`, encrypted with `sops -e -i`
+  (`ansible/.sops.yaml` has the rule for `apps/*/private/`)
+- anything else as `<name>.age`, encrypted with `age` to the same recipient
 
-Built images are written to `workspace/build/` as QCOW2 files (e.g. `debian-base-20260322-1234.qcow2`) alongside their checksums and metadata.
+They are baked into the image still encrypted. On the VM, before any of the app's units start,
+`homelab-private-decrypt@<app>.service` decrypts them with `/etc/homelab/age.key` into
+`/run/app/<app>/private/<name>` (the `.sops` or `.age` marker dropped), where units and Quadlets
+reference them (`EnvironmentFile=`, `Volume=`). The VM has to get the key at boot; nothing in this
+repo provisions it, and without it the app does not start.
 
-After publishing, a cumulative `metadata_all.json` file is maintained in the S3 bucket. It serves as a catalog of all built images, storing each image's name, version, build timestamp, SHA-512 checksum, and source reference. Downstream systems use this file to discover available image versions and verify integrity before downloading.
+## Publishing
+
+CI is the only publisher:
+
+- `build-and-publish-images` runs on every push to `main` and hourly. Its `plan` job writes
+  `imagectl plan` to the run summary; when something is due, its `publish` job waits for approval
+  in the `publish` environment, then runs `imagectl publish`. That builds what is due (inputs
+  changed, source changed, or aged out) and the descendants of anything it rebuilds, parents
+  first, then publishes each build and prunes old ones.
+- `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin
+  moves. The pull request is opened by the cloudyhome bot GitHub App (secrets
+  `CLOUDYHOME_BOT_CLIENT_ID` and `CLOUDYHOME_BOT_PRIVATE_KEY`), so `validate` runs on it.
+- `validate` runs on pull requests and shows `imagectl plan` in the job summary.
+
+The publish credentials are the `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` secrets of the
+`publish` environment. The bucket and its anonymous read policy are set up outside the driver.
+
+Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512` and
+`metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy of the newest `metadata.json`.
+Inside the image, `/etc/os-image-metadata` holds the same facts.
+
+## License
+
+AGPL-3.0, see `LICENSE`. `ansible/` was imported from homelab-self-provisioner and keeps its own
+`ansible/LICENSE`.
