@@ -11,3 +11,4 @@ upstream/{os}/scripts/**
 # the image itself
 ansible/{playbook}.yml
 ansible/roles/{roles}/**
+ansible/apps/{apps}/**

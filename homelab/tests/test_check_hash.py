@@ -15,7 +15,10 @@ images:
       from: debian-cloud
       children:
         - kubernetes
-        - container
+        - container:
+            children:
+              - edge
+              - media
 """
 
 CHECK_HASH = """\
@@ -31,6 +34,7 @@ upstream/{os}/packer/**
 # the image itself
 ansible/{playbook}.yml
 ansible/roles/{roles}/**
+ansible/apps/{apps}/**
 """
 
 
@@ -85,6 +89,38 @@ def tree(tmp_path: Path) -> Path:
     )
     write(tmp_path, "ansible/roles/registry/tasks/main.yml", "- ansible.builtin.debug: {}\n")
     write(tmp_path, "ansible/roles/unused/tasks/main.yml", "- ansible.builtin.debug: {}\n")
+    write(
+        tmp_path,
+        "ansible/packer-debian-edge.yml",
+        """\
+        - hosts: all
+          roles:
+            - role: binarycodes.homelab.systemd_app
+              systemd_app_kind: source
+              systemd_app_name: haproxy
+        """,
+    )
+    write(
+        tmp_path,
+        "ansible/packer-debian-media.yml",
+        """\
+        - hosts: all
+          roles:
+            - role: binarycodes.homelab.systemd_app
+              systemd_app_kind: source
+              systemd_app_name: immich
+          tasks:
+            - name: deploy caddy
+              ansible.builtin.include_role:
+                name: binarycodes.homelab.systemd_app
+              vars:
+                systemd_app_kind: source
+                systemd_app_name: caddy
+        """,
+    )
+    write(tmp_path, "ansible/apps/haproxy/config/haproxy.cfg", "global\n")
+    write(tmp_path, "ansible/apps/immich/config/immich.env", "TZ=UTC\n")
+    write(tmp_path, "ansible/apps/caddy/config/Caddyfile", "x {}\n")
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     return tmp_path
 
@@ -145,11 +181,11 @@ def test_settings_are_part_of_the_hash(tree):
     images = (
         (tree / "images.yml")
         .read_text()
-        .replace("- container", "- container:\n" + " " * 12 + "memory: 4096")
+        .replace("- kubernetes", "- kubernetes:\n" + " " * 12 + "memory: 4096")
     )
     (tree / "images.yml").write_text(images)
     after = hashes(tree)
-    assert [n for n in before if before[n] != after[n]] == ["debian-container"]
+    assert [n for n in before if before[n] != after[n]] == ["debian-kubernetes"]
 
 
 def test_max_age_and_retain_are_not_part_of_the_hash(tree):
@@ -158,8 +194,8 @@ def test_max_age_and_retain_are_not_part_of_the_hash(tree):
         (tree / "images.yml")
         .read_text()
         .replace(
-            "- container",
-            "- container:\n" + " " * 12 + "max_age_days: 1\n" + " " * 12 + "retain_images: 2",
+            "- kubernetes",
+            "- kubernetes:\n" + " " * 12 + "max_age_days: 1\n" + " " * 12 + "retain_images: 2",
         )
     )
     (tree / "images.yml").write_text(images)
@@ -193,4 +229,40 @@ def test_missing_playbook_is_a_per_image_error(tree):
     (tree / "ansible/packer-debian-container.yml").unlink()
     result = check_hash.compute_all(load(tree))
     assert "does not exist" in result.errors["debian-container"]
-    assert set(result.hashes) == {"debian-base", "debian-kubernetes"}
+    assert set(result.hashes) == {"debian-base", "debian-kubernetes", "debian-edge", "debian-media"}
+
+
+def test_apps_resolved_from_role_entries_and_include_role(tree):
+    assert check_hash.resolve_apps(tree, "packer-debian-media", []) == ["caddy", "immich"]
+    files = check_hash.compute_all(load(tree)).files
+    assert "ansible/apps/haproxy/config/haproxy.cfg" in files["debian-edge"]
+    assert not any(f.startswith("ansible/apps/") for f in files["debian-base"])
+
+
+def test_app_change_rebuilds_only_its_images(tree):
+    before = hashes(tree)
+    write(tree, "ansible/apps/caddy/config/Caddyfile", "y {}\n")
+    after = hashes(tree)
+    assert [n for n in before if before[n] != after[n]] == ["debian-media"]
+
+
+def test_templated_app_name_is_an_error(tree):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        "- hosts: all\n  roles:\n    - role: binarycodes.homelab.systemd_app\n"
+        '      systemd_app_name: "{{ app }}"\n',
+    )
+    result = check_hash.compute_all(load(tree))
+    assert "templated" in result.errors["debian-edge"]
+
+
+def test_app_call_without_a_name_is_an_error(tree):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        "- hosts: all\n  roles:\n    - role: binarycodes.homelab.systemd_app\n"
+        "      systemd_app_kind: source\n",
+    )
+    result = check_hash.compute_all(load(tree))
+    assert "without a systemd_app_name" in result.errors["debian-edge"]

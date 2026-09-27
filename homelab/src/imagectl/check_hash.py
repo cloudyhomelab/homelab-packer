@@ -17,7 +17,7 @@ from .catalog import Catalog, Image
 
 CHECK_HASH_FILE = ".check_hash"
 ANSIBLE_DIR = "ansible"
-PLACEHOLDERS = ("{os}", "{playbook}", "{roles}")
+SYSTEMD_APP_ROLE = "binarycodes.homelab.systemd_app"
 ROLE_INCLUDE_KEYS = {
     "import_role",
     "include_role",
@@ -154,11 +154,60 @@ def resolve_roles(root: Path, playbook: str) -> list[str]:
     return sorted(found)
 
 
-def expand(rule: Rule, image: Image, roles: list[str]) -> list[str]:
-    line = rule.template.replace("{os}", image.os).replace("{playbook}", image.playbook)
-    if "{roles}" in line:
-        return [line.replace("{roles}", role) for role in roles]
-    return [line]
+def _app_name(params: object, where: str) -> str:
+    name = params.get("systemd_app_name") if isinstance(params, dict) else None
+    if not isinstance(name, str) or not name:
+        raise CheckHashError(f"{where}: {SYSTEMD_APP_ROLE} call without a systemd_app_name")
+    if "{{" in name or "{%" in name:
+        raise CheckHashError(f"{where}: app name {name!r} is templated and cannot be resolved")
+    return name
+
+
+def _included_apps(node: object, where: str) -> Iterable[str]:
+    """Apps deployed by include_role/import_role of systemd_app anywhere below node."""
+    if isinstance(node, dict):
+        for key, value in node.items():
+            if key in ROLE_INCLUDE_KEYS:
+                if isinstance(value, dict) and value.get("name") == SYSTEMD_APP_ROLE:
+                    yield _app_name(node.get("vars"), where)
+            else:
+                yield from _included_apps(value, where)
+    elif isinstance(node, list):
+        for item in node:
+            yield from _included_apps(item, where)
+
+
+def resolve_apps(root: Path, playbook: str, roles: list[str]) -> list[str]:
+    """Apps a playbook deploys with systemd_app, from its plays and the roles it pulls in."""
+    ansible = root / ANSIBLE_DIR
+    playbook_path = ansible / f"{playbook}.yml"
+    found: set[str] = set()
+    for play in _yaml_docs(playbook_path) or []:
+        if not isinstance(play, dict):
+            continue
+        for entry in play.get("roles") or []:
+            if isinstance(entry, dict) and entry.get("role", entry.get("name")) == SYSTEMD_APP_ROLE:
+                found.add(_app_name(entry, str(playbook_path)))
+        for key in PLAY_TASK_KEYS:
+            found.update(_included_apps(play.get(key), str(playbook_path)))
+    for role in roles:
+        for path in sorted((ansible / "roles" / role / "tasks").glob("**/*.y*ml")):
+            found.update(_included_apps(_yaml_docs(path), str(path)))
+    return sorted(found)
+
+
+def expand(rule: Rule, image: Image, lists: dict[str, list[str]]) -> list[str]:
+    """Fill a rule for one image; {roles} and {apps} give one pattern per role or app."""
+    lines = [rule.template.replace("{os}", image.os).replace("{playbook}", image.playbook)]
+    for placeholder, values in lists.items():
+        filled = []
+        for line in lines:
+            if placeholder in line:
+                filled.extend(line.replace(placeholder, value) for value in values)
+            else:
+                filled.append(line)
+        lines = filled
+    return lines
 
 
 def _match(pattern: str, files: list[str]) -> set[str]:
@@ -173,12 +222,14 @@ class ImageFiles:
     matched_rules: set[int]
 
 
-def select_files(rules: list[Rule], image: Image, roles: list[str], files: list[str]) -> ImageFiles:
+def select_files(
+    rules: list[Rule], image: Image, lists: dict[str, list[str]], files: list[str]
+) -> ImageFiles:
     """Apply the rules in order, gitignore style: the last matching line wins."""
     selected: set[str] = set()
     matched_rules: set[int] = set()
     for rule in rules:
-        for pattern in expand(rule, image, roles):
+        for pattern in expand(rule, image, lists):
             hits = _match(pattern, files)
             if hits:
                 matched_rules.add(rule.line_no)
@@ -220,10 +271,11 @@ def compute_all(catalog: Catalog, images: list[Image] | None = None) -> Result:
     for image in targets:
         try:
             roles = resolve_roles(root, image.playbook)
+            apps = resolve_apps(root, image.playbook, roles)
         except CheckHashError as e:
             result.errors[image.name] = str(e)
             continue
-        picked = select_files(rules, image, roles, files)
+        picked = select_files(rules, image, {"{roles}": roles, "{apps}": apps}, files)
         matched |= picked.matched_rules
         result.files[image.name] = picked.files
         result.hashes[image.name] = compute(root, image, picked.files)
