@@ -16,12 +16,6 @@
   vars:
     systemd_app_apps_dir: "{{ playbook_dir }}/apps"
   roles:
-    - role: nfs
-      nfs_mountpoint: /srv/immich/library/
-      nfs_unit_name: srv-immich-library
-      nfs_server: "{{ sops_app.immich_nfs_server }}"
-      nfs_export: "{{ sops_app.immich_nfs_export }}"
-
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: immich

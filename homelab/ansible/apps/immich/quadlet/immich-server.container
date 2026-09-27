@@ -1,7 +1,7 @@
 [Unit]
 Description=Immich Server
-After=immich-redis.service immich-database.service immich-machine-learning.service
-Requires=immich-redis.service immich-database.service
+After=immich-redis.service immich-database.service immich-machine-learning.service immich-library.service
+Requires=immich-redis.service immich-database.service immich-library.service
 Wants=immich-machine-learning.service
 
 [Container]

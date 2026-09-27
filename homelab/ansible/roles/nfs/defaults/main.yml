@@ -1,3 +1,0 @@
----
-nfs_options: "vers=4.1,proto=tcp,hard,timeo=600,retrans=2,_netdev,noatime"
-nfs_idle_timeout_sec: 600

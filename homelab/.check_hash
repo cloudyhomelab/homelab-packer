@@ -2,7 +2,6 @@
 src/imagectl/packer.py
 ansible/ansible.cfg
 ansible/requirements.yml
-ansible/group_vars/**
 
 # the image's OS
 upstream/{os}/cloud-init/**

@@ -1,5 +1,0 @@
----
-sops_general: "{{ lookup('community.sops.sops', 'secrets/secrets.sops.yml') | ansible.builtin.from_yaml }}"
-sops_dns: "{{ lookup('community.sops.sops', 'secrets/dns.sops.yml') | ansible.builtin.from_yaml }}"
-sops_gh: "{{ lookup('community.sops.sops', 'secrets/ghrunner.sops.yml') | ansible.builtin.from_yaml }}"
-sops_app: "{{ lookup('community.sops.sops', 'secrets/applications.sops.yml') | ansible.builtin.from_yaml }}"
