@@ -1,4 +1,0 @@
-secrets/dns.sops.yml yaml[line-length]
-secrets/ghrunner.sops.yml yaml[line-length]
-secrets/secrets.sops.yml yaml[line-length]
-secrets/applications.sops.yml yaml[line-length]
