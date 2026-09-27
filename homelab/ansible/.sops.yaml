@@ -1,0 +1,7 @@
+stores:
+  yaml:
+    indent: 2
+creation_rules:
+  - path_regex: 'secrets/.*\.sops\.ya?ml$'
+    age: ["age1c98gzcp0g5uhtvxec4pg6vpld5ukfx8e6c7vnnldmz3ahw2gxg7sap9jv9"]
+    encrypted_regex: '.*'

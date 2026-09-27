@@ -1,0 +1,27 @@
+- name: secure ssh
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/00_secure_ssh.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      PasswordAuthentication no
+      PermitRootLogin no
+      X11Forwarding no
+      LoginGraceTime 10
+      MaxAuthTries 3
+      MaxSessions 5
+      MaxStartups 20:50:60
+      PerSourceMaxStartups 20
+      PubkeyAcceptedAlgorithms ssh-ed25519-cert-v01@openssh.com,rsa-sha2-512-cert-v01@openssh.com
+      HostKeyAlgorithms ssh-ed25519-cert-v01@openssh.com
+      PrintMotd no
+      PrintLastLog no
+  notify: restart sshd
+
+# https://dfir.ch/posts/today_i_learned_binfmt_misc/
+- name: mask systemd-binfmt.service
+  ansible.builtin.systemd_service:
+    name: systemd-binfmt.service
+    enabled: false
+    masked: true

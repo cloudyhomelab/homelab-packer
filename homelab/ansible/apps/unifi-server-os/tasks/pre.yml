@@ -1,0 +1,15 @@
+- name: "{{ app.name }} | ensure data directories exist"
+  ansible.builtin.file:
+    path: "{{ _app_dest_root }}/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - persistent
+    - var-log
+    - data
+    - srv
+    - var-lib-unifi
+    - var-lib-mongodb
+    - etc-rabbitmq-ssl

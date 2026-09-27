@@ -1,0 +1,10 @@
+- name: "{{ app.name }} | render per-zone files"
+  ansible.builtin.template:
+    src: "{{ playbook_dir }}/apps/{{ app.name }}/templates/zone.j2"
+    dest: "{{ _app_dest_root }}/config/{{ item.name }}.zone"
+    owner: root
+    group: root
+    mode: "0644"
+    force: false
+  loop: "{{ app.bind9_zone }}"
+  notify: "application : quadlet apply"

@@ -1,0 +1,8 @@
+{% for z in app.bind9_zone %}
+zone "{{ z.name }}" IN {
+  type slave;
+  file "/etc/bind/{{ z.name }}.zone";
+  masters { {{ app.bind9_master_ip }}; };
+};
+
+{% endfor %}

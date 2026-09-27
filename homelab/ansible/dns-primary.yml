@@ -1,0 +1,26 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure primary dns server
+  hosts: all
+  become: true
+  roles:
+    - role: application
+      applications:
+        - name: bind9-master
+          quadlet_units:
+            - bind9
+          bind9_zone: "{{ sops_dns.zone }}"
+          bind9_tsig: "{{ sops_dns.tsig }}"
+          bind9_master_ip: "{{ sops_dns.master_ip }}"
+          bind9_slave_ip: "{{ sops_dns.slave_ip }}"
+          bind9_timezone: "{{ sops_general.timezone }}"

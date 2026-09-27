@@ -1,0 +1,7 @@
+{% for t in bind9_tsig %}
+key "{{ t.name }}" {
+    algorithm hmac-sha512;
+    secret "{{ t.key }}";
+};
+
+{% endfor %}

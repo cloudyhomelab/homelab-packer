@@ -1,0 +1,8 @@
+{% for z in bind9_zone %}
+zone "{{ z.name }}" IN {
+  type master;
+  file "/etc/bind/{{ z.name }}.zone";
+  update-policy {grant terraform-key zonesub any; };
+};
+
+{% endfor %}

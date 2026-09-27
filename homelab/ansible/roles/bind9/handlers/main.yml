@@ -1,0 +1,12 @@
+- name: restart the service again
+  community.docker.docker_compose_v2:
+    project_src: /etc/docker/bind9
+    wait: true
+    wait_timeout: 300
+    state: restarted
+
+- name: restart resolved
+  ansible.builtin.systemd_service:
+    state: restarted
+    daemon_reload: true
+    name: systemd-resolved

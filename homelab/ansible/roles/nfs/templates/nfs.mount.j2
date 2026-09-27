@@ -1,0 +1,13 @@
+[Unit]
+Description=NFS mount for {{ nfs_mountpoint }}
+Wants=network-online.target
+After=network-online.target
+
+[Mount]
+What={{ nfs_server }}:{{ nfs_export }}
+Where={{ nfs_mountpoint }}
+Type=nfs
+Options={{ nfs_options | default(nfs_options) }}
+
+[Install]
+WantedBy=multi-user.target

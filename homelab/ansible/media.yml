@@ -1,0 +1,41 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure media server
+  hosts: all
+  become: true
+  roles:
+    - role: nfs
+      nfs_mountpoint: /srv/immich/library/
+      nfs_unit_name: srv-immich-library
+      nfs_server: "{{ sops_app.immich_nfs_server }}"
+      nfs_export: "{{ sops_app.immich_nfs_export }}"
+
+    - role: application
+      applications:
+        - name: immich
+          quadlet_units:
+            - immich-database
+            - immich-frame
+            - immich-machine-learning
+            - immich-redis
+            - immich-server
+          immich_db_password: "{{ sops_app.immich_db_password }}"
+          immich_timezone: "{{ sops_general.timezone }}"
+          immich_server_url: "{{ sops_app.immich_server_url }}"
+          immich_frame_api_key: "{{ sops_app.immich_frame_api_key }}"
+
+        - name: caddy-lab
+          quadlet_units:
+            - caddy-lab
+          caddy_porkbun_api_key: "{{ sops_dns.porkbun_api_key }}"
+          caddy_porkbun_secret_api_key: "{{ sops_dns.porkbun_secret_api_key }}"

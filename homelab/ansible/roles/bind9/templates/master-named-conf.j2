@@ -1,0 +1,26 @@
+include "/etc/bind/tsig.keys";
+include "/etc/bind/zone-master.conf";
+
+acl internal {
+    10.88.0.0/16;
+};
+
+acl loopbacks {
+   127.0.0.1/32;
+   ::1/128;
+};
+
+options {
+        directory "/var/cache/bind";
+        allow-query { internal; };
+
+        recursion no;
+        dnssec-validation no;
+
+        auth-nxdomain no;
+        deny-answer-addresses { loopbacks; };
+
+        notify yes;
+        also-notify { {{ bind9_slave_ip }}; };
+        allow-transfer { 127.0.0.1; {{ bind9_slave_ip }}; };
+};

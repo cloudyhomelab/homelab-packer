@@ -1,0 +1,21 @@
+networks:
+  reverse_proxy:
+    driver: bridge
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+services:
+  reverse_proxy:
+    image: binarycodes/caddy-porkbun:2.11
+    container_name: caddy_reverse_proxy
+    restart: unless-stopped
+    networks:
+      - reverse_proxy
+    ports:
+      - 443:443
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config

@@ -1,0 +1,24 @@
+[Unit]
+Description=BIND9 authoritative DNS (secondary)
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=bind9
+Image=docker.io/ubuntu/bind9:latest
+Network=host
+Environment=BIND9_USER=root
+Environment=TZ={{ app.bind9_timezone }}
+Volume={{ application_root }}/{{ app.name }}/config:/etc/bind
+Volume={{ application_root }}/{{ app.name }}/cache:/var/cache/bind
+Volume={{ application_root }}/{{ app.name }}/records:/var/lib/bind
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

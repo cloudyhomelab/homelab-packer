@@ -1,0 +1,12 @@
+[Unit]
+Description=Sync CloudyHome ansible self provisioning repo
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/mkdir -p {{ cloudyhome_base_path }}/ansible
+ExecStart={{ cloudyhome_base_path }}/git-sync.sh
+
+[Install]
+WantedBy=multi-user.target

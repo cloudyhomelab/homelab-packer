@@ -1,0 +1,34 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure ephemeral github runner
+  hosts: all
+  become: true
+  roles:
+    - role: application
+      applications:
+        - name: github-runner
+          quadlet_units:
+            - gh-runners.target
+          github_runner_url: "{{ sops_gh.gh_runner_url }}"
+          github_runner_token: "{{ sops_gh.gh_runner_token }}"
+          github_runner_app_id: "{{ sops_gh.gh_runner_app_id }}"
+          github_runner_client_id: "{{ sops_gh.gh_runner_client_id }}"
+          github_runner_installation_id: "{{ sops_gh.gh_runner_installation_id }}"
+          github_runner_private_key: "{{ sops_gh.gh_runner_private_key }}"
+
+  post_tasks:
+    - name: enable the podman auto-update timer
+      ansible.builtin.systemd:
+        name: podman-auto-update.timer
+        enabled: true
+        state: started

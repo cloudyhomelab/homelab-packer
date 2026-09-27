@@ -1,0 +1,39 @@
+name: refresh packer images
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 * * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  # never overlap; a queued run recomputes what is due, so replacing it loses nothing
+  group: refresh-packer-images
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: self-hosted
+    timeout-minutes: 360
+    environment: publish
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      # checkout cleans ignored files, so the download cache lives outside the workspace
+      - name: packer cache
+        run: echo "PACKER_CACHE_DIR=${HOME}/.cache/imagectl/packer" >> "$GITHUB_ENV"
+
+      - name: build and publish
+        env:
+          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+        run: uv run imagectl build --plan

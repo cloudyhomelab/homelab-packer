@@ -1,0 +1,19 @@
+$TTL 2d
+
+$ORIGIN {{ item.name }}.
+
+@           IN      SOA     ns1.{{ item.name }}.                hostmaster.{{ item.name }}. (
+                            {{ '%Y%m%d%H' | strftime }}         ;serial
+                            12h                                 ;refresh
+                            15m                                 ;retry
+                            3w                                  ;expire
+                            2h                                  ;minimum ttl
+                            )
+
+            IN      NS      ns1.{{ item.name }}.
+            IN      NS      ns2.{{ item.name }}.
+
+{# records from YAML #}
+{% for rec in item.records %}
+{{ rec }}
+{% endfor %}

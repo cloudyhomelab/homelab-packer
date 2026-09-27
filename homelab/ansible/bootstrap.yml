@@ -1,0 +1,28 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure bootstrap server
+  hosts: all
+  become: true
+  roles:
+    - role: application
+      applications:
+        - name: caddy-mgmt
+          quadlet_units:
+            - caddy-mgmt
+          caddy_porkbun_api_key: "{{ sops_dns.porkbun_api_key }}"
+          caddy_porkbun_secret_api_key: "{{ sops_dns.porkbun_secret_api_key }}"
+
+        - name: unifi-server-os
+          quadlet_units:
+            - unifi-os-server
+          unifi_system_ip: uos.ip.cloudyhome.net

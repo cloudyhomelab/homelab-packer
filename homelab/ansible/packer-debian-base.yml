@@ -1,0 +1,42 @@
+- name: pre-requisite packages for secret management
+  hosts: all
+  become: true
+  roles:
+    - role: sops
+      sops_version: "3.11.0"
+
+- name: basic configuration for all debian systems
+  hosts: all
+  become: true
+  roles:
+    - role: system
+      system_allow_release_info_change: false
+      system_timezone: "Europe/Helsinki"
+      system_install_packages:
+        - age
+        - ansible-core
+        - bind9-dnsutils
+        - curl
+        - git
+        - gpg
+        - net-tools
+        - nfs-common
+        - python3-debian # required by ansible.builtin.deb822_repository module
+        - qemu-guest-agent
+        - systemd-container
+      system_remove_packages:
+        - man-db
+        - manpages
+        - nano
+        - reportbug
+        - screen
+        - vim
+        - vim-tiny
+
+    - role: security
+      security_ssh_service_name: "sshd"
+
+    - role: ssh_keysign
+      ssh_keysign_version: "0.0.10"
+
+    - role: cloudyhome

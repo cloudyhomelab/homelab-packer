@@ -1,0 +1,18 @@
+---
+- name: add repository into sources list
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: "https://artifacts-cli.infisical.com/deb"
+    suites: "stable"
+    components: "main"
+    architectures: "{{ normalized_arch }}"
+    signed_by: "https://artifacts-cli.infisical.com/infisical.gpg"
+    state: present
+
+- name: install infisical
+  ansible.builtin.apt:
+    name:
+      - infisical
+    state: present
+    update_cache: true

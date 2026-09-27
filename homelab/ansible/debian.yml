@@ -1,0 +1,48 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: pre-requisite packages for secret management
+  hosts: all
+  become: true
+  roles:
+    - role: infisical
+    - role: sops
+      sops_version: "3.11.0"
+
+- name: user level configurations
+  hosts: all
+  become: true
+  become_user: "{{ sops_general.target_user }}"
+  roles:
+    - role: userconfig
+
+- name: basic configuration for all debian systems
+  hosts: all
+  become: true
+  roles:
+    - role: system
+      system_allow_release_info_change: false
+      system_timezone: "{{ sops_general.timezone }}"
+      system_install_packages:
+        - age
+        - bind9-dnsutils
+        - curl
+        - git
+        - gpg
+        - net-tools
+        - systemd-container
+
+    - role: security
+      security_ssh_service_name: "sshd"
+
+    - role: ssh_keysign
+      ssh_keysign_version: "0.0.8"

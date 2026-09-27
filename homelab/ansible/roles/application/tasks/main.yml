@@ -1,0 +1,19 @@
+- name: assert applications list is provided
+  ansible.builtin.assert:
+    that:
+      - applications is defined
+      - applications | length > 0
+      - applications | map(attribute='name') | list | unique | length == applications | length
+    fail_msg: "role 'application' requires a non-empty 'applications' list with unique names"
+
+- name: collect all quadlet units across applications
+  ansible.builtin.set_fact:
+    application_quadlet_units: >-
+      {{ applications | map(attribute='quadlet_units') | flatten | unique | list }}
+
+- name: install each application
+  ansible.builtin.include_tasks: install_application.yml
+  loop: "{{ applications }}"
+  loop_control:
+    loop_var: app
+    label: "{{ app.name }}"

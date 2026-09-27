@@ -1,0 +1,24 @@
+[Unit]
+Description=Caddy Lab VLAN proxy
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=caddy-lab
+Image=docker.io/binarycodes/caddy-porkbun:2.11
+Network=caddy-lab.network
+Volume={{ application_root }}/{{ app.name }}/Caddyfile:/etc/caddy/Caddyfile:ro
+Volume=caddy-data.volume:/data
+Volume=caddy-config.volume:/config
+ReadOnly=true
+PublishPort=443:443
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

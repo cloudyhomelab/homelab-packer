@@ -1,0 +1,23 @@
+[Unit]
+Description=GitHub Ephemeral Runner %i
+After=network-online.target
+Wants=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=gh-runner-%i
+Image=docker.io/binarycodes/github-runner:latest
+EnvironmentFile={{ application_root }}/{{ app.name }}/env
+Volume={{ application_root }}/{{ app.name }}/app.private-key.pem:/etc/github-runner/app.private-key.pem:ro,Z
+LogDriver=journald
+AutoUpdate=registry
+
+[Service]
+Restart=always
+RestartSec=5
+ProtectKernelLogs=yes
+RestrictRealtime=yes
+
+[Install]
+WantedBy=multi-user.target

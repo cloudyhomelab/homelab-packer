@@ -1,0 +1,11 @@
+[Unit]
+Description=Automount NFS for {{ nfs_mountpoint }}
+Wants=network-online.target
+After=network-online.target
+
+[Automount]
+Where={{ nfs_mountpoint }}
+TimeoutIdleSec={{ nfs_idle_timeout_sec | default(nfs_idle_timeout_sec) }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,26 @@
+[Unit]
+Description=Immich Server
+After=immich-redis.service immich-database.service immich-machine-learning.service
+Requires=immich-redis.service immich-database.service
+Wants=immich-machine-learning.service
+
+[Container]
+ContainerName=immich_server
+Image=ghcr.io/immich-app/immich-server:${IMMICH_VERSION}
+Network=immich.network
+Volume=${UPLOAD_LOCATION}:/data
+Volume=/etc/localtime:/etc/localtime:ro
+PublishPort=2283:2283
+EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+HealthCmd=/bin/sh -c 'curl -fsS http://localhost:2283/api/server/ping || exit 1'
+HealthInterval=10s
+HealthStartPeriod=30s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

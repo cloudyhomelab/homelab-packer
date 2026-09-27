@@ -1,0 +1,50 @@
+name: refresh upstream
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-upstream
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: move upstream pins
+        run: uv run imagectl upstream --update
+
+      - name: only upstream.yml may change
+        run: |
+          changed=$(git status --porcelain --untracked-files=all | grep -v '^ M upstream.yml$' || true)
+          if [ -n "${changed}" ]; then
+            printf 'unexpected changes:\n%s\n' "${changed}" >&2
+            exit 1
+          fi
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          add-paths: upstream.yml
+          sign-commits: true
+          commit-message: "chore: bump upstream images"
+          title: "chore: bump upstream images"
+          body: |
+            automated update of the upstream image pins.
+          branch: chore/refresh-upstream
+          delete-branch: true

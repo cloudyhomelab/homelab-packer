@@ -1,0 +1,26 @@
+- name: set timezone for server
+  community.general.timezone:
+    name: "{{ system_timezone }}"
+
+# this is required when connecting from a terminal (kitty, etc.) that sets a non-standard TERM value
+- name: set TERM to xterm
+  ansible.builtin.lineinfile:
+    path: /etc/profile
+    line: export TERM=xterm
+    mode: "0644"
+    create: true
+
+- name: disable dynamic motd scripts
+  ansible.builtin.file:
+    path: /etc/update-motd.d
+    recurse: true
+    mode: "0440"
+    state: directory
+
+- name: empty /etc/motd
+  ansible.builtin.copy:
+    dest: /etc/motd
+    content: ""
+    owner: root
+    group: root
+    mode: "0444"

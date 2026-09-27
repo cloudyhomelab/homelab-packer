@@ -1,0 +1,20 @@
+[Unit]
+Description=Immich Redis (Valkey)
+
+[Container]
+ContainerName=immich_redis
+Image=docker.io/valkey/valkey:9@sha256:fb8d272e529ea567b9bf1302245796f21a2672b8368ca3fcb938ac334e613c8f
+Network=immich.network
+NetworkAlias=redis
+HealthCmd=redis-cli ping || exit 1
+HealthInterval=10s
+HealthStartPeriod=10s
+HealthRetries=10
+Notify=healthy
+EnvironmentFile=/var/lib/cloudyhome/apps/immich/env
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

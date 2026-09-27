@@ -1,0 +1,8 @@
+[Unit]
+Description=All GitHub Ephemeral Runners
+Wants=gh-runner@1.service
+Wants=gh-runner@2.service
+Wants=gh-runner@3.service
+
+[Install]
+WantedBy=multi-user.target

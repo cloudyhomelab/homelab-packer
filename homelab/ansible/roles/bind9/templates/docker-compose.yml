@@ -1,0 +1,17 @@
+---
+services:
+  bind9:
+    image: docker.io/ubuntu/bind9:latest
+    container_name: bind9
+    environment:
+      - BIND9_USER=root
+      - TZ="{{ bind9_timezone }}"
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+    volumes:
+      - ./config/:/etc/bind/
+      - ./cache:/var/cache/bind
+      - ./records:/var/lib/bind
+    network_mode: host
+    restart: unless-stopped
