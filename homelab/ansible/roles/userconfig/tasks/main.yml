@@ -1,8 +1,0 @@
----
-- name: suppress login message (hushlogin)
-  ansible.builtin.file:
-    path: "~/.hushlogin"
-    mode: "0644"
-    modification_time: preserve
-    access_time: preserve
-    state: touch
