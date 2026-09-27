@@ -13,20 +13,20 @@
 - name: configure ephemeral github runner
   hosts: all
   become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
   roles:
-    - role: application
-      applications:
-        - name: github-runner
-          quadlet_units:
-            - gh-runners.target
-          github_runner_url: "{{ sops_gh.gh_runner_url }}"
-          github_runner_token: "{{ sops_gh.gh_runner_token }}"
-          github_runner_app_id: "{{ sops_gh.gh_runner_app_id }}"
-          github_runner_client_id: "{{ sops_gh.gh_runner_client_id }}"
-          github_runner_installation_id: "{{ sops_gh.gh_runner_installation_id }}"
-          github_runner_private_key: "{{ sops_gh.gh_runner_private_key }}"
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: github-runner
 
   post_tasks:
+    # enabled, not started: the runners need the age key, which the vm gets at boot
+    - name: enable the github runners at boot
+      ansible.builtin.systemd:
+        name: gh-runners.target
+        enabled: true
+
     - name: enable the podman auto-update timer
       ansible.builtin.systemd:
         name: podman-auto-update.timer
