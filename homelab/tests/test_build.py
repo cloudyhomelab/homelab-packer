@@ -4,7 +4,13 @@ import time
 import pytest
 
 from imagectl import build
-from imagectl.build import BuildError, image_lock, prune_packer_cache, run_scheduled
+from imagectl.build import (
+    BuildError,
+    image_lock,
+    prune_packer_cache,
+    remove_build_dir,
+    run_scheduled,
+)
 
 
 def test_parent_failure_skips_descendants_and_siblings_run(catalog):
@@ -126,3 +132,20 @@ def test_current_checksums_are_pins_and_parents_latest(catalog):
     assert "sha512:base" in sums
     assert "sha512:leaf" not in sums
     assert {u.checksum for u in catalog.upstreams.values()} <= sums
+
+
+def test_remove_build_dir_drops_the_emptied_image_dir(tmp_path):
+    build_dir = tmp_path / "debian-base" / "20260927-1200"
+    (build_dir / "output").mkdir(parents=True)
+    remove_build_dir(build_dir)
+    assert not (tmp_path / "debian-base").exists()
+
+
+def test_remove_build_dir_leaves_kept_builds(tmp_path):
+    kept = tmp_path / "debian-base" / "20260926-1200"
+    kept.mkdir(parents=True)
+    build_dir = tmp_path / "debian-base" / "20260927-1200"
+    build_dir.mkdir()
+    remove_build_dir(build_dir)
+    assert not build_dir.exists()
+    assert kept.is_dir()

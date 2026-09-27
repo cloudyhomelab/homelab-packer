@@ -12,7 +12,7 @@ import sys
 import tempfile
 from collections.abc import Callable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -217,8 +217,16 @@ def run_build(
         if publisher is not None:
             publisher(Build(image, source, clock, image_hash, git), image_path)
         if not options.keep:
-            shutil.rmtree(build_dir)
+            remove_build_dir(build_dir)
         return build_dir
+
+
+def remove_build_dir(build_dir: Path) -> None:
+    """Remove a finished build, and its image's dir once no kept build is left in it."""
+    shutil.rmtree(build_dir)
+    # safe under the image lock; a kept build or a failed one leaves the dir non-empty
+    with suppress(OSError):
+        build_dir.parent.rmdir()
 
 
 @dataclass(frozen=True)
