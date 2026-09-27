@@ -41,6 +41,9 @@ uv run pytest
 
 `build` of a child needs its parent published; it builds on the parent's `latest.json`.
 
+`test` boots on a throwaway overlay with the serial console attached; log in as `test`/`test`.
+Logging out powers the VM off and ends the run.
+
 ## Adding an image
 
 Add its name under its parent's `children:` in `images.yml` and write
