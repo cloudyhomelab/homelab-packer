@@ -50,7 +50,8 @@ CI is the only publisher:
   what is due (inputs changed, source changed, or aged out) and the descendants of anything it
   rebuilds, parents first, then publishes each build and prunes old ones.
 - `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin
-  moves.
+  moves. The pull request is opened by the cloudyhome bot GitHub App (secrets
+  `CLOUDYHOME_BOT_CLIENT_ID` and `CLOUDYHOME_BOT_PRIVATE_KEY`), so `validate` runs on it.
 - `validate` runs on pull requests and shows `imagectl plan` in the job summary.
 
 The publish credentials are the `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` secrets of the
