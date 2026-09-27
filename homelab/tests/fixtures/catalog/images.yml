@@ -1,0 +1,47 @@
+# test catalog: every shape the loader accepts
+config:
+  s3:
+    endpoint: https://s3.example.net
+    region: home
+    bucket: os-image-staging
+  naming:
+    image_name: "{os}-{key}"
+    playbook: "packer-{os}-{key}"
+    s3_prefix: "{os}"
+
+defaults:
+  disk_size: 5G
+  memory: 2048
+  cpus: 2
+  max_age_days: 7
+  retain_images: 5
+
+images:
+  - base:
+      from: debian-cloud
+      disk_size: 3G
+      memory: 1024
+      children:
+        # bare name: defaults only
+        - kubernetes
+        - container:
+            disk_size: 4G
+            children:
+              # under a 4G parent, still the 5G default: nothing is inherited
+              - edge
+              # ages out before its parent, keeps fewer builds
+              - honeypot:
+                  max_age_days: 1
+                  retain_images: 2
+              - media:
+                  memory: 8192
+                  cpus: 4
+  # the same keys again under another OS
+  - base:
+      from: fedora-cloud
+      children:
+        # a mapping with no settings
+        - kubernetes:
+        - container:
+            children:
+              - edge

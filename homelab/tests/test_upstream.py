@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from conftest import UPSTREAM_YML
+from conftest import CATALOG
 
 from imagectl import upstream
 from imagectl.catalog import Upstream
@@ -15,6 +15,7 @@ from imagectl.upstream import (
 )
 
 FIXTURES = Path(__file__).parent / "fixtures" / "upstream"
+UPSTREAM_YML = (CATALOG / "upstream.yml").read_text()
 
 DEBIAN = Upstream(
     key="debian-cloud",
@@ -182,7 +183,7 @@ def test_update_writes_upstream_yml_only_when_newer(tmp_path):
     assert after.count("\n") == text.count("\n")
 
     mtime = (tmp_path / "upstream.yml").stat().st_mtime_ns
-    assert upstream.check(tmp_path, [], update=True, fetch=fake_fetch(pages)) == 0
+    assert upstream.check(tmp_path, ["debian-cloud"], update=True, fetch=fake_fetch(pages)) == 0
     assert (tmp_path / "upstream.yml").stat().st_mtime_ns == mtime
 
 

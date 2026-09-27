@@ -1,0 +1,20 @@
+# error: defaults: missing cpus
+config:
+  s3:
+    endpoint: https://s3.example.net
+    region: home
+    bucket: os-image-staging
+  naming:
+    image_name: "{os}-{key}"
+    playbook: "packer-{os}-{key}"
+    s3_prefix: "{os}"
+
+defaults:
+  disk_size: 5G
+  memory: 2048
+  max_age_days: 7
+  retain_images: 5
+
+images:
+  - base:
+      from: debian-cloud

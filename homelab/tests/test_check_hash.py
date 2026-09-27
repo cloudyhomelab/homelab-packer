@@ -3,23 +3,11 @@ import textwrap
 from pathlib import Path
 
 import pytest
-from conftest import write_catalog
+from conftest import copy_catalog
 
 from imagectl import check_hash
 from imagectl.catalog import load
 from imagectl.check_hash import CheckHashError, resolve_roles
-
-IMAGES = """\
-images:
-  - base:
-      from: debian-cloud
-      children:
-        - kubernetes
-        - container:
-            children:
-              - edge
-              - media
-"""
 
 CHECK_HASH = """\
 # every image
@@ -51,7 +39,7 @@ def playbook(*roles: str) -> str:
 
 @pytest.fixture
 def tree(tmp_path: Path) -> Path:
-    write_catalog(tmp_path, images=IMAGES)
+    copy_catalog(tmp_path)
     write(tmp_path, ".check_hash", CHECK_HASH)
     write(tmp_path, ".gitignore", "/build/\n")
     write(tmp_path, "src/imagectl/packer.py", "# driver\n")
@@ -74,6 +62,9 @@ def tree(tmp_path: Path) -> Path:
         """,
     )
     write(tmp_path, "ansible/packer-debian-container.yml", playbook("podman"))
+    for name in ("debian-honeypot", "fedora-base", "fedora-kubernetes", "fedora-container"):
+        write(tmp_path, f"ansible/packer-{name}.yml", playbook("system"))
+    write(tmp_path, "ansible/packer-fedora-edge.yml", playbook("system"))
     write(tmp_path, "ansible/roles/system/tasks/main.yml", "- ansible.builtin.debug: {}\n")
     write(tmp_path, "ansible/roles/kubernetes/tasks/main.yml", "- ansible.builtin.debug: {}\n")
     write(tmp_path, "ansible/roles/kubernetes/meta/main.yml", "dependencies:\n  - role: kubelet\n")
@@ -181,7 +172,7 @@ def test_settings_are_part_of_the_hash(tree):
     images = (
         (tree / "images.yml")
         .read_text()
-        .replace("- kubernetes", "- kubernetes:\n" + " " * 12 + "memory: 4096")
+        .replace("- kubernetes\n", "- kubernetes:\n" + " " * 12 + "memory: 4096\n", 1)
     )
     (tree / "images.yml").write_text(images)
     after = hashes(tree)
@@ -194,8 +185,9 @@ def test_max_age_and_retain_are_not_part_of_the_hash(tree):
         (tree / "images.yml")
         .read_text()
         .replace(
-            "- kubernetes",
-            "- kubernetes:\n" + " " * 12 + "max_age_days: 1\n" + " " * 12 + "retain_images: 2",
+            "- kubernetes\n",
+            "- kubernetes:\n" + " " * 12 + "max_age_days: 1\n" + " " * 12 + "retain_images: 2\n",
+            1,
         )
     )
     (tree / "images.yml").write_text(images)
@@ -229,7 +221,7 @@ def test_missing_playbook_is_a_per_image_error(tree):
     (tree / "ansible/packer-debian-container.yml").unlink()
     result = check_hash.compute_all(load(tree))
     assert "does not exist" in result.errors["debian-container"]
-    assert set(result.hashes) == {"debian-base", "debian-kubernetes", "debian-edge", "debian-media"}
+    assert set(result.hashes) == set(load(tree).images) - {"debian-container"}
 
 
 def test_apps_resolved_from_role_entries_and_include_role(tree):

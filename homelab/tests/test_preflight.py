@@ -4,9 +4,8 @@ import urllib.request
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from conftest import write_catalog
 
-from imagectl.catalog import Source, load
+from imagectl.catalog import Source
 from imagectl.preflight import PreflightError, build_required, fetch_latest, plan
 
 NOW = datetime(2026, 9, 27, 12, 0, tzinfo=UTC)
@@ -56,52 +55,71 @@ def test_rule_4_aged_out():
     assert required(latest(), max_age=timedelta(0)) == "aged out"
 
 
-def test_child_ages_out_before_its_parent(tmp_path):
-    write_catalog(
-        tmp_path,
-        images="""\
-        images:
-          - base:
-              from: debian-cloud
-              children:
-                - honeypot:
-                    max_age_days: 1
-                - container
-        """,
-    )
-    catalog = load(tmp_path)
-    up = catalog.upstream_source(catalog.get("debian-base"))
-    base = latest(PARENT_CHECKSUM=up.checksum)
-    child = latest(PARENT_CHECKSUM=base["IMAGE_CHECKSUM"])
-    published = {"debian-base": base, "debian-honeypot": child, "debian-container": child}
-    hashes = dict.fromkeys(published, "sha256:h")
+def published_current(catalog):
+    """A latest.json for every image, one day old, each built on its source as it is now."""
+    published = {}
+    for image in catalog.ordered():
+        if image.parent is None:
+            parent_sum = catalog.upstream_source(image).checksum
+        else:
+            parent_sum = published[image.parent]["IMAGE_CHECKSUM"]
+        published[image.name] = latest(
+            IMAGE=image.name, PARENT_CHECKSUM=parent_sum, IMAGE_CHECKSUM=f"sha512:{image.name}"
+        )
+    return published
 
-    due, _ = plan(catalog, hashes, lambda image: published[image.name], NOW)
+
+def test_nothing_due_when_everything_is_current(catalog):
+    published = published_current(catalog)
+    for image in catalog.ordered():
+        image.max_age_days = 7
+    due, _ = plan(
+        catalog, dict.fromkeys(published, "sha256:h"), lambda image: published[image.name], NOW
+    )
+    assert due == []
+
+
+def test_child_ages_out_before_its_parent(catalog):
+    # honeypot has max_age_days: 1, everything else the 7-day default
+    published = published_current(catalog)
+    due, _ = plan(
+        catalog, dict.fromkeys(published, "sha256:h"), lambda image: published[image.name], NOW
+    )
     assert [(d.image, d.reason) for d in due] == [("debian-honeypot", "aged out")]
 
 
 def test_plan_marks_descendants_of_a_due_image(catalog):
-    base_up = catalog.upstream_source(catalog.get("debian-base"))
-    fedora_up = catalog.upstream_source(catalog.get("fedora-base"))
-    published = {}
-    for image in catalog.ordered():
-        if image.parent is None:
-            parent_sum = (base_up if image.os == "debian" else fedora_up).checksum
-        else:
-            parent_sum = f"sha512:{image.parent}"
-        published[image.name] = latest(
-            IMAGE=image.name, PARENT_CHECKSUM=parent_sum, IMAGE_CHECKSUM=f"sha512:{image.name}"
-        )
+    published = published_current(catalog)
     hashes = dict.fromkeys(published, "sha256:h")
-    hashes["debian-base"] = "sha256:changed"
+    hashes["debian-container"] = "sha256:changed"
+    catalog.get("debian-honeypot").max_age_days = 7
 
     due, _ = plan(catalog, hashes, lambda image: published[image.name], NOW)
     assert [(d.image, d.reason) for d in due] == [
-        ("debian-base", "check hash changed"),
-        ("debian-kubernetes", "parent due (debian-base)"),
-        ("debian-container", "parent due (debian-base)"),
+        ("debian-container", "check hash changed"),
         ("debian-edge", "parent due (debian-container)"),
+        ("debian-honeypot", "parent due (debian-container)"),
+        ("debian-media", "parent due (debian-container)"),
     ]
+
+
+def test_upstream_pin_change_makes_the_tree_due(catalog):
+    published = published_current(catalog)
+    catalog.get("debian-honeypot").max_age_days = 7
+    published["debian-base"]["PARENT_CHECKSUM"] = "sha512:" + "0" * 128
+
+    due, _ = plan(
+        catalog, dict.fromkeys(published, "sha256:h"), lambda image: published[image.name], NOW
+    )
+    assert [d.image for d in due] == [
+        "debian-base",
+        "debian-kubernetes",
+        "debian-container",
+        "debian-edge",
+        "debian-honeypot",
+        "debian-media",
+    ]
+    assert due[0].reason == "source changed"
 
 
 def test_plan_on_an_empty_bucket_lists_everything_as_never_built(catalog):

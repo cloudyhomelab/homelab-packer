@@ -1,0 +1,29 @@
+# error: sha256 hash must be 64 hex characters, got 60
+# test catalog upstreams: both lookup shapes, both hash algorithms, both quote styles
+
+# version as a directory, sha512
+debian-cloud:
+  os: debian
+  index: https://cdimage.debian.org/images/cloud/trixie/
+  image_file: "{version}/debian-13-genericcloud-amd64-{version}.qcow2"
+  checksum_file: "{version}/SHA512SUMS"
+  version: "20260914-2601"
+  checksum: "sha512:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+# version in the file name, sha256, single-quoted version
+fedora-cloud:
+  os: fedora
+  index: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/
+  image_file: "Fedora-Cloud-Base-Generic-44-{version}.x86_64.qcow2"
+  checksum_file: "Fedora-Cloud-44-{version}-x86_64-CHECKSUM"
+  version: '1.7'
+  checksum: "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+
+# used by no image: allowed, so a pin can be kept current ahead of its tree
+ubuntu-cloud:
+  os: ubuntu
+  index: https://cloud-images.ubuntu.com/releases/noble/
+  image_file: "release-{version}/ubuntu-24.04-server-cloudimg-amd64.img"
+  checksum_file: "release-{version}/SHA256SUMS"
+  version: "20260901"
+  checksum: "sha512:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
