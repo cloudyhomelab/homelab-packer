@@ -9,7 +9,9 @@ StartLimitIntervalSec=300
 ContainerName=caddy-lab
 Image=docker.io/binarycodes/caddy-porkbun:2.11
 Network=caddy-lab.network
-Volume={{ application_root }}/{{ app.name }}/Caddyfile:/etc/caddy/Caddyfile:ro
+Volume=/var/app/caddy-lab/config/Caddyfile:/etc/caddy/Caddyfile:ro
+# PORKBUN_API_KEY and PORKBUN_API_SECRET_KEY, decrypted on the VM from private/porkbun.sops.env
+EnvironmentFile=/run/app/caddy-lab/private/porkbun.env
 Volume=caddy-data.volume:/data
 Volume=caddy-config.volume:/config
 ReadOnly=true

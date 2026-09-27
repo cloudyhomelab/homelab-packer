@@ -13,6 +13,8 @@
 - name: configure media server
   hosts: all
   become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
   roles:
     - role: nfs
       nfs_mountpoint: /srv/immich/library/
@@ -34,8 +36,6 @@
           immich_server_url: "{{ sops_app.immich_server_url }}"
           immich_frame_api_key: "{{ sops_app.immich_frame_api_key }}"
 
-        - name: caddy-lab
-          quadlet_units:
-            - caddy-lab
-          caddy_porkbun_api_key: "{{ sops_dns.porkbun_api_key }}"
-          caddy_porkbun_secret_api_key: "{{ sops_dns.porkbun_secret_api_key }}"
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: caddy-lab
