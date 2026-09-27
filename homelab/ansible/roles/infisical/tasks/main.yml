@@ -1,7 +1,7 @@
 ---
 - name: add repository into sources list
   ansible.builtin.deb822_repository:
-    name: docker
+    name: infisical
     types: deb
     uris: "https://artifacts-cli.infisical.com/deb"
     suites: "stable"
