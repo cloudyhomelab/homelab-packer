@@ -1,3 +1,0 @@
-application_root: /var/lib/cloudyhome/apps
-application_quadlet_root: /etc/containers/systemd
-application_unit_root: /etc/systemd/system

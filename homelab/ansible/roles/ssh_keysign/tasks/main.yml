@@ -10,7 +10,6 @@
     owner: root
     group: root
     mode: "644"
-  notify: restart resolved
   with_items:
     - ssh-keysign.service
     - ssh-keysign.timer

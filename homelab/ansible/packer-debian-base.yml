@@ -38,5 +38,3 @@
 
     - role: ssh_keysign
       ssh_keysign_version: "0.0.10"
-
-    - role: cloudyhome
