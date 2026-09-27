@@ -37,7 +37,7 @@ uv run imagectl upstream --update [UPSTREAM...]  # move the pins in upstream.yml
 uv run pytest
 ```
 
-`-v` before the command (`imagectl -v build ...`) streams Packer output while building.
+`-v` on `build` and `publish` streams Packer output while building.
 
 `build` of a child needs its parent published; it builds on the parent's `latest.json`.
 

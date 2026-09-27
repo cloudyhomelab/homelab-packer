@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-import argparse
+import functools
 import subprocess
 import sys
 import tempfile
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Annotated
+
+import typer
 
 from . import build, check_hash, packer, preflight, publish, testvm, upstream
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
@@ -33,7 +37,73 @@ def table(rows: list[list[str]]) -> str:
     return "\n".join(line.rstrip() for line in lines)
 
 
-def cmd_list(catalog: Catalog, args: argparse.Namespace) -> int:
+app = typer.Typer(
+    help=__doc__,
+    no_args_is_help=True,
+    add_completion=False,
+    rich_markup_mode="markdown",
+    context_settings={"help_option_names": ["-h", "--help"]},
+)
+Verbose = Annotated[
+    bool, typer.Option("-v", "--verbose", help="Stream packer output while building.")
+]
+
+
+def run(fn: Callable[[], int]) -> int:
+    """fn's exit code, with the driver's expected errors reported as one line each."""
+    try:
+        return fn()
+    except CatalogError as e:
+        for error in e.errors:
+            print(f"error: {error}", file=sys.stderr)
+        return 1
+    except (
+        build.BuildError,
+        publish.PublishError,
+        preflight.PreflightError,
+        upstream.UpstreamError,
+        check_hash.CheckHashError,
+        testvm.TestVmError,
+    ) as e:
+        return fail(str(e))
+    except FileNotFoundError as e:
+        if e.filename and "/" not in str(e.filename):
+            return fail(f"{e.filename} not found on PATH (see README for host tools)")
+        raise
+    except subprocess.CalledProcessError as e:
+        return fail(f"{' '.join(map(str, e.cmd[:3]))} failed with exit code {e.returncode}")
+
+
+def command(name: str) -> Callable[[Callable[..., int]], Callable[..., None]]:
+    """Register fn as a subcommand whose returned int is the exit code."""
+
+    def register(fn: Callable[..., int]) -> Callable[..., None]:
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs) -> None:
+            raise typer.Exit(run(lambda: fn(*args, **kwargs)))
+
+        return app.command(name)(wrapper)
+
+    return register
+
+
+def project_root() -> Path:
+    root = Path.cwd()
+    if not (root / IMAGES_FILE).is_file():
+        raise CatalogError(
+            [f"run imagectl from the project root ({IMAGES_FILE} not found in {root})"]
+        )
+    return root
+
+
+def project() -> Catalog:
+    return load(project_root())
+
+
+@command("list")
+def cmd_list() -> int:
+    """Print the image tree, children under their parent."""
+    catalog = project()
     rows = [["IMAGE", "PLAYBOOK", "DISK", "MEMORY", "CPUS", "SOURCE"]]
     for image in catalog.ordered():
         if image.parent is None:
@@ -76,9 +146,22 @@ def run_check(label: str, cmd: list[str], cwd: Path, env: dict[str, str] | None 
     return ok
 
 
-def cmd_validate(catalog: Catalog, args: argparse.Namespace) -> int:
+@command("validate")
+def cmd_validate(
+    images: Annotated[
+        list[str] | None,
+        typer.Argument(
+            metavar="[IMAGE]...", help="Images to validate. Default: all.", show_default=False
+        ),
+    ] = None,
+) -> int:
+    """Validate the Packer templates, scripts, .check_hash rules and Ansible playbooks.
+
+    Reads no latest.json, so a child validates without a published parent.
+    """
+    catalog = project()
     root = catalog.root
-    targets = select_images(catalog, args.images)
+    targets = select_images(catalog, images or [])
     failures: dict[str, list[str]] = {i.name: [] for i in targets}
     global_ok = True
 
@@ -165,7 +248,14 @@ def hash_errors(result: check_hash.Result) -> None:
         print(f"{name}: cannot compute CHECK_HASH: {error}", file=sys.stderr)
 
 
-def cmd_plan(catalog: Catalog, args: argparse.Namespace) -> int:
+@command("plan")
+def cmd_plan() -> int:
+    """List the images `publish` would build, and why.
+
+    An image is due when its inputs or source changed, it aged out, or its parent is due.
+    Reads latest.json anonymously, so it needs no credentials.
+    """
+    catalog = project()
     hashes = check_hash.compute_all(catalog)
     due, _ = preflight.plan(
         catalog,
@@ -178,32 +268,54 @@ def cmd_plan(catalog: Catalog, args: argparse.Namespace) -> int:
     return 1 if hashes.errors else 0
 
 
-def cmd_build(catalog: Catalog, args: argparse.Namespace) -> int:
+@command("build")
+def cmd_build(
+    image: Annotated[
+        str, typer.Argument(metavar="IMAGE", help="The image to build.", show_default=False)
+    ],
+    keep: Annotated[
+        bool, typer.Option("--keep", help="Keep the build dir for `imagectl test --local`.")
+    ] = False,
+    verbose: Verbose = False,
+) -> int:
+    """Build one image locally. Never publishes.
+
+    Builds whether or not the image is due. A child builds on its parent's published
+    latest.json, so the parent has to be published first.
+    """
+    catalog = project()
     root = catalog.root
-    image = catalog.get(args.image)
+    target = catalog.get(image)
     env = packer.environment(root, build.packer_cache_dir(root), build.install_collections(root))
-    build.packer_init(root, [image], env)
+    build.packer_init(root, [target], env)
     try:
         build_dir = build.run_build(
             catalog,
-            image,
+            target,
             lambda img: preflight.fetch_latest(catalog, img),
-            build.BuildOptions(verbose=args.verbose, keep=args.keep),
+            build.BuildOptions(verbose=verbose, keep=keep),
         )
     except build.BuildError as e:
         return fail(str(e))
-    if args.keep:
-        print(f"{image.name}: built, kept in {build_dir}")
+    if keep:
+        print(f"{target.name}: built, kept in {build_dir}")
     else:
-        print(f"{image.name}: built")
+        print(f"{target.name}: built")
     return 0
 
 
-def cmd_publish(catalog: Catalog, args: argparse.Namespace) -> int:
+@command("publish")
+def cmd_publish(
+    jobs: Annotated[int, typer.Option("-j", "--jobs", min=1, help="Parallel builds.")] = 2,
+    verbose: Verbose = False,
+) -> int:
+    """Build and publish every image `plan` lists (CI).
+
+    Builds parents first, then publishes each build and prunes old ones. Needs
+    S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
+    """
+    catalog = project()
     root = catalog.root
-    jobs = args.jobs if args.jobs is not None else 2
-    if jobs < 1:
-        return fail("-j must be at least 1")
     store = publish.Store(catalog, publish.s3_client(catalog))
 
     hashes = check_hash.compute_all(catalog)
@@ -232,7 +344,7 @@ def cmd_publish(catalog: Catalog, args: argparse.Namespace) -> int:
     def build_one(image: Image) -> None:
         print(f"{image.name}: building", flush=True)
         build.run_build(
-            catalog, image, store.latest, build.BuildOptions(verbose=args.verbose), publisher
+            catalog, image, store.latest, build.BuildOptions(verbose=verbose), publisher
         )
 
     outcomes = build.run_scheduled(catalog, [d.image for d in due], build_one, jobs)
@@ -244,156 +356,43 @@ def cmd_publish(catalog: Catalog, args: argparse.Namespace) -> int:
     return 1 if failed or hashes.errors else 0
 
 
-def cmd_upstream(args: argparse.Namespace) -> int:
+@command("upstream")
+def cmd_upstream(
+    upstreams: Annotated[
+        list[str] | None,
+        typer.Argument(
+            metavar="[UPSTREAM]...", help="Upstreams to check. Default: all.", show_default=False
+        ),
+    ] = None,
+    update: Annotated[
+        bool, typer.Option("--update", help="Write newer versions and checksums to upstream.yml.")
+    ] = False,
+) -> int:
+    """Check the upstreams in upstream.yml for newer releases.
+
+    Prints pinned against newest and writes nothing, unless --update is given.
+    """
     # reads and writes upstream.yml only; images.yml is never opened
-    return upstream.check(Path.cwd(), args.upstreams, args.update)
+    return upstream.check(project_root(), upstreams or [], update)
 
 
-def cmd_test(catalog: Catalog, args: argparse.Namespace) -> int:
-    try:
-        return testvm.run(catalog, catalog.get(args.image), args.local)
-    except testvm.TestVmError as e:
-        return fail(str(e))
+@command("test")
+def cmd_test(
+    image: Annotated[
+        str, typer.Argument(metavar="IMAGE", help="The image to boot.", show_default=False)
+    ],
+    local: Annotated[
+        bool, typer.Option("--local", help="Boot the newest kept local build instead.")
+    ] = False,
+) -> int:
+    """Boot the latest published build of an image in QEMU."""
+    catalog = project()
+    return testvm.run(catalog, catalog.get(image), local)
 
 
-def make_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        prog="imagectl",
-        description=__doc__,
-        epilog="Run `imagectl COMMAND -h` for a command's arguments.",
-    )
-    parser.add_argument(
-        "-v", "--verbose", action="store_true", help="stream packer output while building"
-    )
-    sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-
-    def add(name: str, summary: str, description: str, epilog: str) -> argparse.ArgumentParser:
-        return sub.add_parser(
-            name,
-            help=summary,
-            description=description,
-            epilog=epilog,
-            formatter_class=argparse.RawDescriptionHelpFormatter,
-        )
-
-    add(
-        "list",
-        "print the image tree",
-        "Print every image in images.yml as a tree, children under their parent.",
-        "example:\n  imagectl list",
-    )
-
-    p = add(
-        "validate",
-        "validate templates, scripts, driver and playbooks",
-        "Check the Packer templates, scripts, .check_hash rules and Ansible playbooks.\n"
-        "Reads no latest.json, so a child validates without a published parent.",
-        "examples:\n  imagectl validate\n  imagectl validate debian-base debian-container",
-    )
-    p.add_argument("images", nargs="*", metavar="IMAGE", help="image to validate (default: all)")
-
-    add(
-        "plan",
-        "list the images that are due, with reasons",
-        "List the images publish would build and why: inputs changed, source changed,\n"
-        "aged out, or parent due. Reads latest.json anonymously; needs no credentials.",
-        "example:\n  imagectl plan",
-    )
-
-    p = add(
-        "build",
-        "build one image locally, never published",
-        "Build IMAGE locally, whether or not it is due. Never publishes. A child builds on\n"
-        "its parent's published latest.json, so the parent has to be published first.",
-        "examples:\n  imagectl build debian-base\n  imagectl -v build --keep debian-container",
-    )
-    p.add_argument("image", metavar="IMAGE", help="the image to build")
-    p.add_argument(
-        "--keep",
-        action="store_true",
-        help="keep the build dir under build/IMAGE/ for `imagectl test --local`",
-    )
-
-    p = add(
-        "publish",
-        "build and publish everything due (CI)",
-        "Build every image `imagectl plan` lists, parents first, then publish each build\n"
-        "and prune old ones. Needs S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.",
-        "examples:\n  imagectl publish\n  imagectl -v publish -j 4",
-    )
-    p.add_argument("-j", "--jobs", type=int, metavar="N", help="parallel builds (default 2)")
-
-    p = add(
-        "upstream",
-        "check upstreams for newer releases",
-        "Check each upstream in upstream.yml for a newer release. Writes nothing\n"
-        "unless --update is given.",
-        "examples:\n  imagectl upstream\n  imagectl upstream --update debian-cloud",
-    )
-    p.add_argument(
-        "upstreams", nargs="*", metavar="UPSTREAM", help="upstream to check (default: all)"
-    )
-    p.add_argument(
-        "--update", action="store_true", help="write newer versions and checksums to upstream.yml"
-    )
-
-    p = add(
-        "test",
-        "boot an image in QEMU",
-        "Boot an image in QEMU with the test cloud-init seed from upstream/<os>/test/.",
-        "examples:\n  imagectl test debian-base\n  imagectl test debian-base --local",
-    )
-    p.add_argument("image", metavar="IMAGE", help="the image to boot")
-    p.add_argument(
-        "--local",
-        action="store_true",
-        help="boot the newest kept local build instead of downloading the published one",
-    )
-    return parser
-
-
-def main(argv: list[str] | None = None) -> int:
-    parser = make_parser()
-    args = parser.parse_args(argv)
-    root = Path.cwd()
-    if not (root / IMAGES_FILE).is_file():
-        return fail(f"run imagectl from the project root ({IMAGES_FILE} not found in {root})")
-    try:
-        if args.command == "upstream":
-            return cmd_upstream(args)
-        catalog = load(root)
-        if args.command == "list":
-            return cmd_list(catalog, args)
-        if args.command == "validate":
-            return cmd_validate(catalog, args)
-        if args.command == "plan":
-            return cmd_plan(catalog, args)
-        if args.command == "build":
-            return cmd_build(catalog, args)
-        if args.command == "publish":
-            return cmd_publish(catalog, args)
-        if args.command == "test":
-            return cmd_test(catalog, args)
-    except CatalogError as e:
-        for error in e.errors:
-            print(f"error: {error}", file=sys.stderr)
-        return 1
-    except (
-        build.BuildError,
-        publish.PublishError,
-        preflight.PreflightError,
-        upstream.UpstreamError,
-        check_hash.CheckHashError,
-    ) as e:
-        return fail(str(e))
-    except FileNotFoundError as e:
-        if e.filename and "/" not in str(e.filename):
-            return fail(f"{e.filename} not found on PATH (see README for host tools)")
-        raise
-    except subprocess.CalledProcessError as e:
-        return fail(f"{' '.join(map(str, e.cmd[:3]))} failed with exit code {e.returncode}")
-    raise AssertionError(args.command)
+def main() -> None:
+    app()
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()
