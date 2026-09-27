@@ -69,6 +69,28 @@ s3_upload() {
          "${upload_url}"
 }
 
+fetch_catalog() {
+    local catalog_path="${1}"
+
+    local http_code
+    http_code=$(curl -sSL -o "${catalog_path}" -w '%{http_code}' "${ALL_METADATA_URL}")
+
+    case "${http_code}" in
+        200)
+            return 0
+            ;;
+        404)
+            printf 'Catalog '\''%s'\'' not found. Starting a new one.\n' "${ALL_METADATA_URL}"
+            printf '%s\n' '[]' > "${catalog_path}"
+            ;;
+        *)
+            # uploading after any other failure would replace the whole catalog with this build only
+            printf 'Unable to fetch catalog '\''%s'\'' (HTTP %s).\n' "${ALL_METADATA_URL}" "${http_code}" >&2
+            return 1
+            ;;
+    esac
+}
+
 ensure_bucket
 
 qemu-img info "${IMAGE_PATH}"
@@ -98,11 +120,11 @@ s3_upload "${IMAGE_CHECKSUM_PATH}"
 s3_upload "${IMAGE_METADATA_PATH}"
 
 ALL_METADATA_URL="${S3_ENDPOINT}/${S3_BUCKET_NAME}/${S3_PREFIX}/${ALL_METADATA_NAME}"
-ALL_EXISTING_METADATA=$(curl -fsSL "${ALL_METADATA_URL}" 2>/dev/null || printf '%s\n' '[]')
-ALL_EXISTING_METADATA=$(jq --slurpfile o "${IMAGE_METADATA_PATH}" '. + [$o[0]]' <<<"${ALL_EXISTING_METADATA}")
-
 TMP_METADATA_PATH="$(mktemp)"
-printf '%s\n' "${ALL_EXISTING_METADATA}" > "${TMP_METADATA_PATH}"
+
+fetch_catalog "${TMP_METADATA_PATH}"
+ALL_METADATA=$(jq --slurpfile o "${IMAGE_METADATA_PATH}" '. + [$o[0]]' "${TMP_METADATA_PATH}")
+printf '%s\n' "${ALL_METADATA}" > "${TMP_METADATA_PATH}"
 
 curl -fsSL --upload-file "${TMP_METADATA_PATH}" \
   --user "${S3_USER}" \
