@@ -96,7 +96,7 @@ repo provisions it, and without it the app does not start.
 
 CI is the only publisher:
 
-- `refresh-packer-images` runs `imagectl publish` on every push to `main` and hourly. It builds
+- `build-and-publish-images` runs `imagectl publish` on every push to `main` and hourly. It builds
   what is due (inputs changed, source changed, or aged out) and the descendants of anything it
   rebuilds, parents first, then publishes each build and prunes old ones.
 - `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin

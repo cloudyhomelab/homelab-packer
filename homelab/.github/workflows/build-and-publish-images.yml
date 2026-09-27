@@ -1,4 +1,4 @@
-name: refresh packer images
+name: build and publish images
 
 on:
   push:
@@ -12,7 +12,7 @@ permissions:
 
 concurrency:
   # never overlap; a queued run recomputes what is due, so replacing it loses nothing
-  group: refresh-packer-images
+  group: build-and-publish-images
   cancel-in-progress: false
 
 jobs:
