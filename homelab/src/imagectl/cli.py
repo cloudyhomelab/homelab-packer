@@ -178,22 +178,7 @@ def cmd_plan(catalog: Catalog, args: argparse.Namespace) -> int:
     return 1 if hashes.errors else 0
 
 
-def cmd_build(catalog: Catalog, args: argparse.Namespace, parser: argparse.ArgumentParser) -> int:
-    if args.plan == args.now:
-        parser.print_usage(sys.stderr)
-        return fail("build takes exactly one of --plan and --now")
-    if args.plan and (args.keep or args.image):
-        parser.print_usage(sys.stderr)
-        return fail("--keep and IMAGE go only with --now")
-    if args.now and (args.jobs is not None or not args.image):
-        parser.print_usage(sys.stderr)
-        return fail("build --now takes exactly one IMAGE and no -j")
-    if args.plan:
-        return build_plan(catalog, args)
-    return build_now(catalog, args)
-
-
-def build_now(catalog: Catalog, args: argparse.Namespace) -> int:
+def cmd_build(catalog: Catalog, args: argparse.Namespace) -> int:
     root = catalog.root
     image = catalog.get(args.image)
     env = packer.environment(root, build.packer_cache_dir(root), build.install_collections(root))
@@ -214,7 +199,7 @@ def build_now(catalog: Catalog, args: argparse.Namespace) -> int:
     return 0
 
 
-def build_plan(catalog: Catalog, args: argparse.Namespace) -> int:
+def cmd_publish(catalog: Catalog, args: argparse.Namespace) -> int:
     root = catalog.root
     jobs = args.jobs if args.jobs is not None else 2
     if jobs < 1:
@@ -271,7 +256,7 @@ def cmd_test(catalog: Catalog, args: argparse.Namespace) -> int:
         return fail(str(e))
 
 
-def make_parser() -> tuple[argparse.ArgumentParser, dict[str, argparse.ArgumentParser]]:
+def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="imagectl",
         description=__doc__,
@@ -281,17 +266,15 @@ def make_parser() -> tuple[argparse.ArgumentParser, dict[str, argparse.ArgumentP
         "-v", "--verbose", action="store_true", help="stream packer output while building"
     )
     sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
-    subs = {}
 
     def add(name: str, summary: str, description: str, epilog: str) -> argparse.ArgumentParser:
-        subs[name] = sub.add_parser(
+        return sub.add_parser(
             name,
             help=summary,
             description=description,
             epilog=epilog,
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
-        return subs[name]
 
     add(
         "list",
@@ -312,37 +295,33 @@ def make_parser() -> tuple[argparse.ArgumentParser, dict[str, argparse.ArgumentP
     add(
         "plan",
         "list the images that are due, with reasons",
-        "List the images build --plan would build and why: inputs changed, source changed,\n"
+        "List the images publish would build and why: inputs changed, source changed,\n"
         "aged out, or parent due. Reads latest.json anonymously; needs no credentials.",
         "example:\n  imagectl plan",
     )
 
     p = add(
         "build",
-        "build --plan (CI) or build --now IMAGE (local)",
-        "Build images. Takes exactly one of --plan and --now.",
-        "examples:\n  imagectl build --now --keep debian-base\n  imagectl -v build --plan -j 4",
+        "build one image locally, never published",
+        "Build IMAGE locally, whether or not it is due. Never publishes. A child builds on\n"
+        "its parent's published latest.json, so the parent has to be published first.",
+        "examples:\n  imagectl build debian-base\n  imagectl -v build --keep debian-container",
     )
-    p.add_argument(
-        "--plan",
-        action="store_true",
-        help="build everything due, parents first, then publish each build and prune "
-        "old ones (CI; needs S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY)",
-    )
-    p.add_argument(
-        "--now",
-        action="store_true",
-        help="build IMAGE locally, whether or not it is due; never publishes",
-    )
-    p.add_argument(
-        "-j", "--jobs", type=int, metavar="N", help="with --plan: parallel builds (default 2)"
-    )
+    p.add_argument("image", metavar="IMAGE", help="the image to build")
     p.add_argument(
         "--keep",
         action="store_true",
-        help="with --now: keep the build dir under build/IMAGE/ for `imagectl test --local`",
+        help="keep the build dir under build/IMAGE/ for `imagectl test --local`",
     )
-    p.add_argument("image", nargs="?", metavar="IMAGE", help="with --now: the image to build")
+
+    p = add(
+        "publish",
+        "build and publish everything due (CI)",
+        "Build every image `imagectl plan` lists, parents first, then publish each build\n"
+        "and prune old ones. Needs S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.",
+        "examples:\n  imagectl publish\n  imagectl -v publish -j 4",
+    )
+    p.add_argument("-j", "--jobs", type=int, metavar="N", help="parallel builds (default 2)")
 
     p = add(
         "upstream",
@@ -370,11 +349,11 @@ def make_parser() -> tuple[argparse.ArgumentParser, dict[str, argparse.ArgumentP
         action="store_true",
         help="boot the newest kept local build instead of downloading the published one",
     )
-    return parser, subs
+    return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser, subs = make_parser()
+    parser = make_parser()
     args = parser.parse_args(argv)
     root = Path.cwd()
     if not (root / IMAGES_FILE).is_file():
@@ -390,7 +369,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "plan":
             return cmd_plan(catalog, args)
         if args.command == "build":
-            return cmd_build(catalog, args, subs["build"])
+            return cmd_build(catalog, args)
+        if args.command == "publish":
+            return cmd_publish(catalog, args)
         if args.command == "test":
             return cmd_test(catalog, args)
     except CatalogError as e:

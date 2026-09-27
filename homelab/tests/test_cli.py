@@ -13,16 +13,22 @@ def in_root(catalog_root, monkeypatch):
     "argv",
     [
         ["build"],
-        ["build", "--plan", "--now", "debian-base"],
-        ["build", "--plan", "--keep"],
-        ["build", "--plan", "debian-base"],
-        ["build", "--now", "-j", "2", "debian-base"],
-        ["build", "--now"],
+        ["build", "debian-base", "debian-edge"],
+        ["build", "-j", "2", "debian-base"],
+        ["publish", "debian-base"],
+        ["publish", "--keep"],
     ],
 )
-def test_build_flag_combinations_fail_with_usage(in_root, capsys, argv):
-    assert cli.main(argv) == 1
+def test_wrong_arguments_fail_with_usage(in_root, capsys, argv):
+    with pytest.raises(SystemExit) as e:
+        cli.main(argv)
+    assert e.value.code == 2
     assert "usage:" in capsys.readouterr().err
+
+
+def test_publish_needs_at_least_one_job(in_root, capsys):
+    assert cli.main(["publish", "-j", "0"]) == 1
+    assert "-j must be at least 1" in capsys.readouterr().err
 
 
 def test_list_prints_tree_with_sources(in_root, capsys):

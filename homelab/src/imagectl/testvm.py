@@ -63,7 +63,7 @@ def local_image(root: Path, image: Image) -> Path:
     if not builds:
         raise TestVmError(
             f"no kept build of {image.name} under build/{image.name}/; "
-            f"run `imagectl build --now --keep {image.name}` first"
+            f"run `imagectl build --keep {image.name}` first"
         )
     return builds[-1]
 

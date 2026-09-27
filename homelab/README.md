@@ -28,8 +28,8 @@ Run from the project root:
 uv run imagectl list                          # the image tree
 uv run imagectl validate [IMAGE...]           # templates, scripts, driver, playbooks
 uv run imagectl plan                          # images that are due, and why
-uv run imagectl build --now [--keep] IMAGE    # local build, never published; --keep keeps the build dir
-uv run imagectl build --plan [-j N]           # build and publish everything due (CI), needs S3_*
+uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
+uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
 uv run imagectl upstream [UPSTREAM...]        # newer upstream releases, writes nothing
@@ -39,7 +39,7 @@ uv run pytest
 
 `-v` before the command (`imagectl -v build ...`) streams Packer output while building.
 
-`build --now` of a child needs its parent published; it builds on the parent's `latest.json`.
+`build` of a child needs its parent published; it builds on the parent's `latest.json`.
 
 ## Adding an image
 
@@ -96,7 +96,7 @@ repo provisions it, and without it the app does not start.
 
 CI is the only publisher:
 
-- `refresh-packer-images` runs `imagectl build --plan` on every push to `main` and hourly. It builds
+- `refresh-packer-images` runs `imagectl publish` on every push to `main` and hourly. It builds
   what is due (inputs changed, source changed, or aged out) and the descendants of anything it
   rebuilds, parents first, then publishes each build and prunes old ones.
 - `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin
