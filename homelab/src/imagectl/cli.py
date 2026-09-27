@@ -272,36 +272,104 @@ def cmd_test(catalog: Catalog, args: argparse.Namespace) -> int:
 
 
 def make_parser() -> tuple[argparse.ArgumentParser, dict[str, argparse.ArgumentParser]]:
-    parser = argparse.ArgumentParser(prog="imagectl", description=__doc__)
-    parser.add_argument("-v", "--verbose", action="store_true", help="stream packer output")
-    sub = parser.add_subparsers(dest="command", required=True)
+    parser = argparse.ArgumentParser(
+        prog="imagectl",
+        description=__doc__,
+        epilog="Run `imagectl COMMAND -h` for a command's arguments.",
+    )
+    parser.add_argument(
+        "-v", "--verbose", action="store_true", help="stream packer output while building"
+    )
+    sub = parser.add_subparsers(dest="command", required=True, metavar="COMMAND")
     subs = {}
 
-    subs["list"] = sub.add_parser("list", help="print the image tree")
+    def add(name: str, summary: str, description: str, epilog: str) -> argparse.ArgumentParser:
+        subs[name] = sub.add_parser(
+            name,
+            help=summary,
+            description=description,
+            epilog=epilog,
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+        )
+        return subs[name]
 
-    p = sub.add_parser("validate", help="validate templates, scripts, driver and playbooks")
-    p.add_argument("images", nargs="*", metavar="IMAGE")
-    subs["validate"] = p
+    add(
+        "list",
+        "print the image tree",
+        "Print every image in images.yml as a tree, children under their parent.",
+        "example:\n  imagectl list",
+    )
 
-    subs["plan"] = sub.add_parser("plan", help="list the images that are due, with reasons")
+    p = add(
+        "validate",
+        "validate templates, scripts, driver and playbooks",
+        "Check the Packer templates, scripts, .check_hash rules and Ansible playbooks.\n"
+        "Reads no latest.json, so a child validates without a published parent.",
+        "examples:\n  imagectl validate\n  imagectl validate debian-base debian-container",
+    )
+    p.add_argument("images", nargs="*", metavar="IMAGE", help="image to validate (default: all)")
 
-    p = sub.add_parser("build", help="build --plan (CI) or build --now IMAGE (local)")
-    p.add_argument("--plan", action="store_true", help="build and publish everything due")
-    p.add_argument("--now", action="store_true", help="build IMAGE locally, never publish")
-    p.add_argument("-j", "--jobs", type=int, help="parallel builds for --plan (default 2)")
-    p.add_argument("--keep", action="store_true", help="keep the build dir after --now")
-    p.add_argument("image", nargs="?", metavar="IMAGE")
-    subs["build"] = p
+    add(
+        "plan",
+        "list the images that are due, with reasons",
+        "List the images build --plan would build and why: inputs changed, source changed,\n"
+        "aged out, or parent due. Reads latest.json anonymously; needs no credentials.",
+        "example:\n  imagectl plan",
+    )
 
-    p = sub.add_parser("upstream", help="check upstreams for newer releases")
-    p.add_argument("upstreams", nargs="*", metavar="UPSTREAM")
-    p.add_argument("--update", action="store_true", help="move pins in upstream.yml")
-    subs["upstream"] = p
+    p = add(
+        "build",
+        "build --plan (CI) or build --now IMAGE (local)",
+        "Build images. Takes exactly one of --plan and --now.",
+        "examples:\n  imagectl build --now --keep debian-base\n  imagectl -v build --plan -j 4",
+    )
+    p.add_argument(
+        "--plan",
+        action="store_true",
+        help="build everything due, parents first, then publish each build and prune "
+        "old ones (CI; needs S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY)",
+    )
+    p.add_argument(
+        "--now",
+        action="store_true",
+        help="build IMAGE locally, whether or not it is due; never publishes",
+    )
+    p.add_argument(
+        "-j", "--jobs", type=int, metavar="N", help="with --plan: parallel builds (default 2)"
+    )
+    p.add_argument(
+        "--keep",
+        action="store_true",
+        help="with --now: keep the build dir under build/IMAGE/ for `imagectl test --local`",
+    )
+    p.add_argument("image", nargs="?", metavar="IMAGE", help="with --now: the image to build")
 
-    p = sub.add_parser("test", help="boot an image in QEMU")
-    p.add_argument("image", metavar="IMAGE")
-    p.add_argument("--local", action="store_true", help="boot the newest kept local build")
-    subs["test"] = p
+    p = add(
+        "upstream",
+        "check upstreams for newer releases",
+        "Check each upstream in upstream.yml for a newer release. Writes nothing\n"
+        "unless --update is given.",
+        "examples:\n  imagectl upstream\n  imagectl upstream --update debian-cloud",
+    )
+    p.add_argument(
+        "upstreams", nargs="*", metavar="UPSTREAM", help="upstream to check (default: all)"
+    )
+    p.add_argument(
+        "--update", action="store_true", help="write newer versions and checksums to upstream.yml"
+    )
+
+    p = add(
+        "test",
+        "boot an image in QEMU",
+        "Boot an image in QEMU with the test cloud-init seed from upstream/<os>/test/.",
+        "examples:\n  imagectl test debian-base\n  imagectl test debian-base --local",
+    )
+    p.add_argument("image", metavar="IMAGE", help="the image to boot")
+    p.add_argument(
+        "--local",
+        action="store_true",
+        help="boot the newest kept local build instead of downloading the published one",
+    )
     return parser, subs
 
 
