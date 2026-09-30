@@ -1,0 +1,25 @@
+# error: item has 2 keys (container, disk_size)
+config:
+  s3:
+    endpoint: https://s3.example.net
+    region: home
+    bucket: os-image-staging
+  naming:
+    image_name: "{os}-{key}"
+    playbook: "packer-{os}-{key}"
+    s3_prefix: "{os}"
+
+defaults:
+  disk_size: 5G
+  memory: 2048
+  cpus: 2
+  max_age_days: 7
+  retain_images: 5
+
+images:
+  - base:
+      from: debian-cloud
+      children:
+        # settings level with the name instead of indented below it
+        - container:
+          disk_size: 3G

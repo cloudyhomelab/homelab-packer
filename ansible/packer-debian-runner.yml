@@ -1,0 +1,34 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure ephemeral github runner
+  hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: github-runner
+
+  post_tasks:
+    # enabled, not started: the runners need the age key, which the vm gets at boot
+    - name: enable the github runners at boot
+      ansible.builtin.systemd:
+        name: gh-runners.target
+        enabled: true
+
+    - name: enable the podman auto-update timer
+      ansible.builtin.systemd:
+        name: podman-auto-update.timer
+        enabled: true
+        state: started

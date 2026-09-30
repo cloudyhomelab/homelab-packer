@@ -1,0 +1,25 @@
+[Unit]
+Description=Immich PostgreSQL
+
+[Container]
+ContainerName=immich_postgres
+Image=immich-database.image
+Network=immich.network
+NetworkAlias=database
+Volume=${DB_DATA_LOCATION}:/var/lib/postgresql/data
+EnvironmentFile=/var/app/immich/config/immich.env
+EnvironmentFile=/run/app/immich/private/db.env
+ShmSize=128m
+HealthCmd=/bin/sh -c 'pg_isready --dbname="$${DB_DATABASE_NAME}" --username="$${DB_USERNAME}" || exit 1'
+HealthInterval=10s
+HealthStartPeriod=20s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+EnvironmentFile=/var/app/immich/config/immich.env
+ExecStartPre=/usr/bin/mkdir -p ${DB_DATA_LOCATION}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

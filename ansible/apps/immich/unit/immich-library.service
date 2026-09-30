@@ -1,0 +1,14 @@
+[Unit]
+Description=NFS mount for the immich library
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+# UPLOAD_LOCATION from the plain env; NFS_SERVER and NFS_EXPORT decrypted on the VM from private/nfs.sops.env
+EnvironmentFile=/var/app/immich/config/immich.env
+EnvironmentFile=/run/app/immich/private/nfs.env
+ExecStartPre=/usr/bin/mkdir -p ${UPLOAD_LOCATION}
+ExecStart=/usr/bin/mount -t nfs -o vers=4.1,proto=tcp,hard,timeo=600,retrans=2,noatime ${NFS_SERVER}:${NFS_EXPORT} ${UPLOAD_LOCATION}
+ExecStop=/usr/bin/umount ${UPLOAD_LOCATION}

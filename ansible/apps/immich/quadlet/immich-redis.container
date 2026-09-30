@@ -1,0 +1,20 @@
+[Unit]
+Description=Immich Redis (Valkey)
+
+[Container]
+ContainerName=immich_redis
+Image=immich-redis.image
+Network=immich.network
+NetworkAlias=redis
+HealthCmd=redis-cli ping || exit 1
+HealthInterval=10s
+HealthStartPeriod=10s
+HealthRetries=10
+Notify=healthy
+EnvironmentFile=/var/app/immich/config/immich.env
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

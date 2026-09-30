@@ -1,0 +1,94 @@
+proxmox.cloudyhome.net {
+    reverse_proxy https://pve1.ip.cloudyhome.net:8006 \
+                  https://pve2.ip.cloudyhome.net:8006 \
+                  https://pve3.ip.cloudyhome.net:8006 {
+        lb_policy random
+        health_uri /
+        health_status 200
+        health_interval 10s
+        health_timeout 3s
+
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+s3.cloudyhome.net {
+    reverse_proxy moria.ip.cloudyhome.net:9002
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+s3-api.cloudyhome.net {
+    reverse_proxy moria.ip.cloudyhome.net:9000
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+nas.cloudyhome.net {
+    reverse_proxy moria.ip.cloudyhome.net:80
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+gateway.cloudyhome.net {
+    reverse_proxy https://gateway.ip.cloudyhome.net:443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+sw1.cloudyhome.net {
+    reverse_proxy https://sw1.ip.cloudyhome.net:443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+uos.cloudyhome.net {
+    reverse_proxy https://uos.ip.cloudyhome.net:11443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}

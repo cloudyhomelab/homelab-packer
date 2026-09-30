@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ssh keysign request on a schedule
+
+[Timer]
+OnCalendar=Sun *-*-* 03:00
+RandomizedDelaySec=30min
+Persistent=true
+Unit=ssh-keysign.service
+
+[Install]
+WantedBy=timers.target

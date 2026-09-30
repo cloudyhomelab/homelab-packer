@@ -1,0 +1,83 @@
+name: refresh upstream
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: refresh-upstream
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: self-hosted
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+
+      - name: move upstream pins
+        id: update
+        run: |
+          out="${RUNNER_TEMP}/upstream.txt"
+          uv run imagectl upstream --update > "${out}"
+          cat "${out}"
+          # the line imagectl upstream prints per pin it moves
+          moved=$(sed -n 's/^\([^:]*\): pinned \(.*\), newest \(.*\) (newer release available)$/\1 \2 \3/p' "${out}")
+          keys=$(printf '%s\n' "${moved}" | cut -d' ' -f1 | paste -sd, - | sed 's/,/, /g')
+          {
+            echo "title=chore: bump upstream ${keys}"
+            echo 'body<<EOF'
+            echo 'Moves the pins in `upstream.yml` to the newest upstream releases.'
+            echo
+            echo '| upstream | pinned | newest |'
+            echo '|---|---|---|'
+            printf '%s\n' "${moved}" | while read -r key from to; do
+              echo "| ${key} | \`${from}\` | \`${to}\` |"
+            done
+            echo
+            echo '<details><summary>imagectl upstream --update</summary>'
+            echo
+            echo '```'
+            cat "${out}"
+            echo '```'
+            echo '</details>'
+            echo 'EOF'
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: only upstream.yml may change
+        run: |
+          changed=$(git status --porcelain --untracked-files=all | grep -v '^ M upstream.yml$' || true)
+          if [ -n "${changed}" ]; then
+            printf 'unexpected changes:\n%s\n' "${changed}" >&2
+            exit 1
+          fi
+
+      # a PR opened with GITHUB_TOKEN would not trigger validate; one opened by the app does
+      - name: bot token
+        id: bot-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ secrets.CLOUDYHOME_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.CLOUDYHOME_BOT_PRIVATE_KEY }}
+          permission-contents: write
+          permission-pull-requests: write
+
+      - name: create pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ steps.bot-token.outputs.token }}
+          add-paths: upstream.yml
+          sign-commits: true
+          commit-message: ${{ steps.update.outputs.title }}
+          title: ${{ steps.update.outputs.title }}
+          body: ${{ steps.update.outputs.body }}
+          branch: chore/refresh-upstream
+          delete-branch: true

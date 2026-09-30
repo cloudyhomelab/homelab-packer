@@ -1,0 +1,19 @@
+immich.cloudyhome.net {
+    reverse_proxy media.ip.cloudyhome.net:2283
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+immich-frame.cloudyhome.net {
+    reverse_proxy media.ip.cloudyhome.net:8080
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}

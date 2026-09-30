@@ -1,0 +1,99 @@
+- name: setup ip forwarding
+  ansible.posix.sysctl:
+    sysctl_file: /etc/sysctl.d/99-kubernetes-ip-forward.conf
+    name: net.ipv4.ip_forward
+    value: '1'
+    sysctl_set: true
+    state: present
+    reload: true
+
+- name: add Docker repository for containerd.io
+  ansible.builtin.deb822_repository:
+    name: docker
+    types: deb
+    uris: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}"
+    suites: "{{ ansible_facts['lsb'].codename }}"
+    components: stable
+    architectures: "{{ normalized_arch }}"
+    signed_by: "https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }}/gpg"
+    state: present
+
+- name: add Kubernetes APT repository
+  ansible.builtin.deb822_repository:
+    name: kubernetes
+    types: deb
+    uris: https://pkgs.k8s.io/core:/stable:/v1.35/deb/
+    suites: /
+    components:
+    signed_by: "https://pkgs.k8s.io/core:/stable:/v1.35/deb/Release.key"
+    state: present
+
+- name: add Helm APT repository
+  ansible.builtin.deb822_repository:
+    name: helm
+    types: deb
+    uris: https://packages.buildkite.com/helm-linux/helm-debian/any/
+    suites: any
+    components: main
+    signed_by: "https://packages.buildkite.com/helm-linux/helm-debian/gpgkey"
+    state: present
+
+- name: Update apt repository cache
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: true
+    clean: true
+
+- name: install packages
+  ansible.builtin.apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - containerd.io
+      - helm
+    state: present
+
+- name: install packages but do not update
+  ansible.builtin.apt:
+    name:
+      - kubelet
+      - kubeadm
+      - kubectl
+    state: present
+
+- name: prevent packages from being upgraded
+  ansible.builtin.dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl
+
+- name: containerd config
+  ansible.builtin.command:
+    cmd: containerd config default
+  register: kubernetes_containerd_config
+  changed_when: false
+
+- name: write containerd config output to file
+  ansible.builtin.copy:
+    dest: /etc/containerd/config.toml
+    content: "{{ kubernetes_containerd_config.stdout }}"
+    mode: "0644"
+
+- name: enable systemd cgroup
+  ansible.builtin.lineinfile:
+    path: /etc/containerd/config.toml
+    regexp: '^(\s*)SystemdCgroup = false\s*$'
+    line: '\1SystemdCgroup = true'
+    state: present
+    backrefs: true
+    backup: true
+
+- name: start containerd
+  ansible.builtin.systemd_service:
+    name: "containerd"
+    daemon_reload: true
+    state: restarted
+    enabled: true

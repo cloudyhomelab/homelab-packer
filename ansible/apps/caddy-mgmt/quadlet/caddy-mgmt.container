@@ -1,0 +1,26 @@
+[Unit]
+Description=Caddy Management VLAN proxy
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=caddy-mgmt
+Image=caddy-mgmt.image
+Network=caddy-mgmt.network
+Volume=/var/app/caddy-mgmt/config/Caddyfile:/etc/caddy/Caddyfile:ro
+# PORKBUN_API_KEY and PORKBUN_API_SECRET_KEY, decrypted on the VM from private/porkbun.sops.env
+EnvironmentFile=/run/app/caddy-mgmt/private/porkbun.env
+Volume=caddy-data.volume:/data
+Volume=caddy-config.volume:/config
+ReadOnly=true
+PublishPort=443:443
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

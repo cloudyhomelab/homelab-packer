@@ -1,0 +1,10 @@
+---
+podman_default_subnet: "172.16.250.0/24"
+podman_packages:
+  - aardvark-dns
+  - catatonit
+  - fuse-overlayfs
+  - nftables
+  - passt
+  - podman
+  - uidmap

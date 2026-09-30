@@ -1,0 +1,20 @@
+[Unit]
+Description=Initiate SSH certificate request to SSH CA server
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/ssh-keysign/config.yml
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/ssh-keysign host
+ExecStartPost=/bin/sh -c 'set -e; echo "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub" > /etc/ssh/sshd_config.d/01_host_certificate.conf'
+ExecStartPost=systemctl reload sshd
+
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/etc/ssh
+
+[Install]
+WantedBy=multi-user.target

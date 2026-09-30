@@ -1,0 +1,6 @@
+- name: configure for container workloads
+  hosts: all
+  become: true
+  roles:
+    - role: podman
+      podman_default_subnet: "172.18.18.0/24"

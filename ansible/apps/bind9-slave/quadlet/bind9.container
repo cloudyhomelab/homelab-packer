@@ -1,0 +1,26 @@
+[Unit]
+Description=BIND9 authoritative DNS (secondary)
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=bind9
+Image=bind9.image
+Network=host
+Environment=BIND9_USER=root
+Environment=TZ=Europe/Helsinki
+Volume=/var/app/bind9-slave/config/named.conf:/etc/bind/named.conf:ro
+# decrypted on the VM from private/
+Volume=/run/app/bind9-slave/private/zone-slave.conf:/etc/bind/zone-slave.conf:ro
+Volume=/var/app/bind9-slave/cache:/var/cache/bind
+Volume=/var/app/bind9-slave/records:/var/lib/bind
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

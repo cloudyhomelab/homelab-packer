@@ -1,0 +1,24 @@
+- name: install ssh-keysign from github release
+  ansible.builtin.apt:
+    deb: "https://github.com/binarycodes/ssh-key-signer/releases/download/v{{ ssh_keysign_version }}/ssh-keysign_{{ ssh_keysign_version }}_amd64.deb"
+    state: present
+
+- name: copy systemd unit files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: "644"
+  with_items:
+    - ssh-keysign.service
+    - ssh-keysign.timer
+
+- name: enable and start service and timer
+  ansible.builtin.systemd_service:
+    enabled: true
+    daemon_reload: true
+    name: '{{ item }}'
+  with_items:
+    - ssh-keysign.service
+    - ssh-keysign.timer

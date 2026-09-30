@@ -1,0 +1,6 @@
+---
+- name: apply general system configuration
+  ansible.builtin.include_tasks: settings.yml
+
+- name: apply general debian package management configuration
+  ansible.builtin.include_tasks: package_management.yml

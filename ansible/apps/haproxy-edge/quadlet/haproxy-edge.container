@@ -1,0 +1,21 @@
+[Unit]
+Description=HAProxy Edge (TLS passthrough + SNI routing)
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+Image=haproxy-edge.image
+Network=host
+Volume=/var/app/haproxy-edge/config/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+ReadOnly=true
+LogDriver=journald
+AddCapability=CAP_NET_BIND_SERVICE
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

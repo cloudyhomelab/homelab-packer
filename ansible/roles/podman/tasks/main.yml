@@ -1,0 +1,26 @@
+- name: create config directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - /etc/containers
+    - /etc/containers/containers.conf.d
+    - /etc/containers/systemd
+
+- name: change default subnet configuration
+  ansible.builtin.template:
+    src: 10-network.conf
+    dest: /etc/containers/containers.conf.d/
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: install podman and related packages
+  ansible.builtin.apt:
+    name: "{{ podman_packages }}"
+    state: present
+    autoremove: true
+    install_recommends: false

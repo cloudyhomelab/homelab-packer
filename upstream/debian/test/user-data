@@ -1,0 +1,27 @@
+#cloud-config
+
+users:
+  - name: test
+    uid: 10001
+    groups:
+      - sudo
+    shell: /bin/bash
+    lock_passwd: false
+    plain_text_passwd: test
+    sudo: ALL=(ALL) NOPASSWD:ALL
+
+# logging out of the console ends the test: poweroff makes qemu exit
+write_files:
+  - path: /home/test/.bash_logout
+    owner: test:test
+    permissions: "0644"
+    defer: true
+    content: |
+      sudo systemctl poweroff
+
+ssh_pwauth: true
+disable_root: true
+
+package_update: false
+package_upgrade: false
+package_reboot_if_required: false

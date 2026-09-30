@@ -1,0 +1,43 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure primary dns server
+  hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+
+  pre_tasks:
+    - name: remove DNS stub listener
+      ansible.builtin.lineinfile:
+        dest: /etc/systemd/resolved.conf
+        regexp: '^(#\s*)?DNSStubListener.*'
+        line: "DNSStubListener=no"
+        state: present
+        backup: true
+      # handlers notified in pre_tasks run before the roles
+      notify: restart resolved to release port 53
+
+  handlers:
+    - name: restart resolved to release port 53
+      ansible.builtin.systemd_service:
+        name: systemd-resolved
+        state: restarted
+        daemon_reload: true
+
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: bind9-master
+      systemd_app_data_dirs:
+        - path: cache
+        - path: records
