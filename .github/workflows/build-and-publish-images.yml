@@ -18,7 +18,7 @@ concurrency:
 jobs:
   # outside the publish environment, so the approver sees the plan in the summary before approving
   plan:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 10
     outputs:
       due: ${{ steps.plan.outputs.due }}
