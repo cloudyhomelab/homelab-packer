@@ -33,9 +33,17 @@ jobs:
       - name: plan
         if: ${{ !cancelled() }}
         run: |
+          set -o pipefail
+          status=0
+          # tee, so the output is in the log as well as the summary
+          uv run imagectl plan 2>&1 | tee plan.txt || status=$?
           {
             echo '### Images this merge would rebuild'
             echo '```'
-            uv run imagectl plan 2>&1
+            cat plan.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=imagectl plan::exited with $status, see the output above"
+            exit "$status"
+          fi

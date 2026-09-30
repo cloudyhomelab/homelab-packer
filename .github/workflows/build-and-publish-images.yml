@@ -33,8 +33,10 @@ jobs:
       - name: plan
         id: plan
         run: |
+          set -o pipefail
           status=0
-          uv run imagectl plan > plan.txt 2>&1 || status=$?
+          # tee, so the output is in the log as well as the summary
+          uv run imagectl plan 2>&1 | tee plan.txt || status=$?
           {
             echo '### Images this run will build and publish'
             echo '```'
@@ -42,7 +44,10 @@ jobs:
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           # summary first, so a failed plan still shows why
-          [ "$status" -eq 0 ] || exit "$status"
+          if [ "$status" -ne 0 ]; then
+            echo "::error title=imagectl plan::exited with $status, see the output above"
+            exit "$status"
+          fi
           # the line imagectl plan prints when the set is empty
           if grep -qx 'nothing is due' plan.txt; then
             echo "due=false" >> "$GITHUB_OUTPUT"
