@@ -20,7 +20,10 @@ images:
       from: debian-cloud
       disk_size: 3G
       children:
-        - kubernetes
+        - kubernetes:
+            children:
+              - kubernetes-control
+              - kubernetes-worker
         - container:
             disk_size: 3G
             children:
