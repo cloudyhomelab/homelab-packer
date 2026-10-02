@@ -3,7 +3,7 @@
   become: true
   roles:
     - role: sops
-      sops_version: "3.11.0"
+      sops_version: "3.13.3"
 
 - name: basic configuration for all debian systems
   hosts: all
@@ -14,22 +14,28 @@
       system_timezone: "Europe/Helsinki"
       system_install_packages:
         - age
-        - bind9-dnsutils
-        - curl
-        - gpg
-        - net-tools
         - nfs-common
         - python3-debian # required by ansible.builtin.deb822_repository module
         - qemu-guest-agent
-        - systemd-container
       system_remove_packages:
+        - apt-listchanges
+        - bash-completion
+        - bind9-host
+        - curl
+        - groff-base
         - man-db
         - manpages
         - nano
+        - pciutils
         - reportbug
         - screen
+        - socat
+        - ssh-import-id
+        - tcpdump
+        - traceroute
         - vim
         - vim-tiny
+        - wget
 
     - role: security
       security_ssh_service_name: "sshd"
