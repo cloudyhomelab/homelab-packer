@@ -149,3 +149,23 @@ def test_remove_build_dir_leaves_kept_builds(tmp_path):
     remove_build_dir(build_dir)
     assert not build_dir.exists()
     assert kept.is_dir()
+
+
+def test_clean_removes_builds_and_test_dir_but_not_caches(tmp_path):
+    root = tmp_path
+    (root / "build" / "debian-base" / "20260927-1200" / "output").mkdir(parents=True)
+    (root / "build" / "test" / "debian-base").mkdir(parents=True)
+    (root / "build" / "debian-edge" / "20260927-1200").mkdir(parents=True)
+    (root / "build" / ".cache" / "packer").mkdir(parents=True)
+    removed = build.clean(root, "debian-base")
+    assert removed == [root / "build" / "debian-base", root / "build" / "test" / "debian-base"]
+    assert not (root / "build" / "test").exists()
+    assert (root / "build" / "debian-edge" / "20260927-1200").is_dir()
+    assert (root / "build" / ".cache" / "packer").is_dir()
+
+
+def test_clean_of_an_image_being_built_fails_on_the_lock(tmp_path):
+    (tmp_path / "build" / "debian-base" / "20260927-1200").mkdir(parents=True)
+    with image_lock(tmp_path, "debian-base"), pytest.raises(BuildError, match="being built"):
+        build.clean(tmp_path, "debian-base")
+    assert (tmp_path / "build" / "debian-base" / "20260927-1200").is_dir()

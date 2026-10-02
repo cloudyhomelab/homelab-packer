@@ -304,6 +304,24 @@ def cmd_build(
     return 0
 
 
+@command("clean")
+def cmd_clean(
+    images: Annotated[
+        list[str] | None,
+        typer.Argument(
+            metavar="[IMAGE]...", help="Images to clean. Default: all.", show_default=False
+        ),
+    ] = None,
+) -> int:
+    """Remove kept and failed local builds and `test` downloads. Keeps the caches."""
+    catalog = project()
+    root = catalog.root
+    for image in select_images(catalog, images or []):
+        for path in build.clean(root, image.name):
+            print(f"removed {path.relative_to(root)}")
+    return 0
+
+
 @command("publish")
 def cmd_publish(
     jobs: Annotated[int, typer.Option("-j", "--jobs", min=1, help="Parallel builds.")] = 2,
