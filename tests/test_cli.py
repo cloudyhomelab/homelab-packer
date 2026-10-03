@@ -69,3 +69,21 @@ def test_help_works_outside_project_root(tmp_path, monkeypatch):
     result = imagectl("build", "-h")
     assert result.exit_code == 0
     assert "The image to build." in result.stdout
+
+
+def test_clean_defaults_to_every_image(in_root):
+    (in_root / "build" / "debian-base" / "20260927-1200").mkdir(parents=True)
+    (in_root / "build" / "test" / "fedora-edge").mkdir(parents=True)
+    result = imagectl("clean")
+    assert result.exit_code == 0
+    assert result.stdout.splitlines() == [
+        "removed build/debian-base",
+        "removed build/test/fedora-edge",
+    ]
+    assert not (in_root / "build" / "debian-base").exists()
+
+
+def test_clean_rejects_unknown_images(in_root):
+    result = imagectl("clean", "debian-nope")
+    assert result.exit_code == 1
+    assert "unknown image 'debian-nope'" in result.stderr

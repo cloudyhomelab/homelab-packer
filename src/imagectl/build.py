@@ -229,6 +229,19 @@ def remove_build_dir(build_dir: Path) -> None:
         build_dir.parent.rmdir()
 
 
+def clean(root: Path, name: str) -> list[Path]:
+    """Remove an image's kept and failed builds and its test dir; the caches stay."""
+    removed = []
+    with image_lock(root, name):
+        for path in (build_root(root) / name, build_root(root) / "test" / name):
+            if path.exists():
+                shutil.rmtree(path)
+                removed.append(path)
+    with suppress(OSError):
+        (build_root(root) / "test").rmdir()
+    return removed
+
+
 @dataclass(frozen=True)
 class Outcome:
     status: str  # "ok", "failed" or "skipped"

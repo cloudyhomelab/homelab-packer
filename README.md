@@ -32,6 +32,7 @@ uv run imagectl build [--keep] IMAGE          # local build, never published; --
 uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
+uv run imagectl clean [IMAGE...]              # remove kept and failed builds and test downloads
 uv run imagectl upstream [UPSTREAM...]        # newer upstream releases, writes nothing
 uv run imagectl upstream --update [UPSTREAM...]  # move the pins in upstream.yml (CI)
 uv run pytest
