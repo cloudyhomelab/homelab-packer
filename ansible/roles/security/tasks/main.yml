@@ -25,3 +25,32 @@
     name: systemd-binfmt.service
     enabled: false
     masked: true
+
+# NFS mounts are vers=4.1, which needs no rpcbind; it is a hard Depends of nfs-common, so mask it
+- name: mask rpcbind
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    masked: true
+  loop:
+    - rpcbind.service
+    - rpcbind.socket
+
+- name: create resolved drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/resolved.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+# LLMNR listens on 5355 on every interface; names resolve through DNS
+- name: disable LLMNR in resolved
+  ansible.builtin.copy:
+    dest: /etc/systemd/resolved.conf.d/00_no_llmnr.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      [Resolve]
+      LLMNR=no
