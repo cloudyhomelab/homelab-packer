@@ -26,8 +26,9 @@
     enabled: false
     masked: true
 
-# NFS mounts are vers=4.1, which needs no rpcbind; it is a hard Depends of nfs-common, so mask it
-- name: mask rpcbind
+# NFS mounts are vers=4.1: no rpcbind, no pNFS block layouts (blkmapd).
+# Both come with nfs-common (rpcbind is a hard Depends), so mask instead of purge
+- name: mask unused nfs-common services
   ansible.builtin.systemd_service:
     name: "{{ item }}"
     enabled: false
@@ -35,6 +36,7 @@
   loop:
     - rpcbind.service
     - rpcbind.socket
+    - nfs-blkmap.service
 
 - name: create resolved drop-in directory
   ansible.builtin.file:
