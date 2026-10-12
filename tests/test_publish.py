@@ -193,6 +193,57 @@ def test_prune_reads_every_latest_json_for_protection(catalog, client):
     assert publish.prune(catalog, FakeStore(), image) == []
 
 
+class IndexStore:
+    """Store double: list_keys and get_json from a dict of metadata by key."""
+
+    def __init__(self, keys, metadata):
+        self.keys = keys
+        self.metadata = metadata
+        self.written = {}
+
+    def list_keys(self, prefix):
+        return [k for k in self.keys if k.startswith(prefix)]
+
+    def get_json(self, key):
+        return self.metadata[key]
+
+    def put_bytes(self, key, body, content_type):
+        self.written[key] = (json.loads(body), content_type)
+
+
+def test_index_lists_every_complete_build_newest_first(catalog):
+    image = catalog.get("debian-container")
+    prefix = "debian/debian-container"
+    versions = ["20260901-0000", "20260910-0000", "20260927-0000"]
+    keys = build_keys(prefix, versions) + [f"{prefix}/index.json"]
+    metadata = {f"{prefix}/{v}/metadata.json": {"BUILD_VERSION": v} for v in versions}
+    store = IndexStore(keys, metadata)
+
+    index = publish.write_index(catalog, store, image)
+
+    assert index == {
+        "IMAGE": "debian-container",
+        "BUILDS": [{"BUILD_VERSION": v} for v in reversed(versions)],
+    }
+    assert store.written == {f"{prefix}/index.json": (index, "application/json")}
+
+
+def test_index_skips_a_build_without_metadata(catalog):
+    image = catalog.get("debian-container")
+    prefix = "debian/debian-container"
+    keys = build_keys(prefix, ["20260910-0000"]) + [
+        f"{prefix}/20260927-0000/debian-container-20260927-0000.qcow2"
+    ]
+    assert publish.index_entries(catalog, image, keys) == [f"{prefix}/20260910-0000/metadata.json"]
+
+
+def test_empty_index_is_never_written(catalog):
+    store = IndexStore(["debian/debian-container/latest.json"], {})
+    with pytest.raises(publish.PublishError, match="no published builds"):
+        publish.write_index(catalog, store, catalog.get("debian-container"))
+    assert store.written == {}
+
+
 def test_credentials_are_required(catalog, monkeypatch):
     monkeypatch.delenv("S3_ACCESS_KEY_ID", raising=False)
     monkeypatch.setenv("S3_SECRET_ACCESS_KEY", "s")

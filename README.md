@@ -30,6 +30,7 @@ uv run imagectl validate [IMAGE...]           # templates, scripts, driver, play
 uv run imagectl plan                          # images that are due, and why
 uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
 uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
+uv run imagectl index [IMAGE...]              # rebuild index.json from S3, needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
 uv run imagectl clean [IMAGE...]              # remove kept and failed builds and test downloads
@@ -115,6 +116,9 @@ The publish credentials are the `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` se
 
 Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512` and
 `metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy of the newest `metadata.json`.
+`<bucket>/<os>/<image>/index.json` lists every build in S3 for that image, newest first, as
+`{"IMAGE": ..., "BUILDS": [<metadata.json>, ...]}`; consumers that mirror the published builds,
+such as Terraform, read it. `publish` rewrites it after pruning, and it is never written empty.
 Inside the image, `/etc/os-image-metadata` holds the same facts.
 
 ## License
