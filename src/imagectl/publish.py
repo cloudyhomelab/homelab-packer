@@ -1,4 +1,4 @@
-"""Publish a finished build to S3: checksum, metadata, upload, latest.json, pruning."""
+"""Publish a finished build to S3: checksum, metadata, upload, latest.json, pruning, index."""
 
 from __future__ import annotations
 
@@ -53,15 +53,17 @@ class Store:
         self.client = client
         self.bucket = catalog.s3.bucket
 
+    def get_json(self, key: str) -> dict:
+        body = self.client.get_object(Bucket=self.bucket, Key=key)["Body"].read()
+        return json.loads(body)
+
     def latest(self, image: Image) -> dict | None:
-        key = f"{self.catalog.image_prefix(image)}/latest.json"
         try:
-            body = self.client.get_object(Bucket=self.bucket, Key=key)["Body"].read()
+            return self.get_json(f"{self.catalog.image_prefix(image)}/latest.json")
         except ClientError as e:
             if e.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
                 return None
             raise
-        return json.loads(body)
 
     def put_file(self, key: str, path: Path, content_type: str) -> None:
         self.client.upload_file(
@@ -168,6 +170,19 @@ def publish(
     return meta
 
 
+def builds_by_version(catalog: Catalog, image: Image, keys: Iterable[str]) -> dict[str, list[str]]:
+    """An image's keys grouped by build folder."""
+    prefix = catalog.image_prefix(image) + "/"
+    by_version: dict[str, list[str]] = {}
+    for key in keys:
+        rest = key[len(prefix) :] if key.startswith(prefix) else None
+        if not rest or "/" not in rest:
+            continue  # latest.json, index.json and anything not in a build folder
+        version = rest.split("/", 1)[0]
+        by_version.setdefault(version, []).append(key)
+    return by_version
+
+
 def builds_to_prune(
     catalog: Catalog,
     image: Image,
@@ -175,15 +190,7 @@ def builds_to_prune(
     protected_urls: set[str],
 ) -> list[str]:
     """Keys of every build beyond the newest retain_images, except protected parents."""
-    prefix = catalog.image_prefix(image) + "/"
-    by_version: dict[str, list[str]] = {}
-    for key in keys:
-        rest = key[len(prefix) :] if key.startswith(prefix) else None
-        if not rest or "/" not in rest:
-            continue  # latest.json and anything not in a build folder
-        version = rest.split("/", 1)[0]
-        by_version.setdefault(version, []).append(key)
-
+    by_version = builds_by_version(catalog, image, keys)
     doomed = []
     for version in sorted(by_version, reverse=True)[image.retain_images :]:
         build_keys = by_version[version]
@@ -205,3 +212,30 @@ def prune(catalog: Catalog, store: Store, image: Image) -> list[str]:
     if doomed:
         store.delete(doomed)
     return doomed
+
+
+def index_entries(catalog: Catalog, image: Image, keys: Iterable[str]) -> list[str]:
+    """metadata.json keys of complete builds, newest first.
+
+    A folder without metadata.json is an upload that failed part way; metadata.json is
+    written after the image, so its presence means the image is there too.
+    """
+    by_version = builds_by_version(catalog, image, keys)
+    entries = []
+    for version in sorted(by_version, reverse=True):
+        meta_key = f"{catalog.image_prefix(image)}/{version}/metadata.json"
+        if meta_key in by_version[version]:
+            entries.append(meta_key)
+    return entries
+
+
+def write_index(catalog: Catalog, store: Store, image: Image) -> dict:
+    """Rebuild <prefix>/index.json from the builds in S3. Never writes an empty index."""
+    keys = store.list_keys(catalog.image_prefix(image) + "/")
+    builds = [store.get_json(key) for key in index_entries(catalog, image, keys)]
+    if not builds:
+        raise PublishError(f"{image.name}: no published builds, index not written")
+    index = {"IMAGE": image.name, "BUILDS": builds}
+    index_json = (json.dumps(index, indent=2) + "\n").encode()
+    store.put_bytes(f"{catalog.image_prefix(image)}/index.json", index_json, "application/json")
+    return index

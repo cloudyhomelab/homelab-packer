@@ -358,6 +358,8 @@ def cmd_publish(
         print(f"{result.image.name}: published {meta['IMAGE_URL']}", flush=True)
         for key in publish.prune(catalog, store, result.image):
             print(f"{result.image.name}: pruned {key}", flush=True)
+        index = publish.write_index(catalog, store, result.image)
+        print(f"{result.image.name}: indexed {len(index['BUILDS'])} builds", flush=True)
 
     def build_one(image: Image) -> None:
         print(f"{image.name}: building", flush=True)
@@ -372,6 +374,34 @@ def cmd_publish(
     print(table(rows))
     failed = any(o.status != "ok" for o in outcomes.values())
     return 1 if failed or hashes.errors else 0
+
+
+@command("index")
+def cmd_index(
+    images: Annotated[
+        list[str] | None,
+        typer.Argument(
+            metavar="[IMAGE]...", help="Images to index. Default: all.", show_default=False
+        ),
+    ] = None,
+) -> int:
+    """Rebuild each image's index.json from its builds in S3.
+
+    `publish` does this after every build; this is for images without one, and for
+    repairs. Needs S3_ACCESS_KEY_ID and S3_SECRET_ACCESS_KEY.
+    """
+    catalog = project()
+    store = publish.Store(catalog, publish.s3_client(catalog))
+    failed = False
+    for image in select_images(catalog, images or []):
+        try:
+            index = publish.write_index(catalog, store, image)
+        except publish.PublishError as e:
+            failed = True
+            print(f"error: {e}", file=sys.stderr)
+            continue
+        print(f"{image.name}: indexed {len(index['BUILDS'])} builds")
+    return 1 if failed else 0
 
 
 @command("upstream")
