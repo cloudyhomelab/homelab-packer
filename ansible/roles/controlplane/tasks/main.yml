@@ -1,0 +1,39 @@
+---
+- name: create the controlplane group
+  ansible.builtin.group:
+    name: controlplane
+    system: true
+
+# the unit's StateDirectory= creates the home with the right owner at start
+- name: create the controlplane user
+  ansible.builtin.user:
+    name: controlplane
+    group: controlplane
+    system: true
+    shell: /usr/sbin/nologin
+    home: /var/lib/controlplane
+    create_home: false
+
+- name: create the kvm group
+  ansible.builtin.group:
+    name: kvm
+    system: true
+
+# without it imagectl falls back to accelerator=none: no error, just a build many times slower
+- name: give the controlplane user access to kvm
+  ansible.builtin.user:
+    name: controlplane
+    groups: kvm
+    append: true
+
+- name: install the controlplane binaries from the github release
+  ansible.builtin.get_url:
+    url: "https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/linux-{{ normalized_arch }}-{{ item }}"
+    checksum: "sha256:https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/SHA256SUMS"
+    dest: "/usr/local/bin/{{ item }}"
+    owner: root
+    group: root
+    mode: "0755"
+  loop:
+    - controlplane
+    - cpctl

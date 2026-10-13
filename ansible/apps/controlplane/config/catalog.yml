@@ -1,0 +1,52 @@
+server:
+  oidc_audience: controlplane_cloudyhome
+  allowed_org: cloudyhomelab
+
+repos:
+  homelab_packer:
+    url: https://github.com/cloudyhomelab/homelab-packer.git
+
+env_profiles:
+  homelab_packer_publish:
+    secrets: [S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY]
+    set:
+      # outside the checkout, so builds reuse downloads
+      PACKER_CACHE_DIR: /var/lib/controlplane/cache/packer
+
+actions:
+  images.plan:
+    description: imagectl plan of cloudyhomelab/homelab-packer
+    repo: homelab_packer
+    allowed_refs: ["refs/heads/main", "refs/pull/*/merge"]
+    require_ref_match: true
+    timeout: 10m
+    steps:
+      - [/usr/local/bin/uv, run, imagectl, plan]
+    allow:
+      - repository: cloudyhomelab/homelab-packer
+
+  images.validate:
+    description: imagectl validate of a cloudyhomelab/homelab-packer pull request
+    repo: homelab_packer
+    allowed_refs: ["refs/pull/*/merge"]
+    require_ref_match: true
+    timeout: 30m
+    steps:
+      - [/usr/local/bin/uv, run, imagectl, validate]
+    allow:
+      - repository: cloudyhomelab/homelab-packer
+
+  images.publish:
+    description: build and publish every due image of cloudyhomelab/homelab-packer
+    repo: homelab_packer
+    env_profile: homelab_packer_publish
+    allowed_refs: ["refs/heads/main"]
+    require_ref_match: true
+    lock: homelab-packer-publish
+    timeout: 6h
+    steps:
+      - [/usr/local/bin/uv, run, imagectl, publish, -v]
+    allow:
+      - repository: cloudyhomelab/homelab-packer
+        ref: refs/heads/main
+        environment: publish

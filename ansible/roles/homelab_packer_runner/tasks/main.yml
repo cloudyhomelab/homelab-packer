@@ -1,0 +1,36 @@
+---
+- name: add HashiCorp APT repository
+  ansible.builtin.deb822_repository:
+    name: hashicorp
+    types: deb
+    uris: https://apt.releases.hashicorp.com
+    suites: "{{ ansible_facts['lsb'].codename }}"
+    components: main
+    architectures: "{{ normalized_arch }}"
+    signed_by: https://apt.releases.hashicorp.com/gpg
+    state: present
+
+- name: update apt repository cache
+  ansible.builtin.apt:
+    update_cache: true
+
+- name: install packages
+  ansible.builtin.apt:
+    name:
+      - "packer={{ homelab_packer_runner_packer_version }}"
+      - git
+      - openssh-client
+      - pipx
+      - qemu-system-x86
+      - qemu-utils
+      - shellcheck
+      - xorriso
+    state: present
+    install_recommends: false
+
+# global, so it lands in /usr/local/bin where catalog steps name it, not in root's ~/.local/bin
+- name: install uv
+  community.general.pipx:
+    name: "uv=={{ homelab_packer_runner_uv_version }}"
+    global: true
+    state: present
