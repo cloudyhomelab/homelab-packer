@@ -9,11 +9,16 @@ on:
 
 permissions:
   contents: read
+  id-token: write
 
 concurrency:
   # never overlap; a queued run recomputes what is due, so replacing it loses nothing
   group: build-and-publish-images
   cancel-in-progress: false
+
+env:
+  CP_SERVER: http://controlplane.ip.cloudyhome.net:8080
+  CP_AUDIENCE: controlplane_cloudyhome
 
 jobs:
   # outside the publish environment, so the approver sees the plan in the summary before approving
@@ -21,35 +26,41 @@ jobs:
     runs-on: self-hosted
     timeout-minutes: 10
     outputs:
-      due: ${{ steps.plan.outputs.due }}
+      due: ${{ steps.summary.outputs.due }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-
       - name: plan
         id: plan
+        uses: cloudyhomelab/control-plane/action@f86374535ceb5613a907b7c1487eb366df711cdc # v0.2.0
+        with:
+          server: ${{ env.CP_SERVER }}
+          audience: ${{ env.CP_AUDIENCE }}
+          action: images.plan
+          ref: ${{ github.ref }}
+
+      - name: summary
+        id: summary
+        if: ${{ !cancelled() && steps.plan.outputs.job_id != '' }}
+        env:
+          CONTROLPLANE_URL: ${{ env.CP_SERVER }}
+          CONTROLPLANE_AUDIENCE: ${{ env.CP_AUDIENCE }}
+          JOB_ID: ${{ steps.plan.outputs.job_id }}
+          STATUS: ${{ steps.plan.outputs.status }}
         run: |
-          set -o pipefail
-          status=0
-          # tee, so the output is in the log as well as the summary
-          uv run imagectl plan 2>&1 | tee plan.txt || status=$?
+          plan="${RUNNER_TEMP}/plan.txt"
+          "${RUNNER_TEMP}/cpctl" logs "${JOB_ID}" > "${plan}"
           {
             echo '### Images this run will build and publish'
             echo '```'
-            cat plan.txt
+            cat "${plan}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           # summary first, so a failed plan still shows why
-          if [ "$status" -ne 0 ]; then
-            echo "::error title=imagectl plan::exited with $status, see the output above"
-            exit "$status"
+          if [ "${STATUS}" != "succeeded" ]; then
+            exit 1
           fi
           # the line imagectl plan prints when the set is empty
-          if grep -qx 'nothing is due' plan.txt; then
+          if grep -qx 'nothing is due' "${plan}"; then
             echo "due=false" >> "$GITHUB_OUTPUT"
           else
             echo "due=true" >> "$GITHUB_OUTPUT"
@@ -64,18 +75,10 @@ jobs:
     environment: publish
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
-
-      # checkout cleans ignored files, so the download cache lives outside the workspace
-      - name: packer cache
-        run: echo "PACKER_CACHE_DIR=${HOME}/.cache/imagectl/packer" >> "$GITHUB_ENV"
-
       - name: build and publish
-        env:
-          S3_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
-          S3_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
-        run: uv run imagectl publish -v
+        uses: cloudyhomelab/control-plane/action@f86374535ceb5613a907b7c1487eb366df711cdc # v0.2.0
+        with:
+          server: ${{ env.CP_SERVER }}
+          audience: ${{ env.CP_AUDIENCE }}
+          action: images.publish
+          ref: ${{ github.ref }}
