@@ -33,3 +33,4 @@ images:
               - dns-primary
               - dns-secondary
               - runner
+              - controlplane

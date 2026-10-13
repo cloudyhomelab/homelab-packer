@@ -1,0 +1,29 @@
+# Runs on the host, not in a container: jobs here need host access (/dev/kvm).
+[Unit]
+Description=Infra control plane
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=controlplane
+Group=controlplane
+# S3 credentials for env_profiles, decrypted on the VM from private/s3.sops.env
+EnvironmentFile=/run/app/controlplane/private/s3.env
+ExecStartPre=/usr/local/bin/controlplane -config /var/app/controlplane/config/catalog.yml -check
+ExecStart=/usr/local/bin/controlplane -config /var/app/controlplane/config/catalog.yml -data-dir /var/lib/controlplane -listen 0.0.0.0:8080
+StateDirectory=controlplane
+StateDirectoryMode=0750
+# SIGTERM makes the server SIGINT running tools; give them time to clean up.
+KillMode=mixed
+TimeoutStopSec=90
+Restart=on-failure
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/controlplane
+
+[Install]
+WantedBy=multi-user.target

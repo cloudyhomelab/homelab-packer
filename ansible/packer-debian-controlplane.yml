@@ -1,0 +1,32 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure control plane
+  hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+  roles:
+    - role: controlplane
+
+    - role: homelab_packer_runner
+
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: controlplane
+
+  post_tasks:
+    # enabled, not started: it needs the age key, which the vm gets at boot
+    - name: enable the control plane at boot
+      ansible.builtin.systemd:
+        name: controlplane.service
+        enabled: true
