@@ -99,7 +99,9 @@ repo provisions it, and without it the app does not start.
 
 ## Publishing
 
-CI is the only publisher:
+CI is the only publisher. `plan`, `publish` and `validate` do not run `imagectl` on the runner:
+they call the control plane on the `controlplane` image, which runs the matching catalog action
+(`ansible/apps/controlplane/config/catalog.yml`) on its own host.
 
 - `build-and-publish-images` runs on every push to `main` and hourly. Its `plan` job writes
   `imagectl plan` to the run summary; when something is due, its `publish` job waits for approval
@@ -111,8 +113,7 @@ CI is the only publisher:
   `CLOUDYHOME_BOT_CLIENT_ID` and `CLOUDYHOME_BOT_PRIVATE_KEY`), so `validate` runs on it.
 - `validate` runs on pull requests and shows `imagectl plan` in the job summary.
 
-The publish credentials are the `S3_ACCESS_KEY_ID` and `S3_SECRET_ACCESS_KEY` secrets of the
-`publish` environment. The bucket and its anonymous read policy are set up outside the driver.
+The bucket and its anonymous read policy are set up outside the driver.
 
 Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512` and
 `metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy of the newest `metadata.json`.
