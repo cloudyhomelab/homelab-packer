@@ -29,6 +29,5 @@ rm -f /etc/ssh/packer_user_ca.pub
 journalctl --rotate && journalctl --vacuum-time=1s
 rm -rf /var/log/* /var/tmp/* /tmp/*
 
-dd if=/dev/zero of=/var/tmp/bigfile bs=1M || true
-rm /var/tmp/bigfile
+fstrim -av
 sync

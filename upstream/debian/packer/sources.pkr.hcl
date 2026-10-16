@@ -12,6 +12,10 @@ source "qemu" "image" {
   accelerator = var.accelerator
   headless    = true
 
+  # fstrim releases free space without first growing the qcow2 to disk_size like a zero fill
+  disk_discard       = "unmap"
+  disk_detect_zeroes = "unmap"
+
   cd_files = [
     "${local.os_dir}/cloud-init/meta-data",
     "${local.os_dir}/cloud-init/network-config",
