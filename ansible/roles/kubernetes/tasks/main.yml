@@ -38,8 +38,9 @@
     signed_by: "https://packages.buildkite.com/helm-linux/helm-debian/gpgkey"
     state: present
 
+# Each third-party repo may only supply these packages; apt never installs anything else from it
 - name: limit third-party repositories to their allowlisted packages
-  ansible.builtin.template:
+  ansible.builtin.copy:
     src: kubernetes-allowlist
     dest: /etc/apt/preferences.d/kubernetes-allowlist
     owner: root
