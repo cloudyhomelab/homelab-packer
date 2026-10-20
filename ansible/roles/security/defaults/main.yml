@@ -1,0 +1,8 @@
+---
+# lp stays: systemd-sysusers recreates its group at boot and udev rules assign it
+security_remove_users:
+  - games
+  - irc
+  - list
+  - news
+  - uucp

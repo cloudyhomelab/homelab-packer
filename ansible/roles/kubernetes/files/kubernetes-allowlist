@@ -1,0 +1,23 @@
+Package: containerd.io
+Pin: origin download.docker.com
+Pin-Priority: 500
+
+Package: *
+Pin: origin download.docker.com
+Pin-Priority: -1
+
+Package: cri-tools kubeadm kubectl kubelet kubernetes-cni
+Pin: origin pkgs.k8s.io
+Pin-Priority: 500
+
+Package: *
+Pin: origin pkgs.k8s.io
+Pin-Priority: -1
+
+Package: helm
+Pin: origin packages.buildkite.com
+Pin-Priority: 500
+
+Package: *
+Pin: origin packages.buildkite.com
+Pin-Priority: -1

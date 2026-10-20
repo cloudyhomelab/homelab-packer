@@ -10,6 +10,15 @@
     signed_by: https://apt.releases.hashicorp.com/gpg
     state: present
 
+# The HashiCorp repo may only supply these packages; apt never installs anything else from it
+- name: limit the HashiCorp repository to its allowlisted packages
+  ansible.builtin.copy:
+    src: hashicorp-allowlist
+    dest: /etc/apt/preferences.d/hashicorp-allowlist
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: update apt repository cache
   ansible.builtin.apt:
     update_cache: true

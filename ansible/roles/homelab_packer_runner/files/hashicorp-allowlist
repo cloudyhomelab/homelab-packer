@@ -1,0 +1,7 @@
+Package: packer
+Pin: origin apt.releases.hashicorp.com
+Pin-Priority: 500
+
+Package: *
+Pin: origin apt.releases.hashicorp.com
+Pin-Priority: -1
