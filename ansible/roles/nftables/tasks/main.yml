@@ -15,21 +15,6 @@
     mode: '0644'
   loop: "{{ lookup('ansible.builtin.fileglob', 'nftables.d/*.nft', wantlist=True) }}"
 
-# image_playbook comes from the Packer template; without it the image's drop-ins would be skipped silently
-- name: check that the playbook name is set
-  ansible.builtin.assert:
-    that: image_playbook is defined
-    fail_msg: image_playbook is not set; Packer passes it as an extra variable
-
-- name: copy the image's nftables drop-ins
-  ansible.builtin.copy:
-    src: "{{ item }}"
-    dest: /etc/nftables.d/
-    owner: root
-    group: root
-    mode: '0644'
-  loop: "{{ lookup('ansible.builtin.fileglob', playbook_dir ~ '/nftables/' ~ image_playbook ~ '/*.nft', wantlist=True) }}"
-
 - name: copy nftables config
   ansible.builtin.copy:
     src: nftables.conf
@@ -37,11 +22,7 @@
     owner: root
     group: root
     mode: '0644'
-
-# a separate check, not copy's validate: a child image changes only drop-ins, never nftables.conf
-- name: check the full nftables ruleset
-  ansible.builtin.command: nft -c -f /etc/nftables.conf
-  changed_when: false
+    validate: nft -c -f %s
 
 # enable only: starting it would apply the ruleset to the build's SSH session
 - name: enable nftables service

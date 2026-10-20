@@ -1,0 +1,18 @@
+# image_playbook comes from the Packer template; without it the image's drop-ins would be skipped silently
+- name: check that the playbook name is set
+  ansible.builtin.assert:
+    that: image_playbook is defined
+    fail_msg: image_playbook is not set; Packer passes it as an extra variable
+
+- name: copy the image's nftables drop-ins
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/nftables.d/
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ lookup('ansible.builtin.fileglob', playbook_dir ~ '/nftables/' ~ image_playbook ~ '/*.nft', wantlist=True) }}"
+
+- name: check the full nftables ruleset
+  ansible.builtin.command: nft -c -f /etc/nftables.conf
+  changed_when: false

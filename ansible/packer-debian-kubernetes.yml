@@ -17,4 +17,4 @@
   roles:
     - role: kubernetes
 
-    - role: nftables
+    - role: nftables_dropins

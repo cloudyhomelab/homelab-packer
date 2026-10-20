@@ -55,7 +55,7 @@ Add its name under its parent's `children:` in `images.yml` and write
 
 The base image runs the `nftables` role; its ruleset and the sets and chains drop-ins extend are in
 `ansible/roles/nftables/files/`. An image's own drop-ins go in `ansible/nftables/<playbook>/`, and
-its playbook runs the role again (`- role: nftables`) to install them; Packer passes the playbook
+its playbook installs them with the `nftables_dropins` role; Packer passes the playbook
 name as `image_playbook`.
 
 They are part of that image's `CHECK_HASH` (`ansible/nftables/{playbook}/**` in `.check_hash`).

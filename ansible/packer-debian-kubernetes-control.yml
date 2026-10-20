@@ -17,4 +17,4 @@
   roles:
     - role: kubernetes_control_plane
 
-    - role: nftables
+    - role: nftables_dropins
