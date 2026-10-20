@@ -1,8 +1,11 @@
+/.idea/
+
 /build/
 /docs/
 /.venv/
 __pycache__/
 /.pytest_cache/
 /.ruff_cache/
+/ansible/.ansible/
 
 test-s3.env
