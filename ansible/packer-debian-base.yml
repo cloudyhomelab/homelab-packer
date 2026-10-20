@@ -15,6 +15,7 @@
       system_install_packages:
         - age
         - nfs-common
+        - nftables
         - python3-debian # required by ansible.builtin.deb822_repository module
         - qemu-guest-agent
       system_remove_packages:
@@ -23,6 +24,7 @@
         - bind9-host
         - curl
         - groff-base
+        - iptables
         - man-db
         - manpages
         - nano
@@ -36,6 +38,7 @@
         - vim
         - vim-tiny
         - wget
+        - whiptail
 
     - role: security
       security_ssh_service_name: "sshd"
