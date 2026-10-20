@@ -13,7 +13,7 @@ from typing import Annotated
 
 import typer
 
-from . import build, check_hash, packer, preflight, publish, testvm, upstream
+from . import build, check_hash, packer, preflight, publish, required_roles, testvm, upstream
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
 
@@ -155,7 +155,7 @@ def cmd_validate(
         ),
     ] = None,
 ) -> int:
-    """Validate the Packer templates, scripts, .check_hash rules and Ansible playbooks.
+    """Validate the Packer templates, scripts, .check_hash rules, required roles and playbooks.
 
     Reads no latest.json, so a child validates without a published parent.
     """
@@ -178,6 +178,7 @@ def cmd_validate(
     for rule in hashes.unmatched:
         print(f".check_hash:{rule.line_no}: {rule.template!r} matches no file for any image")
         global_ok = False
+    missing_roles = required_roles.missing_roles(catalog)
 
     git = packer.git_info(root)
     clock = packer.Clock.now()
@@ -190,6 +191,7 @@ def cmd_validate(
                 continue
             if image.name in hashes.errors:
                 failures[image.name].append(f"CHECK_HASH: {hashes.errors[image.name]}")
+            failures[image.name].extend(missing_roles.get(image.name, []))
             inputs = packer.BuildInputs(
                 image=image,
                 source=validate_source(catalog, image),

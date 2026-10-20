@@ -1,0 +1,19 @@
+add element inet base-filter base-open {
+    tcp . 10250,
+    udp . 8472,
+    tcp . 4240,
+    tcp . 4244,
+}
+
+table inet base-filter {
+    # Cilium routes and polices pod traffic itself; filtering it here would fight its datapath.
+    chain base-forward-dropins {
+        accept
+    }
+
+    # Pods reaching the host, locally or tunnelled from other nodes.
+    chain base-input-dropins {
+        iifname "lxc*" accept
+        iifname "cilium_*" accept
+    }
+}

@@ -12,3 +12,4 @@ upstream/{os}/scripts/**
 ansible/{playbook}.yml
 ansible/roles/{roles}/**
 ansible/apps/{apps}/**
+ansible/nftables/{playbook}/**

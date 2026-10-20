@@ -1,0 +1,4 @@
+add element inet base-filter base-open {
+    tcp . 30000-32767,
+    udp . 30000-32767,
+}

@@ -1,0 +1,79 @@
+table inet base-filter {
+    set base-open {
+        type inet_proto . inet_service
+        flags interval
+    }
+
+    # Wins over base-open, for host and container ports.
+    set base-blocked {
+        type inet_proto . inet_service
+        flags interval
+    }
+
+    chain base-prerouting {
+        type filter hook prerouting priority raw; policy accept;
+
+        meta l4proto . th dport @base-blocked jump base-log-blocked
+        meta l4proto . th dport @base-blocked counter drop
+    }
+
+    chain base-input {
+        type filter hook input priority filter; policy drop;
+
+        ct state vmap {
+            invalid : drop,
+            established : accept,
+            related : accept
+        }
+        iif lo accept
+
+        meta l4proto { icmp, ipv6-icmp } accept
+        meta l4proto . th dport @base-open accept
+
+        jump base-input-dropins
+        jump base-log-input
+
+        # Rate-limited so we cannot be used to flood errors; the rest, plus
+        # broadcast and multicast, falls through to the silent drop.
+        pkttype host limit rate 5/second counter reject with icmpx type admin-prohibited
+        # The policy has no counter of its own.
+        counter
+    }
+
+    # Published ports of rootful podman are DNATed here and never reach input.
+    chain base-forward {
+        # A drop is final across chains, so this also overrides netavark's accepts.
+        type filter hook forward priority filter; policy drop;
+
+        ct state vmap {
+            invalid : drop,
+            established : accept,
+            related : accept
+        }
+        iifname "podman*" accept
+
+        # Match the port as originally addressed, before DNAT rewrote it.
+        oifname "podman*" ct status dnat meta l4proto . ct original proto-dst @base-open accept
+
+        jump base-forward-dropins
+        jump base-log-forward
+
+        counter
+    }
+
+    chain base-input-dropins {
+    }
+
+    # Addresses here are already rewritten by DNAT.
+    chain base-forward-dropins {
+    }
+
+    chain base-log-input {
+    }
+
+    chain base-log-forward {
+    }
+
+    chain base-log-blocked {
+    }
+}

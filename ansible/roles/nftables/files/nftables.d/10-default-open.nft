@@ -1,0 +1,4 @@
+add element inet base-filter base-open {
+    tcp . 22,
+    tcp . 443,
+}

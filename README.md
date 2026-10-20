@@ -9,6 +9,7 @@ change to an image does not need to stay compatible with earlier builds or clean
   published build; top-level images build on an upstream cloud image.
 - `upstream.yml`: the upstream cloud images and their pinned versions.
 - `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
+- `required_roles.yml`: roles a playbook must run when a folder for it exists; `validate` checks it.
 - `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
 - `ansible/`: the playbooks (`packer-<os>-<image>.yml`), roles, and container apps (`apps/`).
 - `src/imagectl/`: the driver.
@@ -50,6 +51,15 @@ Logging out powers the VM off and ends the run.
 
 Add its name under its parent's `children:` in `images.yml` and write
 `ansible/packer-<os>-<name>.yml`. Settings not given come from `defaults`, never from the parent.
+
+## Firewall
+
+The base image runs the `nftables` role; its ruleset and the sets and chains drop-ins extend are in
+`ansible/roles/nftables/files/`. An image's own drop-ins go in `ansible/nftables/<playbook>/`, and
+its playbook installs them with the `nftables_dropins` role; Packer passes the playbook
+name as `image_playbook`.
+
+They are part of that image's `CHECK_HASH` (`ansible/nftables/{playbook}/**` in `.check_hash`).
 
 ## Apps and secrets
 

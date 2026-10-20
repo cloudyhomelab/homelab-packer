@@ -16,3 +16,5 @@
   become: true
   roles:
     - role: kubernetes_control_plane
+
+    - role: nftables_dropins

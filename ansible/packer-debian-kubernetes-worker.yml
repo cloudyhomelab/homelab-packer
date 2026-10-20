@@ -16,3 +16,5 @@
   become: true
   roles:
     - role: kubernetes_worker
+
+    - role: nftables_dropins

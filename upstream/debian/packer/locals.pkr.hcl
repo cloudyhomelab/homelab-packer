@@ -3,7 +3,8 @@ locals {
   os_dir    = abspath("${path.root}/..")
   repo_root = abspath("${path.root}/../../..")
 
-  vm_name = "${var.image_name}-${var.build_version}.qcow2"
+  vm_name       = "${var.image_name}-${var.build_version}.qcow2"
+  playbook_name = trimsuffix(basename(var.playbook_file), ".yml")
 
   user_data = templatefile("${local.os_dir}/cloud-init/user-data.pkrtpl.yml", {
     build_username     = var.username
