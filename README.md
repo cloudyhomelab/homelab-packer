@@ -63,6 +63,8 @@ its playbook runs the role again with them:
     - nftables/packer-debian-myimage/20-myimage.nft
 ```
 
+They are part of that image's `CHECK_HASH` (`ansible/nftables/{playbook}/**` in `.check_hash`).
+
 ## Apps and secrets
 
 A container app lives in `ansible/apps/<app>/` and is installed by the

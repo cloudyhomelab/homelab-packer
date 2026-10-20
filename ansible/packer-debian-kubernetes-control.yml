@@ -16,3 +16,7 @@
   become: true
   roles:
     - role: kubernetes_control_plane
+
+    - role: nftables
+      nftables_dropins:
+        - nftables/packer-debian-kubernetes-control/30-kubernetes-control.nft
