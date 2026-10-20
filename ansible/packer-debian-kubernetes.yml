@@ -18,5 +18,3 @@
     - role: kubernetes
 
     - role: nftables
-      nftables_dropins:
-        - nftables/packer-debian-kubernetes/20-kubernetes.nft

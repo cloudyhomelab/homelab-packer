@@ -18,5 +18,3 @@
     - role: kubernetes_worker
 
     - role: nftables
-      nftables_dropins:
-        - nftables/packer-debian-kubernetes-worker/30-kubernetes-worker.nft
