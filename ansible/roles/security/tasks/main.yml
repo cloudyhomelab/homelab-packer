@@ -56,3 +56,16 @@
     content: |
       [Resolve]
       LLMNR=no
+
+# userdel already drops the same-named primary group; the group task covers a group left without its user
+- name: remove unused base-passwd accounts
+  ansible.builtin.user:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ security_remove_users }}"
+
+- name: remove unused base-passwd groups
+  ansible.builtin.group:
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ security_remove_users }}"
