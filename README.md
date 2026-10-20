@@ -9,6 +9,7 @@ change to an image does not need to stay compatible with earlier builds or clean
   published build; top-level images build on an upstream cloud image.
 - `upstream.yml`: the upstream cloud images and their pinned versions.
 - `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
+- `required_roles.yml`: roles a playbook must run when a folder for it exists; `validate` checks it.
 - `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
 - `ansible/`: the playbooks (`packer-<os>-<image>.yml`), roles, and container apps (`apps/`).
 - `src/imagectl/`: the driver.

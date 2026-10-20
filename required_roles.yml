@@ -1,0 +1,3 @@
+# A playbook must run `role` when `folder` exists for it; {playbook} is the playbook name.
+- folder: ansible/nftables/{playbook}
+  role: nftables_dropins
