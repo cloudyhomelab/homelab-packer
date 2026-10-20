@@ -1,0 +1,12 @@
+{% for repo in kubernetes_apt_allowlist %}
+Package: {{ repo.packages | join(' ') }}
+Pin: origin {{ repo.origin }}
+Pin-Priority: 500
+
+Package: *
+Pin: origin {{ repo.origin }}
+Pin-Priority: -1
+{% if not loop.last %}
+
+{% endif %}
+{% endfor %}

@@ -38,6 +38,14 @@
     signed_by: "https://packages.buildkite.com/helm-linux/helm-debian/gpgkey"
     state: present
 
+- name: limit third-party repositories to their allowlisted packages
+  ansible.builtin.template:
+    src: kubernetes-allowlist
+    dest: /etc/apt/preferences.d/kubernetes-allowlist
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: Update apt repository cache
   ansible.builtin.apt:
     update_cache: true
