@@ -51,6 +51,18 @@ Logging out powers the VM off and ends the run.
 Add its name under its parent's `children:` in `images.yml` and write
 `ansible/packer-<os>-<name>.yml`. Settings not given come from `defaults`, never from the parent.
 
+## Firewall
+
+The base image runs the `nftables` role; its ruleset and the sets and chains drop-ins extend are in
+`ansible/roles/nftables/files/`. An image's own drop-ins go in `ansible/nftables/<playbook>/`, and
+its playbook runs the role again with them:
+
+```yaml
+- role: nftables
+  nftables_dropins:
+    - nftables/packer-debian-myimage/20-myimage.nft
+```
+
 ## Apps and secrets
 
 A container app lives in `ansible/apps/<app>/` and is installed by the

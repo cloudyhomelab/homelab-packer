@@ -1,0 +1,3 @@
+---
+# .nft files relative to the playbook, added after the role's own drop-ins
+nftables_dropins: []

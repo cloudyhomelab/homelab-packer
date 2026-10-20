@@ -1,0 +1,44 @@
+- name: create nftables drop-in directory
+  ansible.builtin.file:
+    path: /etc/nftables.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: copy base nftables drop-ins
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/nftables.d/
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ lookup('ansible.builtin.fileglob', 'nftables.d/*.nft', wantlist=True) }}"
+
+- name: copy playbook nftables drop-ins
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/{{ item }}"
+    dest: /etc/nftables.d/
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ nftables_dropins }}"
+
+- name: copy nftables config
+  ansible.builtin.copy:
+    src: nftables.conf
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+# a separate check, not copy's validate: a child image changes only drop-ins, never nftables.conf
+- name: check the full nftables ruleset
+  ansible.builtin.command: nft -c -f /etc/nftables.conf
+  changed_when: false
+
+# enable only: starting it would apply the ruleset to the build's SSH session
+- name: enable nftables service
+  ansible.builtin.systemd_service:
+    name: nftables.service
+    enabled: true
