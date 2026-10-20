@@ -69,3 +69,12 @@
     name: "{{ item }}"
     state: absent
   loop: "{{ security_remove_users }}"
+
+# applied by systemd-sysctl at boot, not live: ptrace_scope=3, kexec and bpf settings cannot be lowered until reboot
+- name: harden kernel and network sysctls
+  ansible.builtin.copy:
+    src: 60-security.conf
+    dest: /etc/sysctl.d/60-security.conf
+    owner: root
+    group: root
+    mode: '0644'
