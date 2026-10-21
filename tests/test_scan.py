@@ -27,7 +27,13 @@ def test_findings_are_grypes_table(fake_grype, tmp_path):
 
 def test_empty_output_says_nothing_was_found(fake_grype, tmp_path):
     fake_grype()
-    assert scan.scan(tmp_path / "sbom.cdx.json") == "no vulnerabilities found"
+    assert scan.scan(tmp_path / "sbom.cdx.json") == "no fixable vulnerabilities found"
+
+
+def test_only_fixable_findings_are_asked_for(fake_grype, tmp_path):
+    grype = fake_grype()
+    grype.write_text('#!/bin/sh\necho "$@"\n')
+    assert "--only-fixed" in scan.scan(tmp_path / "sbom.cdx.json").split()
 
 
 def test_grype_failure_is_reported_not_raised(fake_grype, tmp_path):

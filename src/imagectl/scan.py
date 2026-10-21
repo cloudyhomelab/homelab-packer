@@ -19,7 +19,8 @@ _lock = threading.Lock()
 def scan(sbom_path: Path) -> str:
     """grype's findings table, or why there is none."""
     env = {**os.environ, "GRYPE_CHECK_FOR_APP_UPDATE": "false"}
-    cmd = [GRYPE, f"sbom:{sbom_path}", "--quiet", "--output", "table"]
+    # a finding without a fix leaves nothing to do: no rebuild or version bump clears it
+    cmd = [GRYPE, f"sbom:{sbom_path}", "--only-fixed", "--quiet", "--output", "table"]
     with _lock:
         try:
             result = subprocess.run(cmd, env=env, capture_output=True, text=True)
@@ -27,7 +28,7 @@ def scan(sbom_path: Path) -> str:
             return f"{GRYPE} not found on PATH, not scanned"
     if result.returncode != 0:
         return f"{GRYPE} failed with exit code {result.returncode}: {result.stderr.strip()}"
-    return result.stdout.strip() or "no vulnerabilities found"
+    return result.stdout.strip() or "no fixable vulnerabilities found"
 
 
 def report(image: str, findings: str) -> str:

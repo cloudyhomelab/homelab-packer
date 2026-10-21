@@ -136,8 +136,9 @@ Inside the image, `/etc/os-image-metadata` holds the same facts.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.
 syft and its output stay on a tmpfs that is removed afterwards, so neither ships in the image.
-`publish` scans each published SBOM with grype and prints the findings; the publish job copies them
-into its summary. Findings never fail a publish.
+`publish` scans each published SBOM with grype and prints the findings that have a fix, the ones a
+rebuild or a version bump clears; the publish job copies them into its summary. Findings never fail
+a publish.
 
 ## License
 
