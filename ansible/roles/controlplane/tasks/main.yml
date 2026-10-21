@@ -29,7 +29,7 @@
 - name: install the controlplane binaries from the github release
   ansible.builtin.get_url:
     url: "https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/linux-{{ normalized_arch }}-{{ item }}"
-    checksum: "sha256:https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/SHA256SUMS"
+    checksum: "sha256:{{ controlplane_sha256[normalized_arch][item] }}"
     dest: "/usr/local/bin/{{ item }}"
     owner: root
     group: root
