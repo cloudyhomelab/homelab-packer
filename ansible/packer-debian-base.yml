@@ -3,7 +3,6 @@
   become: true
   roles:
     - role: sops
-      sops_version: "3.13.3"
 
 - name: basic configuration for all debian systems
   hosts: all
@@ -45,6 +44,5 @@
       security_user_ca_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGOVWBELedVMij+pwZTL5DYDa8UfUx5gf+w8HLLmws0t"
 
     - role: ssh_keysign
-      ssh_keysign_version: "0.0.10"
 
     - role: nftables
