@@ -54,6 +54,15 @@
       [Resolve]
       LLMNR=no
 
+# 99 so this list wins over any other file in cloud.cfg.d
+- name: restrict cloud-init datasources
+  ansible.builtin.copy:
+    src: 99_datasource.cfg
+    dest: /etc/cloud/cloud.cfg.d/99_datasource.cfg
+    owner: root
+    group: root
+    mode: '0644'
+
 # userdel already drops the same-named primary group; the group task covers a group left without its user
 - name: remove unused base-passwd accounts
   ansible.builtin.user:
