@@ -40,6 +40,7 @@ def test_variables(catalog, tmp_path):
         check_hash="sha256:h",
         git=packer.GitInfo("https://g/r", "abc"),
         output_directory=Path("/b/out"),
+        sbom_file=Path("/b/sbom.cdx.json"),
         accelerator="none",
         ssh=ssh,
     )
@@ -65,6 +66,7 @@ def test_template_variables_match_the_driver(catalog, tmp_path):
         "h",
         packer.GitInfo("r", "c"),
         tmp_path,
+        tmp_path / "sbom.cdx.json",
         "none",
         ssh,
     )

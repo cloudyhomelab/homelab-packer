@@ -23,6 +23,7 @@ variable "password" {
 }
 
 variable "output_directory" { type = string }
+variable "sbom_file" { type = string }
 
 variable "ssh_user_ca_public_key_file" { type = string }
 variable "ssh_private_key_file" { type = string }

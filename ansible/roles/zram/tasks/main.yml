@@ -1,0 +1,13 @@
+- name: configure zram swap
+  ansible.builtin.template:
+    src: zram-generator.conf
+    dest: /etc/systemd/zram-generator.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: install zram generator
+  ansible.builtin.apt:
+    name: systemd-zram-generator
+    state: present
+    install_recommends: false

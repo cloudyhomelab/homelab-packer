@@ -48,6 +48,13 @@ def image_path(tmp_path):
     return path
 
 
+@pytest.fixture
+def sbom_path(tmp_path):
+    path = tmp_path / "sbom.cdx.json"
+    path.write_bytes(b"{}")
+    return path
+
+
 def no_check(path):
     pass
 
@@ -79,47 +86,55 @@ def test_metadata_contents(catalog, build):
     }
 
 
-def test_upload_order_puts_latest_json_last(catalog, client, build, image_path):
+def test_upload_order_puts_latest_json_last(catalog, client, build, image_path, sbom_path):
     with Stubber(client) as stub:
         expect_put(stub, f"{BUILD_PREFIX}/{IMAGE_FILE}", "application/octet-stream")
         expect_put(stub, f"{BUILD_PREFIX}/{IMAGE_FILE}.sha512", "text/plain")
+        expect_put(stub, f"{BUILD_PREFIX}/sbom.cdx.json", publish.SBOM_CONTENT_TYPE)
         expect_put(stub, f"{BUILD_PREFIX}/metadata.json")
         stub.add_response(
             "head_object", {}, {"Bucket": "os-image-staging", "Key": f"{BUILD_PREFIX}/{IMAGE_FILE}"}
         )
         expect_put(stub, f"{PREFIX}/latest.json")
-        meta = publish.publish(catalog, Store(catalog, client), build, image_path, no_check)
+        meta = publish.publish(
+            catalog, Store(catalog, client), build, image_path, sbom_path, no_check
+        )
         stub.assert_no_pending_responses()
     assert meta["IMAGE_CHECKSUM"] == "sha512:" + publish.sha512_file(image_path)
 
 
-def test_failure_before_latest_json_leaves_it_untouched(catalog, client, build, image_path):
+def test_failure_before_latest_json_leaves_it_untouched(
+    catalog, client, build, image_path, sbom_path
+):
     with Stubber(client) as stub:
         expect_put(stub, f"{BUILD_PREFIX}/{IMAGE_FILE}", "application/octet-stream")
         stub.add_client_error("put_object", "InternalError", http_status_code=500)
         with pytest.raises(ClientError):
-            publish.publish(catalog, Store(catalog, client), build, image_path, no_check)
+            publish.publish(catalog, Store(catalog, client), build, image_path, sbom_path, no_check)
         # no further calls were made: latest.json was never written
         stub.assert_no_pending_responses()
 
 
-def test_missing_image_object_stops_before_latest_json(catalog, client, build, image_path):
+def test_missing_image_object_stops_before_latest_json(
+    catalog, client, build, image_path, sbom_path
+):
     with Stubber(client) as stub:
         expect_put(stub, f"{BUILD_PREFIX}/{IMAGE_FILE}", "application/octet-stream")
         expect_put(stub, f"{BUILD_PREFIX}/{IMAGE_FILE}.sha512", "text/plain")
+        expect_put(stub, f"{BUILD_PREFIX}/sbom.cdx.json", publish.SBOM_CONTENT_TYPE)
         expect_put(stub, f"{BUILD_PREFIX}/metadata.json")
         stub.add_client_error("head_object", "404", http_status_code=404)
         with pytest.raises(ClientError):
-            publish.publish(catalog, Store(catalog, client), build, image_path, no_check)
+            publish.publish(catalog, Store(catalog, client), build, image_path, sbom_path, no_check)
         stub.assert_no_pending_responses()
 
 
-def test_failed_image_check_uploads_nothing(catalog, client, build, image_path):
+def test_failed_image_check_uploads_nothing(catalog, client, build, image_path, sbom_path):
     def bad_check(path):
         raise RuntimeError("qemu-img check failed")
 
     with Stubber(client) as stub, pytest.raises(RuntimeError):
-        publish.publish(catalog, Store(catalog, client), build, image_path, bad_check)
+        publish.publish(catalog, Store(catalog, client), build, image_path, sbom_path, bad_check)
         stub.assert_no_pending_responses()
 
 

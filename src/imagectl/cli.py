@@ -13,7 +13,7 @@ from typing import Annotated
 
 import typer
 
-from . import build, check_hash, packer, preflight, publish, required_roles, testvm, upstream
+from . import build, check_hash, packer, preflight, publish, required_roles, scan, testvm, upstream
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
 
@@ -199,6 +199,7 @@ def cmd_validate(
                 check_hash=hashes.hashes.get(image.name, "unknown"),
                 git=git,
                 output_directory=(build.build_root(root) / image.name / "validate").resolve(),
+                sbom_file=(build.build_root(root) / image.name / packer.SBOM_FILE).resolve(),
                 accelerator="none",
                 ssh=ssh,
             )
@@ -355,13 +356,15 @@ def cmd_publish(
     env = packer.environment(root, build.packer_cache_dir(root), build.install_collections(root))
     build.packer_init(root, due_images, env)
 
-    def publisher(result: publish.Build, image_path: Path) -> None:
-        meta = publish.publish(catalog, store, result, image_path)
+    def publisher(result: publish.Build, image_path: Path, sbom_path: Path) -> None:
+        meta = publish.publish(catalog, store, result, image_path, sbom_path)
         print(f"{result.image.name}: published {meta['IMAGE_URL']}", flush=True)
         for key in publish.prune(catalog, store, result.image):
             print(f"{result.image.name}: pruned {key}", flush=True)
         index = publish.write_index(catalog, store, result.image)
         print(f"{result.image.name}: indexed {len(index['BUILDS'])} builds", flush=True)
+        findings = scan.scan(sbom_path)
+        print(scan.report(result.image.name, findings), flush=True)
 
     def build_one(image: Image) -> None:
         print(f"{image.name}: building", flush=True)

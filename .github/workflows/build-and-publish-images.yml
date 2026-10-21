@@ -76,9 +76,31 @@ jobs:
 
     steps:
       - name: build and publish
+        id: publish
         uses: cloudyhomelab/control-plane/action@f86374535ceb5613a907b7c1487eb366df711cdc # v0.2.0
         with:
           server: ${{ env.CP_SERVER }}
           audience: ${{ env.CP_AUDIENCE }}
           action: images.publish
           ref: ${{ github.ref }}
+
+      # also after a failed publish: the images published before it were scanned
+      - name: summary
+        if: ${{ !cancelled() && steps.publish.outputs.job_id != '' }}
+        env:
+          CONTROLPLANE_URL: ${{ env.CP_SERVER }}
+          CONTROLPLANE_AUDIENCE: ${{ env.CP_AUDIENCE }}
+          JOB_ID: ${{ steps.publish.outputs.job_id }}
+        run: |
+          log="${RUNNER_TEMP}/publish.txt"
+          "${RUNNER_TEMP}/cpctl" logs "${JOB_ID}" > "${log}"
+          # the markers imagectl's scan module prints around each image's findings
+          {
+            echo '### Vulnerabilities in the published images'
+            awk -v begin='--- vulnerabilities ' -v end='--- end vulnerabilities' '
+              index($0, begin) == 1 { printf "#### %s\n\n```\n", substr($0, length(begin) + 1); on = 1; found = 1; next }
+              $0 == end { print "```\n"; on = 0; next }
+              on
+              END { if (!found) print "no image was scanned" }
+            ' "${log}"
+          } >> "$GITHUB_STEP_SUMMARY"

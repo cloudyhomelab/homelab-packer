@@ -25,7 +25,7 @@ BUILD_DIR = "build"
 CACHE_ENTRY_RE = re.compile(r"^([0-9a-f]{40})\.")
 
 LatestReader = Callable[[Image], "Latest | None"]
-Publisher = Callable[[Build, Path], None]
+Publisher = Callable[[Build, Path, Path], None]
 
 
 class BuildError(Exception):
@@ -204,6 +204,7 @@ def run_build(
                 check_hash=image_hash,
                 git=git,
                 output_directory=(build_dir / "output").resolve(),
+                sbom_file=(build_dir / packer.SBOM_FILE).resolve(),
                 accelerator=packer.detect_accelerator(),
                 ssh=packer.generate_ssh(Path(tmp)),
             )
@@ -214,8 +215,10 @@ def run_build(
         image_path = inputs.output_directory / packer.image_file(image, clock)
         if not image_path.is_file():
             raise BuildError(f"packer finished but {image_path} does not exist")
+        if not inputs.sbom_file.is_file():
+            raise BuildError(f"packer finished but {inputs.sbom_file} does not exist")
         if publisher is not None:
-            publisher(Build(image, source, clock, image_hash, git), image_path)
+            publisher(Build(image, source, clock, image_hash, git), image_path, inputs.sbom_file)
         if not options.keep:
             remove_build_dir(build_dir)
         return build_dir

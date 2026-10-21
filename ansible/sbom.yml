@@ -1,0 +1,6 @@
+# Run by every image's build after its own playbook; not an image playbook.
+- name: software bill of materials
+  hosts: all
+  become: true
+  roles:
+    - role: sbom

@@ -37,6 +37,20 @@
     state: present
     install_recommends: false
 
+- name: download grype package
+  vars:
+    homelab_packer_runner_grype_deb: "grype_{{ homelab_packer_runner_grype_version }}_linux_amd64.deb"
+  ansible.builtin.get_url:
+    url: "https://github.com/anchore/grype/releases/download/v{{ homelab_packer_runner_grype_version }}/{{ homelab_packer_runner_grype_deb }}"
+    checksum: "sha256:{{ homelab_packer_runner_grype_sha256 }}"
+    dest: /tmp/grype.deb
+    mode: "0644"
+
+- name: install grype package
+  ansible.builtin.apt:
+    deb: /tmp/grype.deb
+    state: present
+
 # global, so it lands in /usr/local/bin where catalog steps name it, not in root's ~/.local/bin
 - name: install uv
   community.general.pipx:

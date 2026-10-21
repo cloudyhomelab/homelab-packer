@@ -12,6 +12,7 @@ env_profiles:
     set:
       # outside the checkout, so builds reuse downloads
       PACKER_CACHE_DIR: /var/lib/controlplane/cache/packer
+      GRYPE_DB_CACHE_DIR: /var/lib/controlplane/cache/grype
 
 actions:
   images.plan:

@@ -19,6 +19,7 @@ USERNAME = "packeruser"
 BUILD_VERSION_FORMAT = "%Y%m%d-%H%M"
 BUILD_DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 ANSIBLE_DIR = "ansible"
+SBOM_FILE = "sbom.cdx.json"
 
 
 def template_dir(image: Image) -> str:
@@ -117,6 +118,7 @@ class BuildInputs:
     check_hash: str
     git: GitInfo
     output_directory: Path
+    sbom_file: Path
     accelerator: str
     ssh: SshMaterial
 
@@ -146,6 +148,7 @@ def variables(inputs: BuildInputs) -> dict[str, str]:
         "username": USERNAME,
         "password": secrets.token_urlsafe(24),
         "output_directory": str(inputs.output_directory),
+        "sbom_file": str(inputs.sbom_file),
         "ssh_user_ca_public_key_file": str(inputs.ssh.ca_public_key),
         "ssh_private_key_file": str(inputs.ssh.private_key),
         "ssh_certificate_file": str(inputs.ssh.certificate),
