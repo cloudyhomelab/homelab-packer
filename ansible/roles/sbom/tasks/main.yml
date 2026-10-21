@@ -51,6 +51,8 @@
           - --output=cyclonedx-json={{ sbom_workdir.path }}/sbom.cdx.json
       environment:
         SYFT_CHECK_FOR_APP_UPDATE: "false"
+        SYFT_PARALLELISM: "{{ sbom_syft_parallelism }}"
+        GOMEMLIMIT: "{{ sbom_syft_memory_limit }}"
         # syft would otherwise cache under root's home, which ships in the image
         XDG_CACHE_HOME: "{{ sbom_workdir.path }}/cache"
       changed_when: false
