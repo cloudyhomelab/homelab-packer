@@ -40,6 +40,9 @@
           - --quiet
           - --source-name={{ sbom_image }}
           - --source-version={{ sbom_build_version }}
+          # the kernel file would be matched against upstream ranges, blind to Debian's backported
+          # fixes; the dpkg cataloger already reports the kernel as its Debian package
+          - --select-catalogers=-linux-kernel-cataloger
           - --exclude=./proc/**
           - --exclude=./sys/**
           - --exclude=./dev/**
