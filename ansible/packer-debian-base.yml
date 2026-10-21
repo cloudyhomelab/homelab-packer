@@ -42,6 +42,7 @@
 
     - role: security
       security_ssh_service_name: "sshd"
+      security_user_ca_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGOVWBELedVMij+pwZTL5DYDa8UfUx5gf+w8HLLmws0t"
 
     - role: ssh_keysign
       ssh_keysign_version: "0.0.10"
