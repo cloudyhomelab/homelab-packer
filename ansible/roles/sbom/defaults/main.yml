@@ -3,3 +3,7 @@ sbom_syft_version: "1.55.0"
 sbom_syft_sha256: "bb65249542db5fedeeb4d3f9b018b75e7264dbfbbb10486f044581a92f90490d"
 # holds the syft download, the unpacked binary and the SBOM
 sbom_tmpfs_size: 512M
+# syft's default of 4 workers per CPU drives the guest's peak memory, which QEMU keeps after the scan
+sbom_syft_parallelism: 1
+# a soft heap cap for syft (GOMEMLIMIT); lower ones mostly add GC time
+sbom_syft_memory_limit: 384MiB
