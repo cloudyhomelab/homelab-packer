@@ -48,3 +48,17 @@
     - role: nftables
 
     - role: zram
+
+    - role: binarycodes.homelab.systemd_slices
+      systemd_slices_units:
+        - name: cloudyhome
+          description: Cloudy Home apps
+          settings:
+            # percent of physical RAM; the rest stays with the OS, so sshd outlives a runaway app
+            MemoryHigh: 75%
+            MemoryMax: 85%
+            # under contention system services get twice the CPU and I/O of the apps
+            CPUWeight: 50
+            IOWeight: 50
+            # percent of the kernel's task limit, shared by every process and thread in the slice
+            TasksMax: 50%
