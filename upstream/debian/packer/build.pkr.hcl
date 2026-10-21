@@ -29,6 +29,17 @@ build {
     extra_arguments = ["--extra-vars", "image_playbook=${local.playbook_name}"]
   }
 
+  # after the image playbook, so the SBOM sees every package it installed
+  provisioner "ansible" {
+    playbook_file = "${local.repo_root}/ansible/sbom.yml"
+    user          = var.username
+    extra_arguments = [
+      "--extra-vars", "sbom_dest=${var.sbom_file}",
+      "--extra-vars", "sbom_image=${var.image_name}",
+      "--extra-vars", "sbom_build_version=${var.build_version}",
+    ]
+  }
+
   provisioner "shell" {
     execute_command = "chmod +x {{ .Path }}; {{ .Vars }} sudo -E bash -euo pipefail {{ .Path }}"
     env = {

@@ -125,12 +125,16 @@ they call the control plane on the `controlplane` image, which runs the matching
 
 The bucket and its anonymous read policy are set up outside the driver.
 
-Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512` and
-`metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy of the newest `metadata.json`.
-`<bucket>/<os>/<image>/index.json` lists every build in S3 for that image, newest first, as
+Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512`, the
+CycloneDX SBOM `sbom.cdx.json` and `metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy
+of the newest `metadata.json`. `<bucket>/<os>/<image>/index.json` lists every build in S3 for that
+image, newest first, as
 `{"IMAGE": ..., "BUILDS": [<metadata.json>, ...]}`; consumers that mirror the published builds,
 such as Terraform, read it. `publish` rewrites it after pruning, and it is never written empty.
 Inside the image, `/etc/os-image-metadata` holds the same facts.
+
+The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.
+syft and its output stay on a tmpfs that is removed afterwards, so neither ships in the image.
 
 ## License
 

@@ -16,9 +16,10 @@ from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from .catalog import Catalog, Image, Source
-from .packer import Clock, GitInfo, image_file
+from .packer import SBOM_FILE, Clock, GitInfo, image_file
 
 CREDENTIAL_VARS = ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")
+SBOM_CONTENT_TYPE = "application/vnd.cyclonedx+json"
 CLIENT_CONFIG = Config(
     s3={"addressing_style": "path"},
     retries={"mode": "standard"},
@@ -149,9 +150,10 @@ def publish(
     store: Store,
     build: Build,
     image_path: Path,
+    sbom_path: Path,
     check_image=qemu_img_check,
 ) -> dict[str, str]:
-    """Upload image, checksum and metadata, then latest.json last."""
+    """Upload image, checksum, SBOM and metadata, then latest.json last."""
     check_image(image_path)
     digest = sha512_file(image_path)
     meta = metadata(catalog, build, f"sha512:{digest}")
@@ -161,6 +163,7 @@ def publish(
 
     store.put_file(f"{prefix}/{name}", image_path, "application/octet-stream")
     store.put_bytes(f"{prefix}/{name}.sha512", f"{digest}  {name}\n".encode(), "text/plain")
+    store.put_file(f"{prefix}/{SBOM_FILE}", sbom_path, SBOM_CONTENT_TYPE)
     store.put_bytes(f"{prefix}/metadata.json", meta_json, "application/json")
     # latest.json must never point at an object that is not there
     store.head(f"{prefix}/{name}")
