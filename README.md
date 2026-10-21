@@ -20,6 +20,7 @@ change to an image does not need to stay compatible with earlier builds or clean
 - Packer, in the range the templates' `required_version` allows
 - QEMU (`qemu-system-x86_64`, `qemu-img`), with `/dev/kvm` for acceleration
 - `ssh-keygen` (OpenSSH), `shellcheck`, `xorriso`, `git`
+- [grype](https://github.com/anchore/grype) for `publish`; without it the scan is skipped
 
 ## Usage
 
@@ -135,6 +136,8 @@ Inside the image, `/etc/os-image-metadata` holds the same facts.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.
 syft and its output stay on a tmpfs that is removed afterwards, so neither ships in the image.
+`publish` scans each published SBOM with grype and prints the findings; the publish job copies them
+into its summary. Findings never fail a publish.
 
 ## License
 

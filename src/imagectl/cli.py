@@ -13,7 +13,7 @@ from typing import Annotated
 
 import typer
 
-from . import build, check_hash, packer, preflight, publish, required_roles, testvm, upstream
+from . import build, check_hash, packer, preflight, publish, required_roles, scan, testvm, upstream
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
 
@@ -363,6 +363,8 @@ def cmd_publish(
             print(f"{result.image.name}: pruned {key}", flush=True)
         index = publish.write_index(catalog, store, result.image)
         print(f"{result.image.name}: indexed {len(index['BUILDS'])} builds", flush=True)
+        findings = scan.scan(sbom_path)
+        print(scan.report(result.image.name, findings), flush=True)
 
     def build_one(image: Image) -> None:
         print(f"{image.name}: building", flush=True)
