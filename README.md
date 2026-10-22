@@ -62,6 +62,15 @@ name as `image_playbook`.
 
 They are part of that image's `CHECK_HASH` (`ansible/nftables/{playbook}/**` in `.check_hash`).
 
+## Metrics and logs
+
+The base image runs the `observability` role, which pushes metrics and the journal to the
+endpoints set in its playbook; see `ansible/roles/observability/README.md`. Nothing listens beyond localhost, so no
+firewall drop-in is needed.
+
+The journal stays on disk because Alloy resumes from its cursor in it: entries not yet shipped
+survive a crash, a reboot or an outage of the endpoints.
+
 ## Apps and secrets
 
 A container app lives in `ansible/apps/<app>/` and is installed by the
