@@ -15,6 +15,7 @@
   become: true
   vars:
     systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+    systemd_app_slice: cloudyhome
   roles:
     # no systemd_app_enable_units: the Quadlet [Install] starts it at boot, not during the build
     - role: binarycodes.homelab.systemd_app
