@@ -25,6 +25,8 @@
       systemd_app_kind: source
       systemd_app_name: controlplane
 
+    - role: nftables_dropins
+
   post_tasks:
     # enabled, not started: it needs the age key, which the vm gets at boot
     - name: enable the control plane at boot
