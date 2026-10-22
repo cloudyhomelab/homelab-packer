@@ -3,8 +3,8 @@ debian-cloud:
   index: https://cdimage.debian.org/images/cloud/trixie/
   image_file: "{version}/debian-13-genericcloud-amd64-{version}.qcow2"
   checksum_file: "{version}/SHA512SUMS"
-  version: "20261017-2634"
-  checksum: "sha512:ec584ccabfef7120b4c4f7482adf0e615894d9292cedec446b64194b951ebe5dd97c336b5dcbae458333764b0edd516334506017f33c4f2020ef8d38b569ffe3"
+  version: "20261021-2638"
+  checksum: "sha512:16e0965312c56feb331049d45d2b1b5778f3f942a33d4300eedbb97527707f2bea87c0006f3e4cc7a25fadbff739c4e235a51fb9bcd1b66fd554f7f8e80ba45c"
 fedora-cloud:
   os: fedora
   index: https://dl.fedoraproject.org/pub/fedora/linux/releases/44/Cloud/x86_64/images/
