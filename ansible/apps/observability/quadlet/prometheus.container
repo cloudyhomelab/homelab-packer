@@ -1,0 +1,24 @@
+[Unit]
+Description=Prometheus
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=prometheus
+Image=prometheus.image
+Network=observability.network
+Volume=/var/app/observability/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+Volume=/srv/prometheus:/prometheus
+# hosts push with remote-write; nothing here scrapes them
+Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d --web.enable-remote-write-receiver
+PublishPort=9090:9090
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -34,3 +34,4 @@ images:
               - dns-secondary
               - runner
               - controlplane
+              - observability
