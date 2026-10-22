@@ -186,7 +186,6 @@ def build_command(inputs: BuildInputs) -> list[str]:
         "packer",
         "build",
         "-color=false",
-        "-on-error=abort",
         *var_args(inputs),
         template_dir(inputs.image),
     ]
