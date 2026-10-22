@@ -1,5 +1,4 @@
 ---
-homelab_packer_runner_packer_version: "1.16.1-1"
 homelab_packer_runner_uv_version: "0.13.0"
 homelab_packer_runner_grype_version: "0.121.0"
 homelab_packer_runner_grype_sha256: "3a23dcb0dfe903131eabb4af9e8977ea2a47e2bbbec5aa15b60026ca5467d46d"
