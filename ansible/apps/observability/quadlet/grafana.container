@@ -1,0 +1,27 @@
+[Unit]
+Description=Grafana
+Wants=network-online.target
+After=network-online.target prometheus.service loki.service
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=grafana
+Image=grafana.image
+Network=observability.network
+Volume=/var/app/observability/config/grafana/provisioning:/etc/grafana/provisioning:ro
+Volume=/srv/grafana:/var/lib/grafana
+Environment=GF_ANALYTICS_REPORTING_ENABLED=false
+Environment=GF_ANALYTICS_CHECK_FOR_UPDATES=false
+Environment=GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+# GF_SECURITY_ADMIN_PASSWORD, decrypted on the VM from private/grafana.sops.env
+EnvironmentFile=/run/app/observability/private/grafana.env
+PublishPort=3000:3000
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

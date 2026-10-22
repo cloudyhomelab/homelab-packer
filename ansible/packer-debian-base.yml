@@ -49,6 +49,10 @@
 
     - role: zram
 
+    - role: observability
+      observability_prometheus_url: "https://prometheus.cloudyhome.net/api/v1/write"
+      observability_loki_url: "https://loki.cloudyhome.net/loki/api/v1/push"
+
     - role: binarycodes.homelab.systemd_slices
       systemd_slices_units:
         - name: cloudyhome

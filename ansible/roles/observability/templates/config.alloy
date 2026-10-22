@@ -1,0 +1,53 @@
+logging {
+	level = "warn"
+}
+
+prometheus.exporter.unix "host" {
+	enable_collectors = ["systemd"]
+}
+
+prometheus.scrape "host" {
+	targets    = prometheus.exporter.unix.host.targets
+	forward_to = [prometheus.remote_write.central.receiver]
+}
+
+prometheus.remote_write "central" {
+	endpoint {
+		url = "{{ observability_prometheus_url }}"
+	}
+}
+
+loki.relabel "journal" {
+	forward_to = []
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		target_label  = "unit"
+	}
+
+	rule {
+		source_labels = ["__journal_container_name"]
+		target_label  = "container"
+	}
+
+	rule {
+		source_labels = ["__journal_priority_keyword"]
+		target_label  = "level"
+	}
+}
+
+loki.source.journal "journal" {
+	// the default 7h would skip what an outage longer than that left unshipped; the journal cap bounds it
+	max_age       = "168h"
+	relabel_rules = loki.relabel.journal.rules
+	labels        = {host = constants.hostname}
+	forward_to    = [loki.write.central.receiver]
+}
+
+loki.write "central" {
+	endpoint {
+		url = "{{ observability_loki_url }}"
+		// retry until Loki is up: the full queue then holds back the journal reader instead of dropping
+		max_backoff_retries = 0
+	}
+}

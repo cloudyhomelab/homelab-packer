@@ -1,0 +1,5 @@
+---
+observability_alloy_version: "1.21.1"
+observability_alloy_sha256: "dd00f17c64246b49762ed7afa64a5d3bfea9172748f627b981d4e5c1b83b37c8"
+# the local journal only bridges shipper outages; history lives in the central store
+observability_journal_max_use: 200M
