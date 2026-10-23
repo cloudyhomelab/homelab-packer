@@ -1,0 +1,7 @@
+Package: alloy
+Pin: origin apt.grafana.com
+Pin-Priority: 500
+
+Package: *
+Pin: origin apt.grafana.com
+Pin-Priority: -1
