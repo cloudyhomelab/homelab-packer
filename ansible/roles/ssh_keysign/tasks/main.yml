@@ -1,14 +1,12 @@
-- name: download ssh-keysign from github release
-  ansible.builtin.get_url:
-    url: "https://github.com/binarycodes/ssh-key-signer/releases/download/v{{ ssh_keysign_version }}/ssh-keysign_{{ ssh_keysign_version }}_amd64.deb"
-    checksum: "sha256:{{ ssh_keysign_sha256 }}"
-    dest: /tmp/ssh-keysign.deb
-    mode: "0644"
-
 - name: install ssh-keysign
-  ansible.builtin.apt:
-    deb: /tmp/ssh-keysign.deb
-    state: present
+  ansible.builtin.include_role:
+    name: binarycodes.homelab.external_packages
+  vars:
+    external_packages_list:
+      - name: ssh-keysign
+        version: "{{ ssh_keysign_version }}"
+        url: "https://github.com/binarycodes/ssh-key-signer/releases/download/v{{ ssh_keysign_version }}/ssh-keysign_{{ ssh_keysign_version }}_amd64.deb"
+        checksum: "sha256:{{ ssh_keysign_sha256 }}"
 
 - name: copy systemd unit files
   ansible.builtin.copy:
