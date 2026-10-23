@@ -22,23 +22,30 @@
     group: root
     mode: '0644'
 
-- name: download alloy from github release
-  ansible.builtin.get_url:
-    url: "https://github.com/grafana/alloy/releases/download/v{{ observability_alloy_version }}/alloy-{{ observability_alloy_version }}-1.amd64.deb"
-    checksum: "sha256:{{ observability_alloy_sha256 }}"
-    dest: /tmp/alloy.deb
+- name: add Grafana APT repository
+  ansible.builtin.deb822_repository:
+    name: grafana
+    types: deb
+    uris: https://apt.grafana.com
+    suites: stable
+    components: main
+    signed_by: https://apt.grafana.com/gpg.key
+    state: present
+
+# The Grafana repo may only supply alloy; apt never installs anything else from it
+- name: limit the Grafana repository to its allowlisted packages
+  ansible.builtin.copy:
+    src: grafana-allowlist
+    dest: /etc/apt/preferences.d/grafana-allowlist
+    owner: root
+    group: root
     mode: "0644"
 
 - name: install alloy
   ansible.builtin.apt:
-    deb: /tmp/alloy.deb
+    name: alloy
     state: present
-
-# /tmp is a tmpfs in the build VM; the package would hold its RAM until the cleanup
-- name: remove the alloy package file
-  ansible.builtin.file:
-    path: /tmp/alloy.deb
-    state: absent
+    update_cache: true
 
 - name: copy alloy config
   ansible.builtin.template:
