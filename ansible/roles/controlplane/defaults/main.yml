@@ -1,6 +1,6 @@
 ---
-controlplane_version: "0.2.0"
+controlplane_version: "0.2.1"
 controlplane_sha256:
   amd64:
-    controlplane: "96b0c93359085c81072ff6f9caa069932c361ea0c7f0545c320c143bb40e8946"
-    cpctl: "6015d3504bed33659724e13cb5a85af8e863128abbc4790baa03299372491cfe"
+    controlplane: "f757bfd3c709b5bcef82a40005ee52e13724f410068402beb772bb7507b6c256"
+    cpctl: "8075f30330f16f0ad7300c53035918583cb409abbdb7c2f96418db2c9ad82470"
