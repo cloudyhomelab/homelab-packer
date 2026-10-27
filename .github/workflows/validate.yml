@@ -22,7 +22,7 @@ jobs:
 
     steps:
       - name: validate
-        uses: cloudyhomelab/control-plane/action@f86374535ceb5613a907b7c1487eb366df711cdc # v0.2.0
+        uses: cloudyhomelab/control-plane/action@4076206bf56354105de616ab3914fcbd21165bcd # v0.2.1
         with:
           server: ${{ env.CP_SERVER }}
           audience: ${{ env.CP_AUDIENCE }}
@@ -32,7 +32,7 @@ jobs:
       - name: plan
         id: plan
         if: ${{ !cancelled() }}
-        uses: cloudyhomelab/control-plane/action@f86374535ceb5613a907b7c1487eb366df711cdc # v0.2.0
+        uses: cloudyhomelab/control-plane/action@4076206bf56354105de616ab3914fcbd21165bcd # v0.2.1
         with:
           server: ${{ env.CP_SERVER }}
           audience: ${{ env.CP_AUDIENCE }}
