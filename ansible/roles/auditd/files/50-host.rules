@@ -1,0 +1,35 @@
+-a always,exit -F arch=b64 -F dir=/etc/audit/ -F perm=wa -F key=audit-config
+-a always,exit -F arch=b32 -F dir=/etc/audit/ -F perm=wa -F key=audit-config
+
+-a always,exit -F arch=b64 -F dir=/etc/ssh/ -F perm=wa -F key=ssh
+-a always,exit -F arch=b32 -F dir=/etc/ssh/ -F perm=wa -F key=ssh
+
+-a always,exit -F arch=b64 -F path=/etc/sudoers -F perm=wa -F key=sudoers
+-a always,exit -F arch=b32 -F path=/etc/sudoers -F perm=wa -F key=sudoers
+-a always,exit -F arch=b64 -F dir=/etc/sudoers.d/ -F perm=wa -F key=sudoers
+-a always,exit -F arch=b32 -F dir=/etc/sudoers.d/ -F perm=wa -F key=sudoers
+
+-a always,exit -F arch=b64 -F path=/etc/passwd -F perm=wa -F key=identity
+-a always,exit -F arch=b32 -F path=/etc/passwd -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/shadow -F perm=wa -F key=identity
+-a always,exit -F arch=b32 -F path=/etc/shadow -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/group -F perm=wa -F key=identity
+-a always,exit -F arch=b32 -F path=/etc/group -F perm=wa -F key=identity
+-a always,exit -F arch=b64 -F path=/etc/gshadow -F perm=wa -F key=identity
+-a always,exit -F arch=b32 -F path=/etc/gshadow -F perm=wa -F key=identity
+
+-a always,exit -F arch=b64 -S init_module,finit_module,delete_module -F key=modules
+-a always,exit -F arch=b32 -S init_module,finit_module,delete_module -F key=modules
+
+-a always,exit -F arch=b64 -F dir=/etc/systemd/system/ -F perm=wa -F key=persistence
+-a always,exit -F arch=b32 -F dir=/etc/systemd/system/ -F perm=wa -F key=persistence
+
+-a always,exit -F arch=b64 -F path=/etc/ld.so.preload -F perm=wa -F key=ld-so
+-a always,exit -F arch=b32 -F path=/etc/ld.so.preload -F perm=wa -F key=ld-so
+-a always,exit -F arch=b64 -F dir=/etc/ld.so.conf.d/ -F perm=wa -F key=ld-so
+-a always,exit -F arch=b32 -F dir=/etc/ld.so.conf.d/ -F perm=wa -F key=ld-so
+
+-a always,exit -F arch=b64 -F path=/etc/nftables.conf -F perm=wa -F key=firewall
+-a always,exit -F arch=b32 -F path=/etc/nftables.conf -F perm=wa -F key=firewall
+-a always,exit -F arch=b64 -F dir=/etc/nftables.d/ -F perm=wa -F key=firewall
+-a always,exit -F arch=b32 -F dir=/etc/nftables.d/ -F perm=wa -F key=firewall

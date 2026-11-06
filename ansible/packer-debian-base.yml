@@ -43,6 +43,8 @@
       security_ssh_service_name: "sshd"
       security_user_ca_pub: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGOVWBELedVMij+pwZTL5DYDa8UfUx5gf+w8HLLmws0t"
 
+    - role: auditd
+
     - role: ssh_keysign
 
     - role: nftables
