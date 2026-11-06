@@ -23,6 +23,16 @@
     enabled: false
     masked: true
 
+# neither is used
+- name: mask unused sysv compatibility units
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    masked: true
+  loop:
+    - rc-local.service
+    - systemd-initctl.socket
+
 # NFS mounts are vers=4.1 with sec=sys: no rpcbind, no pNFS block layouts (blkmapd), no NFSv3
 # lock recovery (statd), no Kerberos (gssd, svcgssd).
 # All come with nfs-common (rpcbind is a hard Depends), so mask instead of purge
