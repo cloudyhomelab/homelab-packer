@@ -23,8 +23,19 @@
     enabled: false
     masked: true
 
-# NFS mounts are vers=4.1: no rpcbind, no pNFS block layouts (blkmapd).
-# Both come with nfs-common (rpcbind is a hard Depends), so mask instead of purge
+# neither is used
+- name: mask unused sysv compatibility units
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: false
+    masked: true
+  loop:
+    - rc-local.service
+    - systemd-initctl.socket
+
+# NFS mounts are vers=4.1 with sec=sys: no rpcbind, no pNFS block layouts (blkmapd), no NFSv3
+# lock recovery (statd), no Kerberos (gssd, svcgssd).
+# All come with nfs-common (rpcbind is a hard Depends), so mask instead of purge
 - name: mask unused nfs-common services
   ansible.builtin.systemd_service:
     name: "{{ item }}"
@@ -34,6 +45,9 @@
     - rpcbind.service
     - rpcbind.socket
     - nfs-blkmap.service
+    - rpc-statd-notify.service
+    - rpc-gssd.service
+    - rpc-svcgssd.service
 
 - name: create resolved drop-in directory
   ansible.builtin.file:
