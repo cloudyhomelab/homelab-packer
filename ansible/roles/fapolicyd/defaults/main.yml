@@ -1,0 +1,3 @@
+---
+# log denials instead of enforcing them
+fapolicyd_permissive: true

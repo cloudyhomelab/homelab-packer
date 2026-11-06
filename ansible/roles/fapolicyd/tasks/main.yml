@@ -1,0 +1,44 @@
+- name: install fapolicyd
+  ansible.builtin.apt:
+    name: fapolicyd
+    state: present
+    install_recommends: false
+
+- name: create fapolicyd rules directory
+  ansible.builtin.file:
+    path: /etc/fapolicyd/rules.d
+    state: directory
+    owner: root
+    group: fapolicyd
+    mode: '0750'
+
+- name: copy fapolicyd rules
+  ansible.builtin.copy:
+    src: 50-dpkg-trust.rules
+    dest: /etc/fapolicyd/rules.d/50-dpkg-trust.rules
+    owner: root
+    group: fapolicyd
+    mode: '0644'
+  notify: fapolicyd compile rules
+
+- name: stop fapolicyd around dpkg runs
+  ansible.builtin.copy:
+    src: 80fapolicyd
+    dest: /etc/apt/apt.conf.d/80fapolicyd
+    owner: root
+    group: root
+    mode: '0644'
+    validate: apt-config --config-file %s dump
+
+- name: set fapolicyd permissive mode
+  ansible.builtin.lineinfile:
+    path: /etc/fapolicyd/fapolicyd.conf
+    regexp: '^permissive\s*='
+    line: "permissive = {{ fapolicyd_permissive | ternary(1, 0) }}"
+  notify: fapolicyd restart fapolicyd
+
+# disabled, so later builds on this image run without it
+- name: keep fapolicyd disabled
+  ansible.builtin.systemd_service:
+    name: fapolicyd.service
+    enabled: false
