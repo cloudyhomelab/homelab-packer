@@ -122,6 +122,41 @@ def test_upstream_pin_change_makes_the_tree_due(catalog):
     assert due[0].reason == "source changed"
 
 
+def test_extra_check_makes_a_current_image_due(catalog):
+    published = published_current(catalog)
+    catalog.get("debian-honeypot").max_age_days = 7
+    checked = []
+
+    def extra_check(image, entry):
+        checked.append(image.name)
+        return "security update (x)" if image.name == "debian-container" else None
+
+    due, _ = plan(
+        catalog,
+        dict.fromkeys(published, "sha256:h"),
+        lambda image: published[image.name],
+        NOW,
+        extra_check,
+    )
+    assert [(d.image, d.reason) for d in due] == [
+        ("debian-container", "security update (x)"),
+        ("debian-edge", "parent due (debian-container)"),
+        ("debian-honeypot", "parent due (debian-container)"),
+        ("debian-media", "parent due (debian-container)"),
+    ]
+    # an image already due for another reason is not checked
+    assert "debian-edge" not in checked
+    assert "debian-kubernetes" in checked
+
+
+def test_extra_check_is_skipped_for_a_never_built_image(catalog):
+    def extra_check(image, entry):
+        raise AssertionError(f"{image.name} checked")
+
+    due, _ = plan(catalog, {}, lambda image: None, NOW, extra_check)
+    assert {d.reason for d in due} == {"never built"}
+
+
 def test_plan_on_an_empty_bucket_lists_everything_as_never_built(catalog):
     due, _ = plan(catalog, {}, lambda image: None, NOW)
     assert [d.reason for d in due] == ["never built"] * len(catalog.images)

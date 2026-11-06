@@ -9,6 +9,7 @@ dependencies = [
   "ansible-lint>=25.9",
   "boto3>=1.40",
   "pathspec>=1.0",
+  "python-debian>=1.0",
   "ruamel.yaml>=0.18.15",
   "typer>=0.27",
 ]

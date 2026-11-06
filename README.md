@@ -7,7 +7,8 @@ change to an image does not need to stay compatible with earlier builds or clean
 
 - `images.yml`: global config and the image tree. Every image builds on its parent's latest
   published build; top-level images build on an upstream cloud image.
-- `upstream.yml`: the upstream cloud images and their pinned versions.
+- `upstream.yml`: the upstream cloud images, their pinned versions, and the Packages indexes of
+  their security suites (`security`, optional).
 - `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
 - `required_roles.yml`: roles a playbook must run when a folder for it exists; `validate` checks it.
 - `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
@@ -126,8 +127,8 @@ they call the control plane on the `controlplane` image, which runs the matching
 - `build-and-publish-images` runs on every push to `main` and hourly. Its `plan` job writes
   `imagectl plan` to the run summary; when something is due, its `publish` job waits for approval
   in the `publish` environment, then runs `imagectl publish`. That builds what is due (inputs
-  changed, source changed, or aged out) and the descendants of anything it rebuilds, parents
-  first, then publishes each build and prunes old ones.
+  changed, source changed, aged out, or a security update pending) and the descendants of
+  anything it rebuilds, parents first, then publishes each build and prunes old ones.
 - `refresh-upstream` runs `imagectl upstream --update` daily and opens a pull request when a pin
   moves. The pull request is opened by the cloudyhome bot GitHub App (secrets
   `CLOUDYHOME_BOT_CLIENT_ID` and `CLOUDYHOME_BOT_PRIVATE_KEY`), so `validate` runs on it.
@@ -146,7 +147,11 @@ Inside the image, `/etc/os-image-metadata` holds the same facts.
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.
 syft and its output stay on a tmpfs that is removed afterwards, so neither ships in the image.
 The SBOM leaves out container storage (containerd and Podman): container images follow their
-own update cadence, so the scan does not see them.
+own update cadence, so neither the scan nor the security check below sees them.
+
+A security update is pending when a package installed by dpkg, as the published SBOM lists it,
+has a newer version in one of its upstream's `security` indexes. The build upgrades every
+package, so the rebuild clears the reason.
 
 `publish` scans each published SBOM with grype and prints the findings that have a fix, the ones a
 rebuild or a version bump clears; the publish job copies them into its summary. Findings never fail

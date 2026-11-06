@@ -17,6 +17,7 @@ UPSTREAM_FILE = "upstream.yml"
 SETTINGS = ("disk_size", "memory", "cpus", "max_age_days", "retain_images")
 IMAGE_FIELDS = {"from", "children", *SETTINGS}
 UPSTREAM_FIELDS = ("os", "index", "image_file", "checksum_file", "version", "checksum")
+UPSTREAM_OPTIONAL_FIELDS = ("security",)
 NAMING_FIELDS = ("image_name", "playbook", "s3_prefix")
 S3_FIELDS = ("endpoint", "region", "bucket")
 
@@ -48,6 +49,8 @@ class Upstream:
     checksum_file: str
     version: str
     checksum: str
+    # Packages index URLs of the suites whose updates make a published build due
+    security: tuple[str, ...] = ()
 
     @property
     def url(self) -> str:
@@ -124,6 +127,12 @@ class Catalog:
             out.extend(self.descendants(child))
         return out
 
+    def root_upstream(self, image: Image) -> Upstream:
+        """The upstream at the top of image's tree."""
+        top = self.ancestors(image.name)[-1] if image.parent else image
+        assert top.upstream is not None
+        return self.upstreams[top.upstream]
+
     def upstream_source(self, image: Image) -> Source:
         if image.upstream is None:
             raise ValueError(f"{image.name} is not a top-level image")
@@ -187,7 +196,7 @@ def parse_upstreams(data: object) -> tuple[dict[str, Upstream], list[str]]:
         if not isinstance(entry, dict):
             errors.append(f"{where}: must be a mapping")
             continue
-        unknown = set(entry) - set(UPSTREAM_FIELDS)
+        unknown = set(entry) - {*UPSTREAM_FIELDS, *UPSTREAM_OPTIONAL_FIELDS}
         if unknown:
             errors.append(f"{where}: unknown fields {sorted(unknown)}")
         missing = [f for f in UPSTREAM_FIELDS if f not in entry]
@@ -226,6 +235,13 @@ def parse_upstreams(data: object) -> tuple[dict[str, Upstream], list[str]]:
         if checksum_error:
             errors.append(f"{where}: checksum {checksum_error}")
 
+        security = entry.get("security", [])
+        if not isinstance(security, list) or not all(
+            isinstance(url, str) and url.startswith(("https://", "http://")) for url in security
+        ):
+            errors.append(f"{where}: security must be a list of http(s) URLs")
+            security = []
+
         upstreams[str(key)] = Upstream(
             key=str(key),
             os=str(entry["os"]),
@@ -234,6 +250,7 @@ def parse_upstreams(data: object) -> tuple[dict[str, Upstream], list[str]]:
             checksum_file=str(entry["checksum_file"]),
             version=str(version),
             checksum=str(entry["checksum"]),
+            security=tuple(str(url) for url in security),
         )
     return upstreams, errors
 

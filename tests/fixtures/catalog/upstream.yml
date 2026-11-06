@@ -8,6 +8,8 @@ debian-cloud:
   checksum_file: "{version}/SHA512SUMS"
   version: "20260914-2601"
   checksum: "sha512:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  security:
+    - https://deb.debian.org/debian-security/dists/trixie-security/main/binary-amd64/Packages.xz
 
 # version in the file name, sha256, single-quoted version
 fedora-cloud:

@@ -58,13 +58,16 @@ class Store:
         body = self.client.get_object(Bucket=self.bucket, Key=key)["Body"].read()
         return json.loads(body)
 
-    def latest(self, image: Image) -> dict | None:
+    def get_json_optional(self, key: str) -> dict | None:
         try:
-            return self.get_json(f"{self.catalog.image_prefix(image)}/latest.json")
+            return self.get_json(key)
         except ClientError as e:
             if e.response.get("Error", {}).get("Code") in ("NoSuchKey", "404"):
                 return None
             raise
+
+    def latest(self, image: Image) -> dict | None:
+        return self.get_json_optional(f"{self.catalog.image_prefix(image)}/latest.json")
 
     def put_file(self, key: str, path: Path, content_type: str) -> None:
         self.client.upload_file(

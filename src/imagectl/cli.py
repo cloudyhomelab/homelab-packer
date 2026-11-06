@@ -13,7 +13,18 @@ from typing import Annotated
 
 import typer
 
-from . import build, check_hash, packer, preflight, publish, required_roles, scan, testvm, upstream
+from . import (
+    build,
+    check_hash,
+    packer,
+    preflight,
+    publish,
+    required_roles,
+    scan,
+    security,
+    testvm,
+    upstream,
+)
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
 
@@ -61,6 +72,7 @@ def run(fn: Callable[[], int]) -> int:
         build.BuildError,
         publish.PublishError,
         preflight.PreflightError,
+        security.SecurityError,
         upstream.UpstreamError,
         check_hash.CheckHashError,
         testvm.TestVmError,
@@ -255,16 +267,24 @@ def hash_errors(result: check_hash.Result) -> None:
 def cmd_plan() -> int:
     """List the images `publish` would build, and why.
 
-    An image is due when its inputs or source changed, it aged out, or its parent is due.
-    Reads latest.json anonymously, so it needs no credentials.
+    An image is due when its inputs or source changed, it aged out, its parent is due, or
+    a security update is out for a package it ships. Reads latest.json and the SBOMs
+    anonymously, so it needs no credentials.
     """
     catalog = project()
     hashes = check_hash.compute_all(catalog)
+    checker = security.Checker(
+        catalog,
+        lambda image, latest: preflight.fetch_json(
+            catalog.public_url(security.sbom_key(catalog, image, latest))
+        ),
+    )
     due, _ = preflight.plan(
         catalog,
         dict(hashes.hashes),
         lambda image: preflight.fetch_latest(catalog, image),
         datetime.now(UTC),
+        checker,
     )
     print_plan(due)
     hash_errors(hashes)
@@ -340,7 +360,13 @@ def cmd_publish(
     store = publish.Store(catalog, publish.s3_client(catalog))
 
     hashes = check_hash.compute_all(catalog)
-    due, latest = preflight.plan(catalog, dict(hashes.hashes), store.latest, datetime.now(UTC))
+    checker = security.Checker(
+        catalog,
+        lambda image, latest: store.get_json_optional(security.sbom_key(catalog, image, latest)),
+    )
+    due, latest = preflight.plan(
+        catalog, dict(hashes.hashes), store.latest, datetime.now(UTC), checker
+    )
     print_plan(due)
     hash_errors(hashes)
 
