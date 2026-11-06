@@ -15,6 +15,8 @@ BUILD_DATE_FORMAT = "%Y-%m-%d %H:%M:%S %z"
 
 Latest = dict[str, str]
 LatestReader = Callable[[Image], "Latest | None"]
+# why a current build is due anyway, or None; called only for a build no other rule makes due
+ExtraCheck = Callable[[Image, Latest], "str | None"]
 
 
 class PreflightError(Exception):
@@ -52,19 +54,23 @@ def latest_url(catalog: Catalog, image: Image) -> str:
     return catalog.public_url(f"{catalog.image_prefix(image)}/latest.json")
 
 
-def fetch_latest(catalog: Catalog, image: Image) -> Latest | None:
-    """Read an image's latest.json anonymously. 404 means never built; other errors raise."""
-    url = latest_url(catalog, image)
+def fetch_json(url: str) -> dict | None:
+    """Read a JSON object from the bucket anonymously. None on 404; other errors raise."""
     try:
         with urllib.request.urlopen(url, timeout=60) as response:
             return json.load(response)
     except urllib.error.HTTPError as e:
-        # a missing bucket is also a 404, but it must not read as "never built"
+        # a missing bucket is also a 404, but it must not read as a missing object
         if e.code == 404 and b"NoSuchBucket" not in e.read():
             return None
         raise PreflightError(f"{url}: HTTP {e.code}") from None
     except urllib.error.URLError as e:
         raise PreflightError(f"{url}: {e.reason}") from None
+
+
+def fetch_latest(catalog: Catalog, image: Image) -> Latest | None:
+    """An image's latest.json; None means never built."""
+    return fetch_json(latest_url(catalog, image))
 
 
 def source_from_latest(latest: Latest) -> Source:
@@ -92,10 +98,12 @@ def plan(
     hashes: dict[str, str | None],
     read_latest: LatestReader,
     now: datetime,
+    extra_check: ExtraCheck | None = None,
 ) -> tuple[list[Due], dict[str, Latest | None]]:
     """Images that are due, in tree order, each with its reason.
 
-    An image is due for its own reason, or because an ancestor is due ("parent due").
+    An image is due for its own reason, because an ancestor is due ("parent due"), or
+    for the reason extra_check gives.
     """
     latest: dict[str, Latest | None] = {}
     due: dict[str, str] = {}
@@ -111,6 +119,9 @@ def plan(
         )
         if reason is None and image.parent in due:
             reason = f"parent due ({image.parent})"
+        current = latest[image.name]
+        if reason is None and extra_check is not None and current is not None:
+            reason = extra_check(image, current)
         if reason is not None:
             due[image.name] = reason
     return [Due(name, reason) for name, reason in due.items()], latest
