@@ -1,0 +1,16 @@
+- name: compile fapolicyd rules
+  listen: fapolicyd compile rules
+  ansible.builtin.command: fagenrules --load
+  changed_when: true
+
+- name: gather service state for fapolicyd restart
+  listen: fapolicyd restart fapolicyd
+  ansible.builtin.service_facts:
+
+# only when running, so a stopped daemon stays stopped
+- name: restart fapolicyd
+  listen: fapolicyd restart fapolicyd
+  ansible.builtin.systemd_service:
+    name: fapolicyd.service
+    state: restarted
+  when: ansible_facts.services['fapolicyd.service'].state == 'running'
