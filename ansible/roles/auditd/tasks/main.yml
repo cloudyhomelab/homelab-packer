@@ -1,0 +1,34 @@
+- name: install auditd
+  ansible.builtin.apt:
+    name: auditd
+    state: present
+    install_recommends: false
+
+- name: create audit log directory at boot
+  ansible.builtin.copy:
+    src: audit-log.conf
+    dest: /etc/tmpfiles.d/audit-log.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: copy audit rules
+  ansible.builtin.copy:
+    src: 50-host.rules
+    dest: /etc/audit/rules.d/50-host.rules
+    owner: root
+    group: root
+    mode: '0640'
+  notify: auditd load rules
+
+- name: forward audit events to syslog
+  ansible.builtin.lineinfile:
+    path: /etc/audit/plugins.d/syslog.conf
+    regexp: '^active\s*='
+    line: active = yes
+  notify: auditd restart auditd
+
+- name: enable auditd service
+  ansible.builtin.systemd_service:
+    name: auditd.service
+    enabled: true

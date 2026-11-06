@@ -5,7 +5,7 @@
     owner: root
     group: root
     mode: '0644'
-  notify: restart sshd
+  notify: security restart sshd
 
 - name: secure ssh
   ansible.builtin.copy:
@@ -14,7 +14,7 @@
     owner: root
     group: root
     mode: '0644'
-  notify: restart sshd
+  notify: security restart sshd
 
 # https://dfir.ch/posts/today_i_learned_binfmt_misc/
 - name: mask systemd-binfmt.service
