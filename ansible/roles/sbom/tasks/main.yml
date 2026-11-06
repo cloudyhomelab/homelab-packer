@@ -48,6 +48,12 @@
           - --exclude=./dev/**
           - --exclude=./run/**
           - --exclude=./tmp/**
+          # apt's download cache; cleanup-image.sh empties it after the scan
+          - --exclude=./var/cache/apt/archives/**
+          # container images follow their own update cadence, not the image's
+          - --exclude=./var/lib/containerd/**
+          - --exclude=./var/lib/containers/**
+          - --exclude=./home/*/.local/share/containers/**
           - --output=cyclonedx-json={{ sbom_workdir.path }}/sbom.cdx.json
       environment:
         SYFT_CHECK_FOR_APP_UPDATE: "false"
