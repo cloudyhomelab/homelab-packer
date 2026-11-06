@@ -84,3 +84,12 @@
     owner: root
     group: root
     mode: '0644'
+
+- name: add kernel boot parameters
+  ansible.builtin.copy:
+    src: 60-security.cfg
+    dest: /etc/default/grub.d/60-security.cfg
+    owner: root
+    group: root
+    mode: '0644'
+  notify: security update grub
