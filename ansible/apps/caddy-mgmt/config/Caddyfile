@@ -112,3 +112,33 @@ nas.cloudyhome.net {
         }
     }
 }
+
+grafana.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:3000
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+prometheus.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:9090
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
+
+loki.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:3100
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
