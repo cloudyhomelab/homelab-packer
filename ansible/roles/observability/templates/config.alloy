@@ -65,7 +65,8 @@ loki.source.journal "journal" {
 	// the default 7h would skip what an outage longer than that left unshipped; the journal cap bounds it
 	max_age       = "168h"
 	relabel_rules = loki.relabel.journal.rules
-	labels        = {host = constants.hostname}
+	// same label as the host metrics, so logs and metrics correlate
+	labels        = {instance = constants.hostname}
 	forward_to    = [loki.write.central.receiver]
 }
 
