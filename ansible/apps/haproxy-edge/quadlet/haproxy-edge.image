@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/library/haproxy:2.9
+Image=docker.io/library/haproxy:3.4
