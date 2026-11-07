@@ -34,6 +34,26 @@ loki.relabel "journal" {
 		source_labels = ["__journal_priority_keyword"]
 		target_label  = "level"
 	}
+
+	// one Drilldown service per program instead of one for the whole journal;
+	// each later rule matches only non-empty values so it overrides without erasing
+	rule {
+		source_labels = ["__journal_syslog_identifier"]
+		regex         = "(.+)"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		regex         = "(.+?)(\\.service)?"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__journal_container_name"]
+		regex         = "(.+)"
+		target_label  = "service_name"
+	}
 }
 
 loki.source.journal "journal" {
