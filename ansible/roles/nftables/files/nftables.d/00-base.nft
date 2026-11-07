@@ -30,6 +30,9 @@ table inet base-filter {
         meta l4proto { icmp, ipv6-icmp } accept
         meta l4proto . th dport @base-open accept
 
+        # aardvark-dns answers containers on named networks at the bridge gateway.
+        iifname "podman*" meta l4proto { udp, tcp } th dport 53 accept
+
         jump base-input-dropins
         jump base-log-input
 
