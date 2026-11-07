@@ -1,3 +1,6 @@
+global:
+  scrape_interval: 60s
+
 storage:
   tsdb:
     retention:

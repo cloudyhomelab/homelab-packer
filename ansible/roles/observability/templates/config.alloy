@@ -8,8 +8,9 @@ prometheus.exporter.unix "host" {
 }
 
 prometheus.scrape "host" {
-	targets    = prometheus.exporter.unix.host.targets
-	forward_to = [prometheus.remote_write.central.receiver]
+	targets         = prometheus.exporter.unix.host.targets
+	scrape_interval = "60s"
+	forward_to      = [prometheus.remote_write.central.receiver]
 }
 
 prometheus.remote_write "central" {
