@@ -20,15 +20,3 @@
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: caddy-mgmt
-
-    - role: binarycodes.homelab.systemd_app
-      systemd_app_kind: source
-      systemd_app_name: unifi-server-os
-      systemd_app_data_dirs:
-        - path: persistent
-        - path: var-log
-        - path: data
-        - path: srv
-        - path: var-lib-unifi
-        - path: var-lib-mongodb
-        - path: etc-rabbitmq-ssl
