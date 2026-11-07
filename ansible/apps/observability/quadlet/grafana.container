@@ -14,6 +14,7 @@ Volume=/srv/grafana:/var/lib/grafana
 Environment=GF_ANALYTICS_REPORTING_ENABLED=false
 Environment=GF_ANALYTICS_CHECK_FOR_UPDATES=false
 Environment=GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
+Environment=GF_LOG_CONSOLE_FORMAT=json
 # GF_SECURITY_ADMIN_PASSWORD, decrypted on the VM from private/grafana.sops.env
 EnvironmentFile=/run/app/observability/private/grafana.env
 PublishPort=3000:3000

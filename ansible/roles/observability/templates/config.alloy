@@ -1,5 +1,6 @@
 logging {
-	level = "warn"
+	level  = "warn"
+	format = "json"
 }
 
 prometheus.exporter.unix "host" {

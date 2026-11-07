@@ -12,7 +12,7 @@ Network=observability.network
 Volume=/var/app/observability/config/prometheus.yml:/etc/prometheus/prometheus.yml:ro
 Volume=/srv/prometheus:/prometheus
 # hosts push with remote-write; nothing here scrapes them
-Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d --web.enable-remote-write-receiver
+Exec=--config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus --storage.tsdb.retention.time=30d --web.enable-remote-write-receiver --log.format=json
 PublishPort=9090:9090
 LogDriver=journald
 
