@@ -10,7 +10,7 @@
           ansible_facts['architecture']
           }}
 
-- name: configure bootstrap server
+- name: configure unifi server
   hosts: all
   become: true
   vars:

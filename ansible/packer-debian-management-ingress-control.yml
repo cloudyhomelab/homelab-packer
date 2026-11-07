@@ -10,7 +10,7 @@
           ansible_facts['architecture']
           }}
 
-- name: configure bootstrap server
+- name: configure management ingress control server
   hosts: all
   become: true
   vars:
