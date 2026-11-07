@@ -64,33 +64,3 @@ s3-api.cloudyhome.net {
 nas.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:80
 }
-
-grafana.cloudyhome.net {
-    reverse_proxy observability.ip.cloudyhome.net:3000
-}
-
-prometheus.cloudyhome.net {
-    @ingest {
-        method POST
-        path /api/v1/write
-    }
-
-    handle @ingest {
-        reverse_proxy observability.ip.cloudyhome.net:9090
-    }
-
-    respond 403
-}
-
-loki.cloudyhome.net {
-    @ingest {
-        method POST
-        path /loki/api/v1/push
-    }
-
-    handle @ingest {
-        reverse_proxy observability.ip.cloudyhome.net:3100
-    }
-
-    respond 403
-}

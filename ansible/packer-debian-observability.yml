@@ -36,4 +36,6 @@
       systemd_app_kind: source
       systemd_app_name: observability
 
-    - role: nftables_dropins
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: caddy-observability

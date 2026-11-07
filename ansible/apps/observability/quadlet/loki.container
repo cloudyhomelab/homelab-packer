@@ -12,7 +12,6 @@ Network=observability.network
 Volume=/var/app/observability/config/loki.yml:/etc/loki/loki.yml:ro
 Volume=/srv/loki:/loki
 Exec=-config.file=/etc/loki/loki.yml
-PublishPort=3100:3100
 LogDriver=journald
 
 [Service]
