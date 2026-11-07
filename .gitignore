@@ -9,3 +9,5 @@ __pycache__/
 /ansible/.ansible/
 
 test-s3.env
+
+*#*
