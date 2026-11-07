@@ -1,5 +1,6 @@
 logging {
-	level = "warn"
+	level  = "warn"
+	format = "json"
 }
 
 prometheus.exporter.unix "host" {
@@ -30,9 +31,32 @@ loki.relabel "journal" {
 		target_label  = "container"
 	}
 
+	// podman logs all container stderr at priority err, so for containers the level is
+	// left unset and Loki detects it from the line itself
 	rule {
-		source_labels = ["__journal_priority_keyword"]
+		source_labels = ["__journal_container_name", "__journal_priority_keyword"]
+		regex         = ";(.+)"
 		target_label  = "level"
+	}
+
+	// one Drilldown service per program instead of one for the whole journal;
+	// each later rule matches only non-empty values so it overrides without erasing
+	rule {
+		source_labels = ["__journal_syslog_identifier"]
+		regex         = "(.+)"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__journal__systemd_unit"]
+		regex         = "(.+?)(\\.service)?"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__journal_container_name"]
+		regex         = "(.+)"
+		target_label  = "service_name"
 	}
 }
 
