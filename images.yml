@@ -31,6 +31,8 @@ images:
               - dns-primary
               - dns-secondary
               - edge
+              - iot-ingress-control
+              - lab-ingress-control
               - management-ingress-control
               - media
               - observability

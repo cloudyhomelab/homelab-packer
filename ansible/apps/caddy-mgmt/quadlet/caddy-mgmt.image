@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/binarycodes/caddy-porkbun:2.11
+Image=docker.io/binarycodes/caddy-porkbun:latest

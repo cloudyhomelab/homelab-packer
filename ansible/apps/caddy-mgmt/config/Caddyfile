@@ -1,3 +1,34 @@
+{
+    acme_dns porkbun {
+        api_key {$PORKBUN_API_KEY}
+        api_secret_key {$PORKBUN_API_SECRET_KEY}
+    }
+}
+
+gateway.cloudyhome.net {
+    reverse_proxy https://gateway.ip.cloudyhome.net:443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
+sw1.cloudyhome.net {
+    reverse_proxy https://sw1.ip.cloudyhome.net:443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
+uos.cloudyhome.net {
+    reverse_proxy https://uos.ip.cloudyhome.net:11443 {
+        transport http {
+            tls_insecure_skip_verify
+        }
+    }
+}
+
 proxmox.cloudyhome.net {
     reverse_proxy https://pve1.ip.cloudyhome.net:8006 \
                   https://pve2.ip.cloudyhome.net:8006 \
@@ -12,83 +43,36 @@ proxmox.cloudyhome.net {
             tls_insecure_skip_verify
         }
     }
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
+}
+
+pve-edge.cloudyhome.net {
+    reverse_proxy https://pve-lab-1.ip.cloudyhome.net:8006
+}
+
+pve-infra.cloudyhome.net {
+    reverse_proxy https://pve-infra-1.ip.cloudyhome.net:8006
 }
 
 s3.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:9002
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
 }
 
 s3-api.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:9000
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
 }
 
 nas.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:80
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
 }
 
-gateway.cloudyhome.net {
-    reverse_proxy https://gateway.ip.cloudyhome.net:443 {
-        transport http {
-            tls_insecure_skip_verify
-        }
-    }
-
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
+grafana.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:3000
 }
 
-sw1.cloudyhome.net {
-    reverse_proxy https://sw1.ip.cloudyhome.net:443 {
-        transport http {
-            tls_insecure_skip_verify
-        }
-    }
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
+prometheus.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:9090
 }
 
-uos.cloudyhome.net {
-    reverse_proxy https://uos.ip.cloudyhome.net:11443 {
-        transport http {
-            tls_insecure_skip_verify
-        }
-    }
-    tls {
-        dns porkbun {
-            api_key {$PORKBUN_API_KEY}
-            api_secret_key {$PORKBUN_API_SECRET_KEY}
-        }
-    }
+loki.cloudyhome.net {
+    reverse_proxy observability.ip.cloudyhome.net:3100
 }
