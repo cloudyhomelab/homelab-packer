@@ -1,0 +1,25 @@
+[Unit]
+Description=Caddy observability proxy
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=caddy-observability
+Image=caddy-observability.image
+Network=observability.network
+Volume=/var/app/caddy-observability/config/Caddyfile:/etc/caddy/Caddyfile:ro
+EnvironmentFile=/run/app/caddy-observability/private/porkbun.env
+Volume=caddy-data.volume:/data
+Volume=caddy-config.volume:/config
+ReadOnly=true
+PublishPort=443:443
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
