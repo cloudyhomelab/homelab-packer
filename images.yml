@@ -27,11 +27,12 @@ images:
         - container:
             disk_size: 3G
             children:
-              - edge
               - bootstrap
-              - media
+              - controlplane
               - dns-primary
               - dns-secondary
-              - runner
-              - controlplane
+              - edge
+              - media
               - observability
+              - runner
+              - unifi
