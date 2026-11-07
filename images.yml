@@ -27,11 +27,11 @@ images:
         - container:
             disk_size: 3G
             children:
-              - bootstrap
               - controlplane
               - dns-primary
               - dns-secondary
               - edge
+              - management-ingress-control
               - media
               - observability
               - runner
