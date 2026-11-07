@@ -70,9 +70,27 @@ grafana.cloudyhome.net {
 }
 
 prometheus.cloudyhome.net {
-    reverse_proxy observability.ip.cloudyhome.net:9090
+    @ingest {
+        method POST
+        path /api/v1/write
+    }
+
+    handle @ingest {
+        reverse_proxy observability.ip.cloudyhome.net:9090
+    }
+
+    respond 403
 }
 
 loki.cloudyhome.net {
-    reverse_proxy observability.ip.cloudyhome.net:3100
+    @ingest {
+        method POST
+        path /loki/api/v1/push
+    }
+
+    handle @ingest {
+        reverse_proxy observability.ip.cloudyhome.net:3100
+    }
+
+    respond 403
 }
