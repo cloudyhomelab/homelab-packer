@@ -30,8 +30,11 @@ loki.relabel "journal" {
 		target_label  = "container"
 	}
 
+	// podman logs all container stderr at priority err, so for containers the level is
+	// left unset and Loki detects it from the line itself
 	rule {
-		source_labels = ["__journal_priority_keyword"]
+		source_labels = ["__journal_container_name", "__journal_priority_keyword"]
+		regex         = ";(.+)"
 		target_label  = "level"
 	}
 
