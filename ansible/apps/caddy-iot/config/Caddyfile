@@ -1,0 +1,9 @@
+homeassistant.cloudyhome.net {
+    reverse_proxy http://homeassistant.ip.cloudyhome.net:8123
+    tls {
+        dns porkbun {
+            api_key {$PORKBUN_API_KEY}
+            api_secret_key {$PORKBUN_API_SECRET_KEY}
+        }
+    }
+}
