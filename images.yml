@@ -1,6 +1,6 @@
 config:
   s3:
-    endpoint: https://s3-api.cloudyhome.net
+    endpoint: http://moria.ip.cloudyhome.net:9000
     region: home
     bucket: os-image-staging
   storage:
