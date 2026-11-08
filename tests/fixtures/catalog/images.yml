@@ -4,6 +4,9 @@ config:
     endpoint: https://s3.example.net
     region: home
     bucket: os-image-staging
+  storage:
+    server: nfs.example.net
+    base: /mnt/tank/apps
   naming:
     image_name: "{os}-{key}"
     playbook: "packer-{os}-{key}"

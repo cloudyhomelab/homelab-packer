@@ -1,17 +1,19 @@
 [Unit]
 Description=Youtarr
-After=youtarr-database.service
-Requires=youtarr-database.service
+After=youtarr-database.service youtarr-storage.service
+Requires=youtarr-database.service youtarr-storage.service
 
 [Container]
+SubUIDMap=youtarr
+SubGIDMap=youtarr
 ContainerName=youtarr
 Image=youtarr.image
 Network=youtarr.network
 User=1000:1000
 Volume=/srv/youtarr/media:/usr/src/app/data
-Volume=/srv/youtarr/config:/app/config
-Volume=/srv/youtarr/jobs:/app/jobs
-Volume=/srv/youtarr/images:/app/server/images
+Volume=/srv/youtarr/data/config:/app/config
+Volume=/srv/youtarr/data/jobs:/app/jobs
+Volume=/srv/youtarr/data/images:/app/server/images
 PublishPort=3087:3011
 EnvironmentFile=/var/app/youtarr/config/youtarr.env
 EnvironmentFile=/run/app/youtarr/private/db.env

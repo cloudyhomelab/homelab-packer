@@ -3,6 +3,9 @@ config:
     endpoint: https://s3-api.cloudyhome.net
     region: home
     bucket: os-image-staging
+  storage:
+    server: moria.ip.cloudyhome.net
+    base: /mnt/zpool0/cloudyhome_app_data
   naming:
     image_name: "{os}-{key}"
     playbook: "packer-{os}-{key}"

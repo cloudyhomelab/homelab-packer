@@ -28,3 +28,6 @@ variable "sbom_file" { type = string }
 variable "ssh_user_ca_public_key_file" { type = string }
 variable "ssh_private_key_file" { type = string }
 variable "ssh_certificate_file" { type = string }
+
+# JSON, passed to the image playbook as extra vars
+variable "storage_vars" { type = string }

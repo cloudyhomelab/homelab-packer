@@ -1,3 +1,5 @@
+import json
+
 import pytest
 from typer.testing import CliRunner
 
@@ -87,3 +89,37 @@ def test_clean_rejects_unknown_images(in_root):
     result = imagectl("clean", "debian-nope")
     assert result.exit_code == 1
     assert "unknown image 'debian-nope'" in result.stderr
+
+
+EMPTY_PLAYBOOK = "- hosts: all\n  roles: []\n"
+EDGE_PLAYBOOK = """\
+- hosts: all
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: web
+"""
+
+
+def test_storage_lists_the_datasets(in_root):
+    ansible = in_root / "ansible"
+    (ansible / "apps" / "web").mkdir(parents=True)
+    (ansible / "apps" / "web" / "storage.yml").write_text(
+        "datasets:\n  db:\n    owner: '999:999'\n    recordsize: 16K\n"
+    )
+    for image in ("base", "container"):
+        (ansible / f"packer-debian-{image}.yml").write_text(EMPTY_PLAYBOOK)
+    (ansible / "packer-debian-edge.yml").write_text(EDGE_PLAYBOOK)
+
+    result = imagectl("storage", "debian-edge")
+    assert result.exit_code == 0, result.output
+    assert [line.split() for line in result.stdout.splitlines()] == [
+        ["EXPORT", "RECORDSIZE", "MOUNT"],
+        ["nfs.example.net:/mnt/tank/apps/web/db", "16K", "/srv/web/db"],
+    ]
+
+    result = imagectl("storage", "--json", "debian-edge")
+    assert json.loads(result.stdout) == [{"app": "web", "dataset": "db", "recordsize": "16K"}]
+
+    result = imagectl("storage", "debian-base")
+    assert result.stdout == "debian-base mounts no storage\n"

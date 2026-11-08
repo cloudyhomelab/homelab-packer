@@ -1,0 +1,59 @@
+- name: install the NFS client
+  ansible.builtin.apt:
+    name: nfs-common
+    state: present
+    install_recommends: false
+
+- name: give each app its ID range
+  ansible.builtin.lineinfile:
+    path: "{{ item.0 }}"
+    regexp: "^{{ item.1.app }}:"
+    line: "{{ item.1.app }}:{{ item.1.id_base }}:{{ item.1.id_count }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_storage_apps) | list }}"
+  loop_control:
+    label: "{{ item.0 }} {{ item.1.app }}"
+
+- name: install the mount units
+  ansible.builtin.template:
+    src: storage.mount
+    dest: "/etc/systemd/system/{{ item.unit }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ app_storage_mounts }}"
+  loop_control:
+    label: "{{ item.unit }}"
+
+# a mount hides whatever the image put below it, so the directories are made after mounting
+- name: install the units that prepare each app's directories
+  ansible.builtin.template:
+    src: app-storage.service
+    dest: "/etc/systemd/system/{{ item.app }}-storage.service"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ app_storage_apps }}"
+  loop_control:
+    label: "{{ item.app }}"
+
+# enabled only: the build VM is not allowed by any export
+- name: enable the mount units
+  ansible.builtin.systemd_service:
+    name: "{{ item.unit }}"
+    enabled: true
+    daemon_reload: true
+  loop: "{{ app_storage_mounts }}"
+  loop_control:
+    label: "{{ item.unit }}"
+
+- name: enable the directory units
+  ansible.builtin.systemd_service:
+    name: "{{ item.app }}-storage.service"
+    enabled: true
+  loop: "{{ app_storage_apps }}"
+  loop_control:
+    label: "{{ item.app }}"

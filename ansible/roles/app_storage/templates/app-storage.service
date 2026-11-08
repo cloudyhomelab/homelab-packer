@@ -1,0 +1,16 @@
+[Unit]
+Description=Storage directories of {{ item.app }}
+RequiresMountsFor={{ item.datasets | map(attribute='where') | join(' ') }}
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+{% for dataset in item.datasets %}
+{% set paths = [dataset.where] + dataset.dirs %}
+ExecStart=/usr/bin/mkdir -p {{ paths | join(' ') }}
+ExecStart=/usr/bin/chown {{ dataset.owner }} {{ paths | join(' ') }}
+ExecStart=/usr/bin/chmod {{ app_storage_dir_mode }} {{ paths | join(' ') }}
+{% endfor %}
+
+[Install]
+WantedBy=multi-user.target

@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import functools
+import json
 import subprocess
 import sys
 import tempfile
@@ -16,12 +17,14 @@ import typer
 from . import (
     build,
     check_hash,
+    idmap,
     packer,
     preflight,
     publish,
     required_roles,
     scan,
     security,
+    storage,
     testvm,
     upstream,
 )
@@ -136,6 +139,37 @@ def cmd_list() -> int:
     return 0
 
 
+@command("storage")
+def cmd_storage(
+    image: Annotated[
+        str, typer.Argument(metavar="IMAGE", help="The image to list.", show_default=False)
+    ],
+    as_json: Annotated[
+        bool, typer.Option("--json", help="Print the STORAGE list of metadata.json instead.")
+    ] = False,
+) -> int:
+    """List the datasets a VM of an image mounts, its ancestors' included.
+
+    Reads the checkout, not S3: the list the next publish of the image would carry.
+    """
+    catalog = project()
+    datasets = storage.image_datasets(catalog, catalog.get(image))
+    if as_json:
+        print(json.dumps([d.published() for d in datasets], indent=2))
+        return 0
+    if not datasets:
+        print(f"{image} mounts no storage")
+        return 0
+    if catalog.storage is None:
+        raise CatalogError(["apps declare storage but images.yml has no config.storage"])
+    rows = [["EXPORT", "RECORDSIZE", "MOUNT"]]
+    for d in datasets:
+        export = f"{catalog.storage.server}:{storage.export_path(catalog.storage, d)}"
+        rows.append([export, d.recordsize or "default", d.path])
+    print(table(rows))
+    return 0
+
+
 def validate_source(catalog: Catalog, image: Image) -> Source:
     """What packer validate gets as the source: the pin, or the parent's folder for children.
 
@@ -167,7 +201,7 @@ def cmd_validate(
         ),
     ] = None,
 ) -> int:
-    """Validate the Packer templates, scripts, .check_hash rules, required roles and playbooks.
+    """Validate templates, scripts, .check_hash rules, required roles, storage and playbooks.
 
     Reads no latest.json, so a child validates without a published parent.
     """
@@ -191,6 +225,7 @@ def cmd_validate(
         print(f".check_hash:{rule.line_no}: {rule.template!r} matches no file for any image")
         global_ok = False
     missing_roles = required_roles.missing_roles(catalog)
+    storage_problems = storage.problems(catalog)
 
     git = packer.git_info(root)
     clock = packer.Clock.now()
@@ -204,6 +239,12 @@ def cmd_validate(
             if image.name in hashes.errors:
                 failures[image.name].append(f"CHECK_HASH: {hashes.errors[image.name]}")
             failures[image.name].extend(missing_roles.get(image.name, []))
+            failures[image.name].extend(storage_problems.get(image.name, []))
+            # a broken storage.yml is reported above; validate the template without it
+            unreadable = image.name in hashes.errors or image.name in storage_problems
+            own = [] if unreadable else storage.own_datasets(root, image)
+            ranges = idmap.load(root) if own else None
+            storage_vars = storage.ansible_vars(catalog.storage, ranges, own)
             inputs = packer.BuildInputs(
                 image=image,
                 source=validate_source(catalog, image),
@@ -214,6 +255,7 @@ def cmd_validate(
                 sbom_file=(build.build_root(root) / image.name / packer.SBOM_FILE).resolve(),
                 accelerator="none",
                 ssh=ssh,
+                storage_vars=storage_vars,
             )
             print(f"--- packer validate {image.name}", flush=True)
             result = subprocess.run(
