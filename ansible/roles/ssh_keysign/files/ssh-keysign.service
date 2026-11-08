@@ -3,12 +3,17 @@ Description=Initiate SSH certificate request to SSH CA server
 After=network-online.target
 Wants=network-online.target
 ConditionPathExists=/etc/ssh-keysign/config.yml
+# bounded so a persistent failure still lands in the failed state the alert watches
+StartLimitIntervalSec=2h
+StartLimitBurst=4
 
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/ssh-keysign host
 ExecStartPost=/bin/sh -c 'set -e; echo "HostCertificate /etc/ssh/ssh_host_ed25519_key-cert.pub" > /etc/ssh/sshd_config.d/01_host_certificate.conf'
 ExecStartPost=systemctl reload sshd
+Restart=on-failure
+RestartSec=15min
 
 NoNewPrivileges=yes
 PrivateTmp=yes
