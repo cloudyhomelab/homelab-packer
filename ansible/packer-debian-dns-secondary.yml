@@ -42,3 +42,5 @@
       systemd_app_data_dirs:
         - path: cache
         - path: records
+
+    - role: nftables_dropins
