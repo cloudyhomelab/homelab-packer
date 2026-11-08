@@ -12,8 +12,7 @@ Network=host
 Environment=BIND9_USER=root
 Environment=TZ=Europe/Helsinki
 Volume=/var/app/bind9-slave/config/named.conf:/etc/bind/named.conf:ro
-# decrypted on the VM from private/
-Volume=/run/app/bind9-slave/private/zone-slave.conf:/etc/bind/zone-slave.conf:ro
+Volume=/var/app/bind9-slave/config/zone-slave.conf:/etc/bind/zone-slave.conf:ro
 Volume=/var/app/bind9-slave/cache:/var/cache/bind
 Volume=/var/app/bind9-slave/records:/var/lib/bind
 LogDriver=journald
