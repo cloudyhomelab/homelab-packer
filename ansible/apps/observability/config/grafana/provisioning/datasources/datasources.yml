@@ -6,6 +6,9 @@ datasources:
     uid: prometheus
     url: http://prometheus:9090
     isDefault: true
+    jsonData:
+      # hosts push via Alloy at this interval; keep in sync with its prometheus.scrape
+      timeInterval: 60s
 
   - name: Loki
     type: loki

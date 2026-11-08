@@ -8,8 +8,9 @@ prometheus.exporter.unix "host" {
 }
 
 prometheus.scrape "host" {
-	targets    = prometheus.exporter.unix.host.targets
-	forward_to = [prometheus.remote_write.central.receiver]
+	targets         = prometheus.exporter.unix.host.targets
+	scrape_interval = "60s"
+	forward_to      = [prometheus.remote_write.central.receiver]
 }
 
 prometheus.remote_write "central" {
@@ -64,7 +65,8 @@ loki.source.journal "journal" {
 	// the default 7h would skip what an outage longer than that left unshipped; the journal cap bounds it
 	max_age       = "168h"
 	relabel_rules = loki.relabel.journal.rules
-	labels        = {host = constants.hostname}
+	// same label as the host metrics, so logs and metrics correlate
+	labels        = {instance = constants.hostname}
 	forward_to    = [loki.write.central.receiver]
 }
 

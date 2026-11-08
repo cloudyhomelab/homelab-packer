@@ -1,7 +1,12 @@
+global:
+  scrape_interval: 60s
+
 storage:
   tsdb:
     retention:
       time: 30d
+    # hosts replay their buffered backlog after an outage instead of losing it as out of bounds
+    out_of_order_time_window: 8h
 
 scrape_configs:
   - job_name: prometheus
