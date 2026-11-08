@@ -1,0 +1,38 @@
+# Grafana expands $VARS anywhere in provisioning files; a literal dollar must be written $$
+apiVersion: 1
+
+templates:
+  - orgId: 1
+    name: telegram
+    # only names, no values or details: messages are readable by Telegram
+    template: |
+      {{ define "telegram.minimal" -}}
+      {{ range .Alerts -}}
+      [{{ .Status | toUpper }}] {{ .Labels.alertname }}:
+      {{- with .Labels.instance }} {{ . }}{{ end }}
+      {{- with .Labels.name }} {{ . }}{{ end }}
+      {{- with .Labels.mountpoint }} {{ . }}{{ end }}
+      {{- with .Labels.rulename }} {{ . }}{{ end }}
+      {{ end -}}
+      {{ .ExternalURL }}
+      {{- end }}
+
+contactPoints:
+  - orgId: 1
+    name: telegram
+    receivers:
+      - uid: telegram
+        type: telegram
+        settings:
+          bottoken: ${TELEGRAM_BOT_TOKEN}
+          chatid: "${TELEGRAM_CHAT_ID}"
+          message: '{{ template "telegram.minimal" . }}'
+          disable_web_page_preview: true
+
+policies:
+  - orgId: 1
+    receiver: telegram
+    group_by: [alertname, instance]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 12h
