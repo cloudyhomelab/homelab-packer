@@ -29,6 +29,7 @@ Run from the project root:
 
 ```bash
 uv run imagectl list                          # the image tree
+uv run imagectl storage [--json] IMAGE        # the NFS datasets a VM of the image mounts
 uv run imagectl validate [IMAGE...]           # templates, scripts, driver, playbooks
 uv run imagectl plan                          # images that are due, and why
 uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
@@ -118,6 +119,55 @@ They are baked into the image still encrypted. On the VM, before any of the app'
 reference them (`EnvironmentFile=`, `Volume=`). The VM has to get the key at boot; nothing in this
 repo provisions it, and without it the app does not start.
 
+## Persistent storage
+
+An app that keeps data declares it in `ansible/apps/<app>/storage.yml`, one NFS dataset per set of
+ZFS properties:
+
+```yaml
+datasets:
+  db:
+    owner: "999:999"      # uid:gid inside the container
+    recordsize: 16K       # optional
+  data:
+    owner: "1000:1000"
+    dirs: [config, jobs]  # optional, made below the mount at boot
+```
+
+Dataset `<key>` of app `<app>` is exported from `config.storage` in `images.yml` as
+`<server>:<base>/<app>/<key>` and mounted at `/srv/<app>/<key>`. The playbook runs the
+`app_storage` role, which bakes the mount units and `<app>-storage.service`; that service creates
+the `dirs` and sets ownership after mounting, since the mount hides anything the image put there.
+The app's units order themselves after it (`Requires=` and `After=`). Mounts are enabled, not
+started, during the build.
+
+Each app with storage runs its containers in its own ID range, so its files on the NFS server are
+owned by IDs that no other app and no account on the server uses. `ansible/apps/idmap.yml` gives
+the app a slot; container ID `n` becomes `start + slot * size + n`. The role writes the range to
+`/etc/subuid` and `/etc/subgid` under the app's name, and every `.container` of the app names it:
+
+```ini
+[Container]
+SubUIDMap=<app>
+SubGIDMap=<app>
+```
+
+A container that writes to its storage runs as the dataset's owner (`User=` in the quadlet), not
+as root: the NFS server checks permissions itself, so root inside the container gets no override
+there and cannot read a directory it does not own.
+
+A slot is never reused or changed while data owned by it exists. A per-app rootless user later
+gets the same IDs with UID `start + slot * size` and its sub-IDs from the next one up.
+
+The image does not create datasets or exports. `metadata.json` lists every dataset a VM of the
+image mounts, its ancestors' included, under `STORAGE` (`app`, `dataset`, `recordsize`), and
+`imagectl storage IMAGE` prints the same from the checkout. Whatever deploys the image creates the
+missing datasets (preset Generic, so the VM can `chmod`) and exports each to the VM only, with
+root mapped to root, before the VM boots. A dataset belongs to the app, so moving an app to
+another image keeps its data. `validate` checks the files, the slots and the containers' ID
+lines, that no dataset is declared twice for one image, and that the playbook runs
+`app_storage`.
+
 ## Publishing
 
 CI is the only publisher. `plan`, `publish` and `validate` do not run `imagectl` on the runner:
@@ -142,7 +192,7 @@ of the newest `metadata.json`. `<bucket>/<os>/<image>/index.json` lists every bu
 image, newest first, as
 `{"IMAGE": ..., "BUILDS": [<metadata.json>, ...]}`; consumers that mirror the published builds,
 such as Terraform, read it. `publish` rewrites it after pruning, and it is never written empty.
-Inside the image, `/etc/os-image-metadata` holds the same facts.
+Inside the image, `/etc/os-image-metadata` holds the same facts, without `STORAGE`.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.
 syft and its output stay on a tmpfs that is removed afterwards, so neither ships in the image.

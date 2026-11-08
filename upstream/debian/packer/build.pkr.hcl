@@ -24,9 +24,12 @@ build {
   }
 
   provisioner "ansible" {
-    playbook_file   = "${local.repo_root}/${var.playbook_file}"
-    user            = var.username
-    extra_arguments = ["--extra-vars", "image_playbook=${local.playbook_name}"]
+    playbook_file = "${local.repo_root}/${var.playbook_file}"
+    user          = var.username
+    extra_arguments = [
+      "--extra-vars", "image_playbook=${local.playbook_name}",
+      "--extra-vars", var.storage_vars,
+    ]
   }
 
   # after the image playbook, so the SBOM sees every package it installed

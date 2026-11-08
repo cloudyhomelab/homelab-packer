@@ -1,3 +1,4 @@
+import dataclasses
 import io
 import json
 
@@ -83,7 +84,15 @@ def test_metadata_contents(catalog, build):
         "PACKER_GIT_COMMIT": "abc1234",
         "IMAGE_URL": f"{BASE_URL}/{BUILD_PREFIX}/{IMAGE_FILE}",
         "IMAGE_CHECKSUM": "sha512:" + "d" * 128,
+        "STORAGE": [],
     }
+
+
+def test_metadata_lists_the_storage(catalog, build):
+    dataset = {"app": "youtarr", "dataset": "db"}
+    with_storage = dataclasses.replace(build, storage=(dataset,))
+    meta = publish.metadata(catalog, with_storage, "sha512:" + "d" * 128)
+    assert meta["STORAGE"] == [dataset]
 
 
 def test_upload_order_puts_latest_json_last(catalog, client, build, image_path, sbom_path):

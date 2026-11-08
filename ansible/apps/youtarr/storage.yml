@@ -1,0 +1,10 @@
+datasets:
+  db:
+    owner: "999:999"
+    recordsize: 32K
+  media:
+    owner: "1000:1000"
+    recordsize: 1M
+  data:
+    owner: "1000:1000"
+    dirs: [config, jobs, images]

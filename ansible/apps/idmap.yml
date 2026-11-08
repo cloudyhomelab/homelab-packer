@@ -1,0 +1,6 @@
+# Each app's containers run in their own ID range: container ID n is start + slot * size + n on
+# the VM and on the NFS server. A slot is never reused, since files on the NAS keep its IDs.
+start: 2000000
+size: 65536
+slots:
+  youtarr: 1

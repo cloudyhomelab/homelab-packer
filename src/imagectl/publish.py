@@ -123,13 +123,15 @@ class Build:
     clock: Clock
     check_hash: str
     git: GitInfo
+    # the datasets a VM of this image mounts, for whatever deploys it to create and export
+    storage: tuple[dict[str, str], ...] = ()
 
 
 def build_prefix(catalog: Catalog, build: Build) -> str:
     return f"{catalog.image_prefix(build.image)}/{build.clock.build_version}"
 
 
-def metadata(catalog: Catalog, build: Build, image_checksum: str) -> dict[str, str]:
+def metadata(catalog: Catalog, build: Build, image_checksum: str) -> dict[str, object]:
     name = image_file(build.image, build.clock)
     return {
         "IMAGE": build.image.name,
@@ -145,6 +147,7 @@ def metadata(catalog: Catalog, build: Build, image_checksum: str) -> dict[str, s
         "PACKER_GIT_COMMIT": build.git.commit,
         "IMAGE_URL": catalog.public_url(f"{build_prefix(catalog, build)}/{name}"),
         "IMAGE_CHECKSUM": image_checksum,
+        "STORAGE": list(build.storage),
     }
 
 
@@ -155,13 +158,13 @@ def publish(
     image_path: Path,
     sbom_path: Path,
     check_image=qemu_img_check,
-) -> dict[str, str]:
+) -> dict[str, object]:
     """Upload image, checksum, SBOM and metadata, then latest.json last."""
     check_image(image_path)
     digest = sha512_file(image_path)
     meta = metadata(catalog, build, f"sha512:{digest}")
     prefix = build_prefix(catalog, build)
-    name = meta["IMAGE_FILE"]
+    name = image_file(build.image, build.clock)
     meta_json = (json.dumps(meta, indent=2) + "\n").encode()
 
     store.put_file(f"{prefix}/{name}", image_path, "application/octet-stream")

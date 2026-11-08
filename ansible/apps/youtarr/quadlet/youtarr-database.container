@@ -1,7 +1,13 @@
 [Unit]
 Description=Youtarr MariaDB
+After=youtarr-storage.service
+Requires=youtarr-storage.service
 
 [Container]
+SubUIDMap=youtarr
+SubGIDMap=youtarr
+# root in the container gets no override on NFS; the server checks the real owner
+User=999:999
 ContainerName=youtarr_mariadb
 Image=youtarr-database.image
 Network=youtarr.network

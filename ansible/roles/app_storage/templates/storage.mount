@@ -1,0 +1,11 @@
+[Unit]
+Description=NFS storage at {{ item.where }}
+
+[Mount]
+What={{ item.what }}
+Where={{ item.where }}
+Type=nfs
+Options={{ app_storage_mount_options }}
+
+[Install]
+WantedBy=remote-fs.target

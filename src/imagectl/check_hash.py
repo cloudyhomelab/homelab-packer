@@ -6,18 +6,20 @@ import hashlib
 import json
 import subprocess
 from collections.abc import Iterable
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 import pathspec
 from ruamel.yaml import YAML
 from ruamel.yaml.error import YAMLError
 
-from .catalog import Catalog, Image
+from . import idmap
+from .catalog import Catalog, CatalogError, Image
 
 CHECK_HASH_FILE = ".check_hash"
 ANSIBLE_DIR = "ansible"
 SYSTEMD_APP_ROLE = "binarycodes.homelab.systemd_app"
+STORAGE_FILE = "storage.yml"
 ROLE_INCLUDE_KEYS = {
     "import_role",
     "include_role",
@@ -240,9 +242,34 @@ def select_files(
     return ImageFiles(sorted(selected), matched_rules)
 
 
-def compute(root: Path, image: Image, selected: list[str]) -> str:
+def storage_inputs(catalog: Catalog, apps: list[str]) -> dict[str, object] | None:
+    """The shared settings that shape an image's mounts: none for an image without storage,
+    and of idmap.yml only the slots of its own apps, so a new app rebuilds no other image."""
+    root = catalog.root
+    with_storage = [a for a in apps if (root / ANSIBLE_DIR / "apps" / a / STORAGE_FILE).is_file()]
+    if not with_storage:
+        return None
+    ranges = idmap.load(root)
+    return {
+        "config": asdict(catalog.storage) if catalog.storage else None,
+        "idmap": None
+        if ranges is None
+        else {
+            "start": ranges.start,
+            "size": ranges.size,
+            "slots": {a: ranges.slots.get(a) for a in with_storage},
+        },
+    }
+
+
+def compute(
+    root: Path, image: Image, selected: list[str], storage: dict[str, object] | None = None
+) -> str:
     h = hashlib.sha256()
     h.update(json.dumps(image.settings(), sort_keys=True).encode())
+    # only images that mount storage, so a new NFS server rebuilds just those
+    if storage is not None:
+        h.update(json.dumps(storage, sort_keys=True).encode())
     for name in selected:
         h.update(b"\0" + name.encode() + b"\0")
         h.update(hashlib.sha256((root / name).read_bytes()).digest())
@@ -278,7 +305,12 @@ def compute_all(catalog: Catalog, images: list[Image] | None = None) -> Result:
         picked = select_files(rules, image, {"{roles}": roles, "{apps}": apps}, files)
         matched |= picked.matched_rules
         result.files[image.name] = picked.files
-        result.hashes[image.name] = compute(root, image, picked.files)
+        try:
+            storage = storage_inputs(catalog, apps)
+        except CatalogError as e:
+            result.errors[image.name] = "; ".join(e.errors)
+            continue
+        result.hashes[image.name] = compute(root, image, picked.files, storage)
     if images is None:
         result.unmatched = [rule for rule in rules if rule.line_no not in matched]
     return result
