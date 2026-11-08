@@ -8,7 +8,11 @@ templates:
     template: |
       {{ define "telegram.minimal" -}}
       {{ range .Alerts -}}
-      [{{ .Status | toUpper }}] {{ .Labels.alertname }}: {{ .Labels.instance }}{{ with .Labels.name }} {{ . }}{{ end }}{{ with .Labels.mountpoint }} {{ . }}{{ end }}{{ with .Labels.rulename }} {{ . }}{{ end }}
+      [{{ .Status | toUpper }}] {{ .Labels.alertname }}:
+      {{- with .Labels.instance }} {{ . }}{{ end }}
+      {{- with .Labels.name }} {{ . }}{{ end }}
+      {{- with .Labels.mountpoint }} {{ . }}{{ end }}
+      {{- with .Labels.rulename }} {{ . }}{{ end }}
       {{ end -}}
       {{ .ExternalURL }}
       {{- end }}
