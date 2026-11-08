@@ -17,6 +17,14 @@ package_update: true
 package_upgrade: true
 package_reboot_if_required: true
 
+# build VMs must not report as hosts; the drop-in lives in /run so it never reaches the image,
+# and bootcmd rewrites it after the package-upgrade reboot clears /run
+bootcmd:
+  - |
+    mkdir -p /run/systemd/system/alloy.service.d
+    printf '[Unit]\nConditionPathExists=/nonexistent\n' > /run/systemd/system/alloy.service.d/10-packer-build.conf
+    systemctl daemon-reload
+
 write_files:
   - path: /etc/ssh/packer_user_ca.pub
     owner: root:root
