@@ -27,6 +27,7 @@ images:
         - container:
             disk_size: 3G
             children:
+              - arr-stack
               - controlplane
               - dns-primary
               - dns-secondary

@@ -1,0 +1,42 @@
+- name: set computed facts
+  hosts: all
+  tasks:
+    - name: set normalized architecture fact
+      ansible.builtin.set_fact:
+        normalized_arch: >-
+          {{
+          'amd64' if ansible_facts['architecture'] == 'x86_64' else
+          'arm64' if ansible_facts['architecture'] == 'aarch64' else
+          ansible_facts['architecture']
+          }}
+
+- name: configure arr stack
+  hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+    systemd_app_slice: cloudyhome
+
+  # /srv, not systemd_app_data_dirs under /var/app: a per-host share is mounted there; owners are the images' users
+  pre_tasks:
+    - name: create persistent data directories
+      ansible.builtin.file:
+        path: "/srv/{{ item.name }}"
+        state: directory
+        owner: "{{ item.owner }}"
+        group: "{{ item.group }}"
+        mode: '0750'
+      loop:
+        - {name: youtarr, owner: "1000", group: "1000"}
+        - {name: youtarr/db, owner: "999", group: "999"}
+        - {name: youtarr/media, owner: "1000", group: "1000"}
+        - {name: youtarr/config, owner: "1000", group: "1000"}
+        - {name: youtarr/jobs, owner: "1000", group: "1000"}
+        - {name: youtarr/images, owner: "1000", group: "1000"}
+
+  roles:
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: youtarr
+
+    - role: nftables_dropins

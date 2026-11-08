@@ -1,0 +1,23 @@
+[Unit]
+Description=Youtarr MariaDB
+
+[Container]
+ContainerName=youtarr_mariadb
+Image=youtarr-database.image
+Network=youtarr.network
+NetworkAlias=database
+Volume=/srv/youtarr/db:/var/lib/mysql
+EnvironmentFile=/var/app/youtarr/config/youtarr.env
+EnvironmentFile=/run/app/youtarr/private/db.env
+Exec=--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+HealthCmd=healthcheck.sh --connect --innodb_initialized
+HealthInterval=10s
+HealthStartPeriod=30s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -12,3 +12,7 @@ immich.cloudyhome.net {
 immich-frame.cloudyhome.net {
     reverse_proxy media.ip.cloudyhome.net:8080
 }
+
+youtarr.cloudyhome.net {
+    reverse_proxy arr-stack.ip.cloudyhome.net:3087
+}
