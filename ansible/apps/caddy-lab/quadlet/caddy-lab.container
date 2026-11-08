@@ -1,18 +1,24 @@
 [Unit]
 Description=Caddy Lab VLAN proxy
 Wants=network-online.target
-After=network-online.target
+After=network-online.target caddy-lab-storage.service
+Requires=caddy-lab-storage.service
 StartLimitBurst=5
 StartLimitIntervalSec=300
 
 [Container]
+SubUIDMap=caddy-lab
+SubGIDMap=caddy-lab
+# root in the container gets no override on NFS; the server checks the real owner
+User=1000:1000
+Sysctl=net.ipv4.ip_unprivileged_port_start=443
 ContainerName=caddy-lab
 Image=caddy-lab.image
 Network=caddy-lab.network
 Volume=/var/app/caddy-lab/config/Caddyfile:/etc/caddy/Caddyfile:ro
 EnvironmentFile=/run/app/caddy-lab/private/porkbun.env
-Volume=caddy-data.volume:/data
-Volume=caddy-config.volume:/config
+Volume=/srv/caddy-lab/data:/data
+Volume=caddy-config.volume:/config:U
 ReadOnly=true
 PublishPort=443:443
 LogDriver=journald

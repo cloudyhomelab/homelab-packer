@@ -4,3 +4,7 @@ start: 2000000
 size: 65536
 slots:
   youtarr: 1
+  caddy-lab: 2
+  caddy-mgmt: 3
+  caddy-iot: 4
+  caddy-observability: 5
