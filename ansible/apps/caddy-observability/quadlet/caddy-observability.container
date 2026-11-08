@@ -1,18 +1,24 @@
 [Unit]
 Description=Caddy observability proxy
 Wants=network-online.target
-After=network-online.target
+After=network-online.target caddy-observability-storage.service
+Requires=caddy-observability-storage.service
 StartLimitBurst=5
 StartLimitIntervalSec=300
 
 [Container]
+SubUIDMap=caddy-observability
+SubGIDMap=caddy-observability
+# root in the container gets no override on NFS; the server checks the real owner
+User=1000:1000
+Sysctl=net.ipv4.ip_unprivileged_port_start=443
 ContainerName=caddy-observability
 Image=caddy-observability.image
 Network=observability.network
 Volume=/var/app/caddy-observability/config/Caddyfile:/etc/caddy/Caddyfile:ro
 EnvironmentFile=/run/app/caddy-observability/private/porkbun.env
-Volume=caddy-data.volume:/data
-Volume=caddy-config.volume:/config
+Volume=/srv/caddy-observability/data:/data
+Volume=caddy-config.volume:/config:U
 ReadOnly=true
 PublishPort=443:443
 LogDriver=journald
