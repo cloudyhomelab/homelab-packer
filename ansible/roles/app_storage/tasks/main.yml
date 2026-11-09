@@ -1,6 +1,8 @@
-- name: install the NFS client
+- name: install the NFS client and the DNS lookup tool
   ansible.builtin.apt:
-    name: nfs-common
+    name:
+      - nfs-common
+      - bind9-host
     state: present
     install_recommends: false
 

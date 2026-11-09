@@ -6,17 +6,20 @@ set -u
 interval=$1
 fqdn=$(uname -n)
 
-query() {
-    resolvectl query --legend=no --cache=no --synthesize=no -t "$1" "$2" 2>/dev/null |
-        awk -v type="$1" '$3 == type { sub(/\.$/, "", $4); print $4 }'
+# host asks the servers in resolv.conf directly: no /etc/hosts, no cache. resolved has no servers here.
+addresses() {
+    host -t A "$1." 2>/dev/null | awk '/ has address / { print $NF }'
+}
+
+names() {
+    host -t PTR "$1" 2>/dev/null | awk '/ domain name pointer / { sub(/\.$/, "", $NF); print $NF }'
 }
 
 echo "waiting for DNS to map $fqdn to a local address and back"
 while :; do
-    for addr in $(query A "$fqdn"); do
+    for addr in $(addresses "$fqdn"); do
         ip -4 -o addr show scope global | grep -qF " $addr/" || continue
-        ptr=$(echo "$addr" | awk -F. '{ print $4 "." $3 "." $2 "." $1 ".in-addr.arpa" }')
-        if query PTR "$ptr" | grep -qxF "$fqdn"; then
+        if names "$addr" | grep -qxF "$fqdn"; then
             echo "DNS maps $fqdn to $addr and back"
             exit 0
         fi
