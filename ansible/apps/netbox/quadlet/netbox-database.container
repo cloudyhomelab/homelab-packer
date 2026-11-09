@@ -1,0 +1,29 @@
+[Unit]
+Description=NetBox PostgreSQL
+After=netbox-storage.service
+Requires=netbox-storage.service
+
+[Container]
+SubUIDMap=netbox
+SubGIDMap=netbox
+# root in the container gets no override on NFS; the server checks the real owner
+User=70:70
+ContainerName=netbox_postgres
+Image=netbox-database.image
+Network=netbox.network
+NetworkAlias=database
+Volume=/srv/netbox/db:/var/lib/postgresql
+EnvironmentFile=/var/app/netbox/config/netbox.env
+EnvironmentFile=/run/app/netbox/private/db.env
+ShmSize=128m
+HealthCmd=/bin/sh -c 'pg_isready -q -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}" || exit 1'
+HealthInterval=10s
+HealthStartPeriod=20s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

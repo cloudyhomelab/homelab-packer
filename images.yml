@@ -39,6 +39,7 @@ images:
               - lab-ingress-control
               - management-ingress-control
               - media
+              - netbox
               - observability
               - runner
               - unifi

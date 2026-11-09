@@ -1,0 +1,32 @@
+[Unit]
+Description=NetBox
+After=netbox-database.service netbox-redis.service netbox-storage.service
+Requires=netbox-database.service netbox-redis.service netbox-storage.service
+
+[Container]
+SubUIDMap=netbox
+SubGIDMap=netbox
+User=999:0
+ContainerName=netbox
+Image=netbox.image
+Network=netbox.network
+Volume=/srv/netbox/data/media:/opt/netbox/netbox/media
+Volume=/srv/netbox/data/reports:/opt/netbox/netbox/reports
+Volume=/srv/netbox/data/scripts:/opt/netbox/netbox/scripts
+PublishPort=8080:8080
+EnvironmentFile=/var/app/netbox/config/netbox.env
+EnvironmentFile=/run/app/netbox/private/db.env
+EnvironmentFile=/run/app/netbox/private/netbox.env
+HealthCmd=/opt/netbox/health.sh
+HealthInterval=15s
+HealthStartPeriod=90s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+# the entrypoint runs the database migrations before it serves, which takes minutes on a new database
+TimeoutStartSec=15min
+
+[Install]
+WantedBy=multi-user.target
