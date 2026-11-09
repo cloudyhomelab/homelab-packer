@@ -1,11 +1,11 @@
 $ORIGIN .
 $TTL 172800	; 2 days
 ip.cloudyhome.net	IN SOA	ns1.ip.cloudyhome.net. hostmaster.ip.cloudyhome.net. (
-				2026110803 ; serial
+				2026110901 ; serial
 				43200      ; refresh (12 hours)
 				900        ; retry (15 minutes)
 				1814400    ; expire (3 weeks)
-				7200       ; minimum (2 hours)
+				60         ; minimum (1 minute)
 				)
 			NS	ns1.ip.cloudyhome.net.
 			NS	ns2.ip.cloudyhome.net.
