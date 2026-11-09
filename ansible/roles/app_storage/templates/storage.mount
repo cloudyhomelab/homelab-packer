@@ -7,7 +7,8 @@ After=app-storage-dns.service
 What={{ item.what }}
 Where={{ item.where }}
 Type=nfs
-Options={{ app_storage_mount_options }}
+# nofail drops Before=remote-fs.target: the DNS wait would otherwise hold the boot, and logins, with it
+Options={{ app_storage_mount_options }},nofail
 
 [Install]
 WantedBy=remote-fs.target
