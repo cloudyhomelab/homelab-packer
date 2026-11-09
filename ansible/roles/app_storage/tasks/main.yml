@@ -1,8 +1,6 @@
-- name: install the NFS client and the DNS lookup tool
+- name: install the NFS client
   ansible.builtin.apt:
-    name:
-      - nfs-common
-      - bind9-host
+    name: nfs-common
     state: present
     install_recommends: false
 
@@ -18,22 +16,6 @@
   loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_storage_apps) | list }}"
   loop_control:
     label: "{{ item.0 }} {{ item.1.app }}"
-
-- name: install the DNS wait script
-  ansible.builtin.copy:
-    src: app-storage-dns-wait
-    dest: /usr/local/libexec/app-storage-dns-wait
-    owner: root
-    group: root
-    mode: '0755'
-
-- name: install the unit that holds the mounts until DNS knows the VM
-  ansible.builtin.template:
-    src: app-storage-dns.service
-    dest: /etc/systemd/system/app-storage-dns.service
-    owner: root
-    group: root
-    mode: '0644'
 
 - name: install the mount units
   ansible.builtin.template:

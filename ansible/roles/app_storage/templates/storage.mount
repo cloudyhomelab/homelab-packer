@@ -1,14 +1,11 @@
 [Unit]
 Description=NFS storage at {{ item.where }}
-Requires=app-storage-dns.service
-After=app-storage-dns.service
 
 [Mount]
 What={{ item.what }}
 Where={{ item.where }}
 Type=nfs
-# nofail drops Before=remote-fs.target: the DNS wait would otherwise hold the boot, and logins, with it
-Options={{ app_storage_mount_options }},nofail
+Options={{ app_storage_mount_options }}
 
 [Install]
 WantedBy=remote-fs.target

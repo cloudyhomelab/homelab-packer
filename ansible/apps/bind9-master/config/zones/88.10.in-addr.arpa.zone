@@ -5,7 +5,7 @@ $ORIGIN 88.10.in-addr.arpa.
                             12h                                 ;refresh
                             15m                                 ;retry
                             3w                                  ;expire
-                            60s                                 ;minimum ttl
+                            2h                                  ;minimum ttl
                             )
 
             IN      NS      ns1.cloudyhome.net.

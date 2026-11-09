@@ -141,12 +141,6 @@ the `dirs` and sets ownership after mounting, since the mount hides anything the
 The app's units order themselves after it (`Requires=` and `After=`). Mounts are enabled, not
 started, during the build.
 
-The NFS server matches an export by the client's name and caches a failed match, so the mounts
-wait (`app-storage-dns.service`, up to `app_storage_dns_timeout`) until DNS resolves the VM's
-FQDN to one of its own addresses and that address back to the FQDN. Whatever creates the VM's
-records after boot has that long; the zones' negative-caching TTL (SOA minimum) bounds how late
-the VM sees them.
-
 Each app with storage runs its containers in its own ID range, so its files on the NFS server are
 owned by IDs that no other app and no account on the server uses. `ansible/apps/idmap.yml` gives
 the app a slot; container ID `n` becomes `start + slot * size + n`. The role writes the range to
