@@ -1,5 +1,7 @@
 [Unit]
 Description=NFS storage at {{ item.where }}
+Requires=app-storage-dns.service
+After=app-storage-dns.service
 
 [Mount]
 What={{ item.what }}
