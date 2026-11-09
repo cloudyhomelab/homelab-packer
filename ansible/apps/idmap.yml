@@ -8,3 +8,4 @@ slots:
   caddy-mgmt: 3
   caddy-iot: 4
   caddy-observability: 5
+  netbox: 6

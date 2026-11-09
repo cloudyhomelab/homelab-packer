@@ -64,3 +64,7 @@ s3-api.cloudyhome.net {
 nas.cloudyhome.net {
     reverse_proxy moria.ip.cloudyhome.net:80
 }
+
+netbox.cloudyhome.net {
+    reverse_proxy netbox.ip.cloudyhome.net:8080
+}

@@ -1,0 +1,25 @@
+[Unit]
+Description=NetBox worker
+After=netbox.service
+Requires=netbox.service
+
+[Container]
+SubUIDMap=netbox
+SubGIDMap=netbox
+User=999:0
+ContainerName=netbox_worker
+Image=netbox.image
+Network=netbox.network
+Volume=/srv/netbox/data/media:/opt/netbox/netbox/media
+Volume=/srv/netbox/data/reports:/opt/netbox/netbox/reports
+Volume=/srv/netbox/data/scripts:/opt/netbox/netbox/scripts
+EnvironmentFile=/var/app/netbox/config/netbox.env
+EnvironmentFile=/run/app/netbox/private/db.env
+EnvironmentFile=/run/app/netbox/private/netbox.env
+Exec=/opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py rqworker
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

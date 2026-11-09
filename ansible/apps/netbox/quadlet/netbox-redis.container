@@ -1,0 +1,27 @@
+[Unit]
+Description=NetBox Valkey
+After=netbox-storage.service
+Requires=netbox-storage.service
+
+[Container]
+SubUIDMap=netbox
+SubGIDMap=netbox
+# root in the container gets no override on NFS; the server checks the real owner
+User=999:999
+ContainerName=netbox_redis
+Image=netbox-redis.image
+Network=netbox.network
+NetworkAlias=redis
+Volume=/srv/netbox/redis:/data
+Exec=valkey-server --appendonly yes
+HealthCmd=valkey-cli ping || exit 1
+HealthInterval=10s
+HealthStartPeriod=10s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

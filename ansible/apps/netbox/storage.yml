@@ -1,0 +1,9 @@
+datasets:
+  db:
+    owner: "70:70"
+    recordsize: 32K
+  redis:
+    owner: "999:999"
+  data:
+    owner: "999:0"
+    dirs: [media, reports, scripts]
