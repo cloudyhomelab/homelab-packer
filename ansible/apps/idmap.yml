@@ -9,3 +9,4 @@ slots:
   caddy-iot: 4
   caddy-observability: 5
   netbox: 6
+  immich: 7

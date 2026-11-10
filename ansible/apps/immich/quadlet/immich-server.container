@@ -1,14 +1,17 @@
 [Unit]
 Description=Immich Server
-After=immich-redis.service immich-database.service immich-machine-learning.service immich-library.service
-Requires=immich-redis.service immich-database.service immich-library.service
+After=immich-redis.service immich-database.service immich-machine-learning.service immich-storage.service
+Requires=immich-redis.service immich-database.service immich-storage.service
 Wants=immich-machine-learning.service
 
 [Container]
+SubUIDMap=immich
+SubGIDMap=immich
+User=1000:1000
 ContainerName=immich_server
 Image=immich-server.image
 Network=immich.network
-Volume=${UPLOAD_LOCATION}:/data
+Volume=/srv/immich/library:/data
 Volume=/etc/localtime:/etc/localtime:ro
 PublishPort=2283:2283
 EnvironmentFile=/var/app/immich/config/immich.env
@@ -21,7 +24,6 @@ HealthRetries=10
 Notify=healthy
 
 [Service]
-EnvironmentFile=/var/app/immich/config/immich.env
 Restart=always
 
 [Install]
