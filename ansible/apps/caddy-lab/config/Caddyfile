@@ -5,14 +5,24 @@
     }
 }
 
+(upstream) {
+    header_up Host {host}
+}
+
 immich.cloudyhome.net {
-    reverse_proxy media.ip.cloudyhome.net:2283
+    reverse_proxy media.ip.cloudyhome.net:2283 {
+        import upstream
+    }
 }
 
 immich-frame.cloudyhome.net {
-    reverse_proxy media.ip.cloudyhome.net:8080
+    reverse_proxy media.ip.cloudyhome.net:8080 {
+        import upstream
+    }
 }
 
 youtarr.cloudyhome.net {
-    reverse_proxy arr-stack.ip.cloudyhome.net:3087
+    reverse_proxy arr-stack.ip.cloudyhome.net:3087 {
+        import upstream
+    }
 }

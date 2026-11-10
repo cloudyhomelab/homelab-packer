@@ -5,8 +5,14 @@
     }
 }
 
+(upstream) {
+    header_up Host {host}
+}
+
 grafana.cloudyhome.net {
-    reverse_proxy grafana:3000
+    reverse_proxy grafana:3000 {
+        import upstream
+    }
 }
 
 prometheus.cloudyhome.net {
@@ -16,7 +22,9 @@ prometheus.cloudyhome.net {
     }
 
     handle @ingest {
-        reverse_proxy prometheus:9090
+        reverse_proxy prometheus:9090 {
+            import upstream
+        }
     }
 
     respond 403
@@ -29,7 +37,9 @@ loki.cloudyhome.net {
     }
 
     handle @ingest {
-        reverse_proxy loki:3100
+        reverse_proxy loki:3100 {
+            import upstream
+        }
     }
 
     respond 403
