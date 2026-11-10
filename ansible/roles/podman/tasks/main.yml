@@ -18,6 +18,15 @@
     group: root
     mode: "0644"
 
+# one timezone for host and containers, set by the system role
+- name: give containers the host's timezone
+  ansible.builtin.template:
+    src: 20-timezone.conf
+    dest: /etc/containers/containers.conf.d/
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: install podman and related packages
   ansible.builtin.apt:
     name: "{{ podman_packages }}"
