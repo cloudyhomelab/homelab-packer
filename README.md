@@ -80,7 +80,9 @@ A container app lives in `ansible/apps/<app>/` and is installed by the
 role:
 
 - `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`. Each `<name>.container`
-  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it
+  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it.
+  The `.image` sets `Policy=missing`: every build pulls the image into the qcow2
+  (`ansible/quadlet-prepull.yml`, run after the image's playbook), so boot needs no registry
 - `unit/`: plain systemd units, installed to `/etc/systemd/system/`
 - `config/`: config files, installed to `/var/app/<app>/config/`
 - `private/`: encrypted files, see below

@@ -1,0 +1,6 @@
+# Run by every image's build after its own playbook; not an image playbook.
+- name: pull the images of the Quadlet apps
+  hosts: all
+  become: true
+  roles:
+    - role: quadlet_prepull

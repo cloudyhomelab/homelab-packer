@@ -1,0 +1,17 @@
+---
+# The Quadlet generator's output, not `systemctl list-unit-files`: it holds only Quadlet units
+# and an image without any apps simply has none.
+- name: find the Quadlet image units
+  ansible.builtin.find:
+    paths: /run/systemd/generator
+    patterns: "*-image.service"
+  register: quadlet_prepull_units
+
+# Starting the unit runs the pull exactly as boot would, from the ref in the app's .image file.
+- name: pull the container images into the image
+  ansible.builtin.systemd:
+    name: "{{ item.path | basename }}"
+    state: started
+  loop: "{{ quadlet_prepull_units.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"

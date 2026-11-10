@@ -32,6 +32,12 @@ build {
     ]
   }
 
+  # a separate play, so the image playbook's daemon-reload handler has generated the units
+  provisioner "ansible" {
+    playbook_file = "${local.repo_root}/ansible/quadlet-prepull.yml"
+    user          = var.username
+  }
+
   # after the image playbook, so the SBOM sees every package it installed
   provisioner "ansible" {
     playbook_file = "${local.repo_root}/ansible/sbom.yml"

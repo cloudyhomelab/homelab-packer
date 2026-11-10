@@ -1,2 +1,3 @@
 [Image]
 Image=ghcr.io/lemker/unifi-os-server:latest
+Policy=missing
