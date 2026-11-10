@@ -1,3 +1,2 @@
 [Image]
 Image=docker.io/library/haproxy:3.4
-Policy=missing

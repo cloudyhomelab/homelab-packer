@@ -1,3 +1,2 @@
 [Image]
 Image=docker.io/binarycodes/github-runner:latest
-Policy=missing

@@ -1,3 +1,2 @@
 [Image]
 Image=docker.io/grafana/grafana:13.2.4
-Policy=missing

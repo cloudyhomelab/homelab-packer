@@ -1,3 +1,2 @@
 [Image]
 Image=docker.io/binarycodes/caddy-porkbun:latest
-Policy=missing

@@ -1,3 +1,2 @@
 [Image]
 Image=docker.io/ubuntu/bind9:latest
-Policy=missing
