@@ -5,6 +5,12 @@
     }
 }
 
+(upstream) {
+    header_up Host {host}
+}
+
 homeassistant.cloudyhome.net {
-    reverse_proxy http://homeassistant.ip.cloudyhome.net:8123
+    reverse_proxy http://homeassistant.ip.cloudyhome.net:8123 {
+        import upstream
+    }
 }
