@@ -1,0 +1,6 @@
+add element inet base-filter base-open {
+    tcp . 8123,
+    udp . 1900,
+    udp . 5353,
+    udp . 5540,
+}

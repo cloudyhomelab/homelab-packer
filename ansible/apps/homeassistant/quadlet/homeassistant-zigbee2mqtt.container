@@ -1,0 +1,25 @@
+[Unit]
+Description=Zigbee2MQTT
+After=homeassistant-mosquitto.service homeassistant-storage.service
+Requires=homeassistant-mosquitto.service homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+# root in the container gets no override on NFS; the server checks the real owner
+User=1000:1000
+ContainerName=zigbee2mqtt
+Image=homeassistant-zigbee2mqtt.image
+Network=homeassistant.network
+Volume=/srv/homeassistant/zigbee2mqtt:/app/data
+# loopback only: the UI is reached through Home Assistant's ingress panel
+PublishPort=127.0.0.1:8080:8080
+EnvironmentFile=/var/app/homeassistant/config/zigbee2mqtt.env
+EnvironmentFile=/run/app/homeassistant/private/zigbee2mqtt.env
+
+[Service]
+Restart=always
+RestartSec=10s
+
+[Install]
+WantedBy=multi-user.target

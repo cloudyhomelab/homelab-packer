@@ -1,0 +1,29 @@
+[Unit]
+Description=Home Assistant PostgreSQL
+After=homeassistant-storage.service
+Requires=homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+# root in the container gets no override on NFS; the server checks the real owner
+User=70:70
+ContainerName=homeassistant_postgres
+Image=homeassistant-database.image
+Network=homeassistant.network
+Volume=/srv/homeassistant/db:/var/lib/postgresql
+PublishPort=127.0.0.1:5432:5432
+EnvironmentFile=/var/app/homeassistant/config/database.env
+EnvironmentFile=/run/app/homeassistant/private/db.env
+ShmSize=128m
+HealthCmd=/bin/sh -c 'pg_isready -q -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}" || exit 1'
+HealthInterval=10s
+HealthStartPeriod=20s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

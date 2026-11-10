@@ -1,0 +1,25 @@
+# Mounted read-only over /config/configuration.yaml; everything set in the UI stays in /config.
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - CADDY-IOT-IP
+
+recorder:
+  db_url: !secret recorder_db_url
+
+# hass_ingress, from the Marketplace
+ingress:
+  zigbee2mqtt:
+    title: Zigbee2MQTT
+    icon: mdi:zigbee
+    url: http://127.0.0.1:8080
+    require_admin: true

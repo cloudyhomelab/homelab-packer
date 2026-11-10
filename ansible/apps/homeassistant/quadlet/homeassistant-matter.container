@@ -1,0 +1,23 @@
+[Unit]
+Description=Matter server
+After=homeassistant-storage.service
+Requires=homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+User=1000:1000
+ContainerName=matter-server
+Image=homeassistant-matter.image
+# Matter and Thread need IPv6 link-local multicast on the VM's interface
+Network=host
+Volume=/srv/homeassistant/matter:/data
+# the WebSocket API has no authentication; only Home Assistant on this VM uses it
+Environment=LISTEN_ADDRESS=127.0.0.1
+Environment=MATTER_LOG_FORMAT=plain
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
