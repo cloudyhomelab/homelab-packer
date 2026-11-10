@@ -10,7 +10,6 @@ ContainerName=bind9
 Image=bind9.image
 Network=host
 Environment=BIND9_USER=root
-Environment=TZ=Europe/Helsinki
 Volume=/var/app/bind9-slave/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-slave/config/zone-slave.conf:/etc/bind/zone-slave.conf:ro
 Volume=/var/app/bind9-slave/cache:/var/cache/bind

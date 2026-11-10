@@ -10,7 +10,6 @@ ContainerName=bind9
 Image=bind9.image
 Network=host
 Environment=BIND9_USER=root
-Environment=TZ=Europe/Helsinki
 Volume=/var/app/bind9-master/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-master/config/zone-master.conf:/etc/bind/zone-master.conf:ro
 # decrypted on the VM from private/

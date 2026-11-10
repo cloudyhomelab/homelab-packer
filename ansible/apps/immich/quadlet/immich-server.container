@@ -12,7 +12,6 @@ ContainerName=immich_server
 Image=immich-server.image
 Network=immich.network
 Volume=/srv/immich/library:/data
-Volume=/etc/localtime:/etc/localtime:ro
 PublishPort=2283:2283
 EnvironmentFile=/var/app/immich/config/immich.env
 EnvironmentFile=/run/app/immich/private/db.env
