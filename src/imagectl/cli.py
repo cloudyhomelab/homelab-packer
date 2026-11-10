@@ -505,10 +505,14 @@ def cmd_test(
     local: Annotated[
         bool, typer.Option("--local", help="Boot the newest kept local build instead.")
     ] = False,
+    no_network: Annotated[
+        bool,
+        typer.Option("--no-network", help="Boot with DHCP but no route beyond the host."),
+    ] = False,
 ) -> int:
     """Boot the latest published build of an image in QEMU."""
     catalog = project()
-    return testvm.run(catalog, catalog.get(image), local)
+    return testvm.run(catalog, catalog.get(image), local, network=not no_network)
 
 
 def main() -> None:

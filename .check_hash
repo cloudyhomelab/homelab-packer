@@ -2,6 +2,8 @@
 src/imagectl/packer.py
 ansible/ansible.cfg
 ansible/requirements.yml
+ansible/quadlet-prepull.yml
+ansible/roles/quadlet_prepull/**
 
 # the image's OS
 upstream/{os}/cloud-init/**

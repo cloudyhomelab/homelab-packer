@@ -37,6 +37,7 @@ uv run imagectl publish [-j N]                # build and publish everything due
 uv run imagectl index [IMAGE...]              # rebuild index.json from S3, needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
+uv run imagectl test IMAGE --no-network       # boot with DHCP but no route beyond the host
 uv run imagectl clean [IMAGE...]              # remove kept and failed builds and test downloads
 uv run imagectl upstream [UPSTREAM...]        # newer upstream releases, writes nothing
 uv run imagectl upstream --update [UPSTREAM...]  # move the pins in upstream.yml (CI)
@@ -80,7 +81,9 @@ A container app lives in `ansible/apps/<app>/` and is installed by the
 role:
 
 - `quadlet/`: Podman Quadlet files, installed to `/etc/containers/systemd/`. Each `<name>.container`
-  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it
+  names its image as `Image=<name>.image`, with the reference in the `<name>.image` next to it.
+  Every build pulls the image into the qcow2 (`ansible/quadlet-prepull.yml`, run after the
+  image's playbook), so boot downloads no layers
 - `unit/`: plain systemd units, installed to `/etc/systemd/system/`
 - `config/`: config files, installed to `/var/app/<app>/config/`
 - `private/`: encrypted files, see below
