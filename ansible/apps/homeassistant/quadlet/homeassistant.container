@@ -1,6 +1,7 @@
 [Unit]
 Description=Home Assistant
-After=homeassistant-database.service homeassistant-mosquitto.service homeassistant-matter.service homeassistant-storage.service
+Wants=network-online.target
+After=network-online.target homeassistant-database.service homeassistant-mosquitto.service homeassistant-matter.service homeassistant-storage.service
 Requires=homeassistant-database.service homeassistant-storage.service
 
 [Container]
@@ -15,6 +16,7 @@ Volume=/srv/homeassistant/backups:/config/backups
 Volume=/var/app/homeassistant/config/configuration.yaml:/config/configuration.yaml:ro
 # U: the decrypted file is root-only, and host root is outside the app's ID range
 Volume=/run/app/homeassistant/private/secrets.yaml:/config/secrets.yaml:ro,U
+EnvironmentFile=/run/homeassistant-proxy/proxy.env
 HealthCmd=curl -fsS http://127.0.0.1:8123/manifest.json -o /dev/null
 HealthInterval=30s
 HealthStartPeriod=5m
@@ -22,6 +24,9 @@ HealthRetries=5
 
 [Service]
 Restart=always
+RuntimeDirectory=homeassistant-proxy
+ExecStartPre=/bin/sh /var/app/homeassistant/config/ensure-includes.sh
+ExecStartPre=/bin/sh /var/app/homeassistant/config/resolve-proxy.sh /run/homeassistant-proxy/proxy.env
 
 [Install]
 WantedBy=multi-user.target

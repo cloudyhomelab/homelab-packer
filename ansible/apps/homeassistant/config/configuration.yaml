@@ -10,8 +10,8 @@ scene: !include scenes.yaml
 
 http:
   use_x_forwarded_for: true
-  trusted_proxies:
-    - CADDY-IOT-IP
+  # set at unit start by resolve-proxy.sh
+  trusted_proxies: !env_var HA_TRUSTED_PROXY
 
 recorder:
   db_url: !secret recorder_db_url
