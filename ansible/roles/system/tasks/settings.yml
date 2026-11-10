@@ -2,6 +2,26 @@
   community.general.timezone:
     name: "{{ system_timezone }}"
 
+- name: create the systemd manager drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system.conf.d
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# the file form keeps system_timezone the only place the zone is named, and spares glibc a
+# stat of /etc/localtime on every time call
+- name: point TZ at /etc/localtime for every service
+  ansible.builtin.copy:
+    dest: /etc/systemd/system.conf.d/10-timezone.conf
+    content: |
+      [Manager]
+      DefaultEnvironment="TZ=:/etc/localtime"
+    owner: root
+    group: root
+    mode: "0644"
+
 # this is required when connecting from a terminal (kitty, etc.) that sets a non-standard TERM value
 - name: set TERM to xterm
   ansible.builtin.lineinfile:
