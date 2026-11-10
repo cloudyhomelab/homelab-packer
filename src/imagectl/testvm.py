@@ -115,10 +115,12 @@ def make_overlay(base: Path, work: Path) -> Path:
     return overlay
 
 
-def qemu_command(overlay: Path, seed: Path, accelerator: str) -> list[str]:
+def qemu_command(overlay: Path, seed: Path, accelerator: str, network: bool) -> list[str]:
     cmd = ["qemu-system-x86_64", "-m", "2048", "-smp", "2"]
     if accelerator == "kvm":
         cmd.append("-enable-kvm")
+    # restrict keeps DHCP, so the guest boots as it would on a LAN without a route out
+    nic = "user,model=virtio" if network else "user,model=virtio,restrict=on"
     return [
         *cmd,
         "-drive",
@@ -126,18 +128,19 @@ def qemu_command(overlay: Path, seed: Path, accelerator: str) -> list[str]:
         "-drive",
         f"file={seed},format=raw,if=virtio,index=1",
         "-nic",
-        "user,model=virtio",
+        nic,
         "-nographic",
         "-serial",
         "mon:stdio",
     ]
 
 
-def run(catalog: Catalog, image: Image, local: bool) -> int:
+def run(catalog: Catalog, image: Image, local: bool, network: bool) -> int:
     root = catalog.root
     work = workdir(root, image)
     base = local_image(root, image) if local else published_image(catalog, image, work)
     print(f"booting {base}")
     seed = make_seed(root, image, work)
     overlay = make_overlay(base, work)
-    return subprocess.run(qemu_command(overlay, seed, detect_accelerator())).returncode
+    command = qemu_command(overlay, seed, detect_accelerator(), network)
+    return subprocess.run(command).returncode
