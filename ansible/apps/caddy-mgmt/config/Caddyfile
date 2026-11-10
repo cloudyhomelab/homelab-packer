@@ -10,7 +10,7 @@
 }
 
 gateway.cloudyhome.net {
-    reverse_proxy https://gateway.ip.cloudyhome.net:443 {
+    reverse_proxy https://gateway.ip.cloudyhome.net:8443 {
         import upstream
 
         transport http {
