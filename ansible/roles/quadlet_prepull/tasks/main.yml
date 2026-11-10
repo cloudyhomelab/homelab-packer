@@ -28,10 +28,27 @@
     quiet: true
 
 # Starting the unit runs the pull exactly as boot would, from the ref in the app's .image file.
+# The build VM is gone after a failure, so podman's own error has to reach the build log.
 - name: pull the container images into the image
-  ansible.builtin.systemd:
-    name: "{{ item.path | basename }}"
-    state: started
-  loop: "{{ quadlet_prepull_units.files }}"
-  loop_control:
-    label: "{{ item.path | basename }}"
+  block:
+    - name: start the image units
+      ansible.builtin.systemd:
+        name: "{{ item.path | basename }}"
+        state: started
+      loop: "{{ quadlet_prepull_units.files }}"
+      loop_control:
+        label: "{{ item.path | basename }}"
+  rescue:
+    - name: read the journal of the failed pulls
+      ansible.builtin.command:
+        cmd: journalctl --no-pager --output=cat --lines=20 --unit={{ item.item.path | basename }}
+      loop: "{{ ansible_failed_result.results | default([]) | selectattr('failed', 'defined')
+                | selectattr('failed') | list }}"
+      loop_control:
+        label: "{{ item.item.path | basename }}"
+      register: quadlet_prepull_journal
+      changed_when: false
+
+    - name: fail with the pull errors
+      ansible.builtin.fail:
+        msg: "{{ quadlet_prepull_journal.results | map(attribute='stdout_lines') | list }}"
