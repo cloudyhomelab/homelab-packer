@@ -3,3 +3,9 @@ use_default_rules: true
 
 skip_list:
   - name[casing]
+
+exclude_paths:
+  # sops ciphertext
+  - apps/*/private/
+  # Home Assistant YAML, with its own tags such as !include and !secret
+  - apps/homeassistant/config/configuration.yaml
