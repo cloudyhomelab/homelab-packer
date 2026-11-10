@@ -1,0 +1,7 @@
+datasets:
+  db:
+    owner: "999:999"
+    recordsize: 32K
+  library:
+    owner: "1000:1000"
+    recordsize: 1M

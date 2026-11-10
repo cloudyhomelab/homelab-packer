@@ -2,6 +2,8 @@
 Description=Immich Machine Learning
 
 [Container]
+SubUIDMap=immich
+SubGIDMap=immich
 ContainerName=immich_machine_learning
 Image=immich-machine-learning.image
 Network=immich.network
@@ -10,7 +12,6 @@ Volume=immich-model-cache.volume:/cache
 EnvironmentFile=/var/app/immich/config/immich.env
 
 [Service]
-EnvironmentFile=/var/app/immich/config/immich.env
 Restart=always
 
 [Install]

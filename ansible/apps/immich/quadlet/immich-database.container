@@ -1,12 +1,18 @@
 [Unit]
 Description=Immich PostgreSQL
+After=immich-storage.service
+Requires=immich-storage.service
 
 [Container]
+SubUIDMap=immich
+SubGIDMap=immich
+# root in the container gets no override on NFS; the server checks the real owner
+User=999:999
 ContainerName=immich_postgres
 Image=immich-database.image
 Network=immich.network
 NetworkAlias=database
-Volume=${DB_DATA_LOCATION}:/var/lib/postgresql/data
+Volume=/srv/immich/db:/var/lib/postgresql/data
 EnvironmentFile=/var/app/immich/config/immich.env
 EnvironmentFile=/run/app/immich/private/db.env
 ShmSize=128m
@@ -17,8 +23,6 @@ HealthRetries=10
 Notify=healthy
 
 [Service]
-EnvironmentFile=/var/app/immich/config/immich.env
-ExecStartPre=/usr/bin/mkdir -p ${DB_DATA_LOCATION}
 Restart=always
 
 [Install]

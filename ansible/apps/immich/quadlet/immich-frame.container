@@ -4,13 +4,18 @@ Requires=immich-server.service
 After=immich-server.service
 
 [Container]
+SubUIDMap=immich
+SubGIDMap=immich
 ContainerName=immichframe
 Image=immich-frame.image
 Network=immich.network
-Volume=/run/app/immich/private/Settings.yml:/app/Config/Settings.yml:ro
+Volume=/var/app/immich/config/Settings.yml:/app/Config/Settings.yml:ro
+# U: the decrypted file is root-only, and host root is outside the app's ID range
+Volume=/run/app/immich/private/frame-api-key:/app/Config/api.key:ro,U
 PublishPort=8080:8080
 Environment=IMMICHFRAME_CONFIG_PATH=/app/Config
 EnvironmentFile=/var/app/immich/config/immich.env
+EnvironmentFile=/run/app/immich/private/frame.env
 
 [Service]
 Restart=always

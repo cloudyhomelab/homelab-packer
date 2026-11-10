@@ -2,6 +2,8 @@
 Description=Immich Redis (Valkey)
 
 [Container]
+SubUIDMap=immich
+SubGIDMap=immich
 ContainerName=immich_redis
 Image=immich-redis.image
 Network=immich.network
