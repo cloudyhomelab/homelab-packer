@@ -12,7 +12,7 @@ config:
     s3_prefix: "{os}"
 
 defaults:
-  disk_size: 5G
+  disk_size: 10G
   memory: 2048
   cpus: 2
   max_age_days: 7
@@ -21,14 +21,12 @@ defaults:
 images:
   - base:
       from: debian-cloud
-      disk_size: 5G
       children:
         - kubernetes:
             children:
               - kubernetes-control
               - kubernetes-worker
         - container:
-            disk_size: 5G
             children:
               - arr-stack
               - controlplane
