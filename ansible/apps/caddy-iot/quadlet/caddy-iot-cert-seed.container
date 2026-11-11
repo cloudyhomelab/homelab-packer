@@ -25,8 +25,8 @@ Exec=-c "test -f /data/wildcard/_.cloudyhome.net.key || exec rclone copy certs:a
 
 [Service]
 Type=oneshot
-# rclone's retries and their sleeps fit inside this
-TimeoutStartSec=10min
+# the longest a first boot without S3 holds Caddy; the hourly fetch keeps trying after
+TimeoutStartSec=2min
 
 [Install]
 WantedBy=caddy-iot.service
