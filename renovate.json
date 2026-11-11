@@ -1,0 +1,25 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "enabledManagers": ["quadlet"],
+  "dependencyDashboard": false,
+  "semanticCommits": "enabled",
+  "platformCommit": "enabled",
+  "packageRules": [
+    {
+      "description": "server and machine-learning must run the same release",
+      "matchDepNames": ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
+      "groupName": "immich"
+    },
+    {
+      "description": "immich pins its database image per release; follow the immich release notes instead",
+      "matchDepNames": ["ghcr.io/immich-app/postgres"],
+      "enabled": false
+    },
+    {
+      "description": "a major database version needs a dump and restore",
+      "matchDepNames": ["docker.io/library/postgres", "docker.io/library/mariadb"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    }
+  ]
+}
