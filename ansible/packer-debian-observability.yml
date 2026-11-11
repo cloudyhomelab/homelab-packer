@@ -42,6 +42,14 @@
       systemd_app_kind: source
       systemd_app_name: caddy-observability
 
+    # one hostname per Caddy ingress, through the edge, so the served certificate is what is checked
+    - role: tls_probe
+      tls_probe_targets:
+        - { name: caddy-mgmt, address: "netbox.cloudyhome.net:443" }
+        - { name: caddy-lab, address: "youtarr.cloudyhome.net:443" }
+        - { name: caddy-iot, address: "homeassistant.cloudyhome.net:443" }
+        - { name: caddy-observability, address: "grafana.cloudyhome.net:443" }
+
   post_tasks:
     # enabled, not started: the fetch needs the age key, which the vm gets at boot
     - name: enable the caddy-observability certificate fetch timer at boot

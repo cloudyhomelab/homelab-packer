@@ -103,3 +103,57 @@ groups:
               expression: A
               conditions:
                 - evaluator: {type: lt, params: [10]}
+
+  - orgId: 1
+    name: certificates
+    folder: Homelab
+    interval: 1m
+    rules:
+      # renewal is due at about 30 days left and reaches the proxies within the hour, so this means
+      # renewal or the fetch has been stuck for two weeks, with two weeks left to fix it
+      - uid: cert-expiry
+        title: Certificate expires soon
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: (probe_ssl_earliest_cert_expiry - time()) / 86400
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: lt, params: [14]}
+
+      # a failing probe reports no expiry, which the rule above treats as OK
+      - uid: cert-probe-failed
+        title: Certificate probe failing
+        condition: C
+        for: 10m
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: probe_success
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: lt, params: [1]}

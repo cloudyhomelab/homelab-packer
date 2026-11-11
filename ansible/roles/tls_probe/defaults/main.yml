@@ -1,0 +1,7 @@
+---
+# One entry per endpoint: {name, address}; address is host:port and its host is sent as SNI
+tls_probe_targets: []
+# handshake deadline per probe
+tls_probe_timeout: 5s
+# how often each endpoint is probed
+tls_probe_interval: 60s
