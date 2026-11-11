@@ -8,6 +8,20 @@ automation: !include automations.yaml
 script: !include scripts.yaml
 scene: !include scenes.yaml
 
+rest_command:
+  opnsense_wol:
+    url: !secret opnsense_wol_url
+    method: POST
+    authentication: basic
+    username: !secret opnsense_api_key
+    password: !secret opnsense_api_secret
+    content_type: "application/json"
+    verify_ssl: true
+    payload: >
+      {
+        "uuid": {{ uuid | tojson }}
+      }
+
 http:
   use_x_forwarded_for: true
   # set at unit start by resolve-proxy.sh
