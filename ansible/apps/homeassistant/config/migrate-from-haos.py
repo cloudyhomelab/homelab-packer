@@ -2,7 +2,8 @@
 
   extract BACKUP STAGING   unpack an unencrypted HAOS backup, then check it
   check STAGING            check the unpacked state again, e.g. after editing it
-  apply STAGING            check, then copy into /srv/homeassistant and set the owners
+  apply STAGING            check, then copy into /srv/homeassistant, set the owners and point
+                           Home Assistant's Matter integration at the container
 
 The backup and the staging directory are never modified by apply, so both stay as the fallback.
 """
@@ -46,6 +47,14 @@ APP_METADATA = "addon.json"
 
 # history starts fresh; the image mounts its own configuration.yaml and secrets.yaml over these
 HA_SKIP = re.compile(r"^(home-assistant_v2\.db.*|configuration\.yaml|secrets\.yaml)$")
+CONFIG_ENTRIES = Path(".storage/core.config_entries")
+# the Matter server container; the HAOS entry points at the app and has HA manage it through the
+# Supervisor, which is absent here, so the integration would never load
+MATTER_ENTRY = {
+    "url": "ws://127.0.0.1:5580/ws",
+    "use_addon": False,
+    "integration_created_addon": False,
+}
 # Zigbee2MQTT generates these when they are missing and forms a new network on the coordinator
 NETWORK_KEYS = ("network_key", "pan_id", "ext_pan_id")
 # Zigbee2MQTT's advanced.channel when unset; checked against the coordinator backup instead
@@ -309,12 +318,38 @@ def apply(staged: Staged, srv: Path, replace: bool) -> None:
         chown_tree(target, uid_base + container_id, gid_base + container_id)
         print(f"copied {source} -> {target}, owner {uid_base + container_id}")
 
+    repoint_matter(srv / "config" / CONFIG_ENTRIES)
+
     print(
         "\nnext: start Zigbee2MQTT alone and watch it reuse the existing network:\n"
         "  systemctl start homeassistant-zigbee2mqtt && journalctl -fu homeassistant-zigbee2mqtt\n"
         "stop it at once if it forms a new network; then start the rest:\n"
         "  systemctl start homeassistant-matter homeassistant"
     )
+
+
+def repoint_matter(path: Path) -> None:
+    """Point HA's Matter integration at the container; HA has no UI to reconfigure it."""
+    if not path.is_file():
+        print(f"no {path}; Matter integration unchanged")
+        return
+    doc = json.loads(path.read_text())
+    entries = [e for e in doc["data"]["entries"] if e["domain"] == "matter"]
+    if not entries:
+        print("no Matter integration in Home Assistant; nothing to repoint")
+        return
+
+    backup = path.with_name(path.name + ".before-matter")
+    shutil.copy2(path, backup)
+    owner = path.stat()
+    os.lchown(backup, owner.st_uid, owner.st_gid)
+    for entry in entries:
+        print(f"Matter integration was: {entry['data']}")
+        entry["data"].update(MATTER_ENTRY)
+        print(f"Matter integration now: {entry['data']}")
+    # written in place, so the file keeps its owner
+    path.write_text(json.dumps(doc, indent=2))
+    print(f"kept the previous version as {backup}")
 
 
 def main() -> None:
