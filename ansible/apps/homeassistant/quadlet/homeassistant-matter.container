@@ -15,6 +15,9 @@ Volume=/srv/homeassistant/matter:/data
 # the WebSocket API has no authentication; only Home Assistant on this VM uses it
 Environment=LISTEN_ADDRESS=127.0.0.1
 Environment=MATTER_LOG_FORMAT=plain
+# the HAOS app's controller identity (storage server-2-134b); other values start an empty controller
+Environment=FABRIC_ID=2
+Environment=VENDOR_ID=0x134B
 # as the HAOS app's time_sync default (auto) on an NTP-synced host
 Environment=ENABLE_TIME_SYNC=true
 
