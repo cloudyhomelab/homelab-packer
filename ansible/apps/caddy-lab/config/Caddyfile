@@ -1,8 +1,6 @@
-{
-    acme_dns porkbun {
-        api_key {$PORKBUN_API_KEY}
-        api_secret_key {$PORKBUN_API_SECRET_KEY}
-    }
+# issued centrally by the acme app and fetched by caddy-lab-cert
+(wildcard) {
+    tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
 }
 
 (upstream) {
@@ -10,30 +8,40 @@
 }
 
 immich.cloudyhome.net {
+    import wildcard
+
     reverse_proxy media.ip.cloudyhome.net:2283 {
         import upstream
     }
 }
 
 immich-frame.cloudyhome.net {
+    import wildcard
+
     reverse_proxy media.ip.cloudyhome.net:8080 {
         import upstream
     }
 }
 
 youtarr.cloudyhome.net {
+    import wildcard
+
     reverse_proxy arr-stack.ip.cloudyhome.net:3087 {
         import upstream
     }
 }
 
 jellyfin.cloudyhome.net {
+    import wildcard
+
     reverse_proxy arr-stack.ip.cloudyhome.net:8096 {
         import upstream
     }
 }
 
 audiobookshelf.cloudyhome.net {
+    import wildcard
+
     reverse_proxy arr-stack.ip.cloudyhome.net:13378 {
         import upstream
     }
