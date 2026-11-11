@@ -1,0 +1,20 @@
+[Unit]
+Description=Music Assistant
+After=homeassistant-storage.service
+Requires=homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+ContainerName=music-assistant
+Image=homeassistant-music.image
+# speakers are found by mDNS and pull the audio from this VM's own address
+Network=host
+Volume=/srv/homeassistant/music-assistant:/data
+Environment=LOG_LEVEL=info
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
