@@ -17,6 +17,7 @@ from botocore.exceptions import ClientError
 
 from .catalog import Catalog, Image, Source
 from .packer import SBOM_FILE, Clock, GitInfo, image_file
+from .upstream import natural_key
 
 CREDENTIAL_VARS = ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")
 SBOM_CONTENT_TYPE = "application/vnd.cyclonedx+json"
@@ -92,11 +93,22 @@ class Store:
         return keys
 
     def delete(self, keys: list[str]) -> None:
-        for start in range(0, len(keys), 1000):
-            batch = keys[start : start + 1000]
+        self.delete_objects([{"Key": k} for k in keys])
+
+    def list_versions(self) -> list[dict[str, str]]:
+        """Every object version and delete marker in the bucket, as delete_objects takes them."""
+        versions = []
+        paginator = self.client.get_paginator("list_object_versions")
+        for page in paginator.paginate(Bucket=self.bucket):
+            for entry in [*page.get("Versions", []), *page.get("DeleteMarkers", [])]:
+                versions.append({"Key": entry["Key"], "VersionId": entry["VersionId"]})
+        return versions
+
+    def delete_objects(self, objects: list[dict[str, str]]) -> None:
+        for start in range(0, len(objects), 1000):
+            batch = objects[start : start + 1000]
             response = self.client.delete_objects(
-                Bucket=self.bucket,
-                Delete={"Objects": [{"Key": k} for k in batch], "Quiet": True},
+                Bucket=self.bucket, Delete={"Objects": batch, "Quiet": True}
             )
             if response.get("Errors"):
                 raise PublishError(f"delete failed: {response['Errors']}")
@@ -156,10 +168,10 @@ def publish(
     store: Store,
     build: Build,
     image_path: Path,
-    sbom_path: Path,
+    sbom_path: Path | None,
     check_image=qemu_img_check,
 ) -> dict[str, object]:
-    """Upload image, checksum, SBOM and metadata, then latest.json last."""
+    """Upload image, checksum, SBOM (if any) and metadata, then latest.json last."""
     check_image(image_path)
     digest = sha512_file(image_path)
     meta = metadata(catalog, build, f"sha512:{digest}")
@@ -169,7 +181,8 @@ def publish(
 
     store.put_file(f"{prefix}/{name}", image_path, "application/octet-stream")
     store.put_bytes(f"{prefix}/{name}.sha512", f"{digest}  {name}\n".encode(), "text/plain")
-    store.put_file(f"{prefix}/{SBOM_FILE}", sbom_path, SBOM_CONTENT_TYPE)
+    if sbom_path is not None:
+        store.put_file(f"{prefix}/{SBOM_FILE}", sbom_path, SBOM_CONTENT_TYPE)
     store.put_bytes(f"{prefix}/metadata.json", meta_json, "application/json")
     # latest.json must never point at an object that is not there
     store.head(f"{prefix}/{name}")
@@ -201,7 +214,7 @@ def builds_to_prune(
     """Keys of every build beyond the newest retain_images, except protected parents."""
     by_version = builds_by_version(catalog, image, keys)
     doomed = []
-    for version in sorted(by_version, reverse=True)[image.retain_images :]:
+    for version in sorted(by_version, key=natural_key, reverse=True)[image.retain_images :]:
         build_keys = by_version[version]
         if any(catalog.public_url(k) in protected_urls for k in build_keys):
             continue
@@ -231,7 +244,7 @@ def index_entries(catalog: Catalog, image: Image, keys: Iterable[str]) -> list[s
     """
     by_version = builds_by_version(catalog, image, keys)
     entries = []
-    for version in sorted(by_version, reverse=True):
+    for version in sorted(by_version, key=natural_key, reverse=True):
         meta_key = f"{catalog.image_prefix(image)}/{version}/metadata.json"
         if meta_key in by_version[version]:
             entries.append(meta_key)

@@ -27,6 +27,18 @@ def parse_build_date(value: str) -> datetime:
     return datetime.strptime(value, BUILD_DATE_FORMAT)
 
 
+def source_required(latest: Latest | None, source: Source | None) -> str | None:
+    """Why a copy of source is due, or None when the published one is of it.
+
+    All an upstream node needs: a download neither ages nor has inputs of its own.
+    """
+    if latest is None:
+        return "never built"
+    if source is None or latest.get("PARENT_CHECKSUM") != source.checksum:
+        return "source changed"
+    return None
+
+
 def build_required(
     latest: Latest | None,
     source: Source | None,
@@ -39,10 +51,10 @@ def build_required(
     source is None when the parent has never been published; check_hash is None when it could
     not be computed (for example a missing playbook).
     """
-    if latest is None:
-        return "never built"
-    if source is None or latest.get("PARENT_CHECKSUM") != source.checksum:
-        return "source changed"
+    reason = source_required(latest, source)
+    if reason is not None:
+        return reason
+    assert latest is not None
     if latest.get("CHECK_HASH") != check_hash:
         return "check hash changed"
     if now - parse_build_date(latest["BUILD_DATE"]) >= max_age:
@@ -81,8 +93,9 @@ def current_source(
     catalog: Catalog, image: Image, latest: dict[str, Latest | None]
 ) -> Source | None:
     """The source a build of image would use now: its upstream pin or its parent's latest."""
-    if image.parent is None:
+    if image.upstream is not None:
         return catalog.upstream_source(image)
+    assert image.parent is not None
     parent_latest = latest.get(image.parent)
     return source_from_latest(parent_latest) if parent_latest else None
 
@@ -110,6 +123,11 @@ def plan(
     for image in catalog.ordered():
         latest[image.name] = read_latest(image)
         source = current_source(catalog, image, latest)
+        if image.upstream is not None:
+            reason = source_required(latest[image.name], source)
+            if reason is not None:
+                due[image.name] = reason
+            continue
         reason = build_required(
             latest[image.name],
             source,
@@ -117,7 +135,8 @@ def plan(
             now,
             timedelta(days=image.max_age_days),
         )
-        if reason is None and image.parent in due:
+        # with no source to compare, "source changed" would hide that the parent is the cause
+        if image.parent in due and (reason is None or (source is None and latest[image.name])):
             reason = f"parent due ({image.parent})"
         current = latest[image.name]
         if reason is None and extra_check is not None and current is not None:

@@ -1,4 +1,4 @@
-# error: only a top-level image sets from
+# error: unknown fields ['disk_size']
 config:
   s3:
     endpoint: https://s3.example.net
@@ -17,8 +17,8 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
+  # a download has no disk to size
+  - debian-cloud:
+      disk_size: 3G
       children:
-        - edge:
-            from: fedora-cloud
+        - base

@@ -121,20 +121,12 @@ def cmd_list() -> int:
     catalog = project()
     rows = [["IMAGE", "PLAYBOOK", "DISK", "MEMORY", "CPUS", "SOURCE"]]
     for image in catalog.ordered():
-        if image.parent is None:
-            source = f"{image.upstream} {catalog.upstream_source(image).url}"
-        else:
-            source = image.parent
-        rows.append(
-            [
-                "  " * image.depth + image.name,
-                image.playbook,
-                image.disk_size,
-                str(image.memory),
-                str(image.cpus),
-                source,
-            ]
-        )
+        name = "  " * image.depth + image.name
+        if image.upstream is not None:
+            rows.append([name, "", "", "", "", catalog.upstream_source(image).url])
+            continue
+        settings = [image.playbook, image.disk_size, str(image.memory), str(image.cpus)]
+        rows.append([name, *settings, image.parent or ""])
     print(table(rows))
     return 0
 
@@ -171,12 +163,11 @@ def cmd_storage(
 
 
 def validate_source(catalog: Catalog, image: Image) -> Source:
-    """What packer validate gets as the source: the pin, or the parent's folder for children.
+    """What packer validate gets as the source: the parent's folder.
 
-    validate never reads latest.json, so a child is validated without a published parent.
+    validate never reads latest.json, so an image is validated without a published parent.
     """
-    if image.parent is None:
-        return catalog.upstream_source(image)
+    assert image.parent is not None
     parent = catalog.get(image.parent)
     return Source(parent.name, catalog.public_url(catalog.image_prefix(parent) + "/"), "none")
 
@@ -203,11 +194,12 @@ def cmd_validate(
 ) -> int:
     """Validate templates, scripts, .check_hash rules, required roles, storage and playbooks.
 
-    Reads no latest.json, so a child validates without a published parent.
+    Reads no latest.json, so an image validates without a published parent. An upstream node
+    has nothing to validate.
     """
     catalog = project()
     root = catalog.root
-    targets = select_images(catalog, images or [])
+    targets = [i for i in select_images(catalog, images or []) if i.upstream is None]
     failures: dict[str, list[str]] = {i.name: [] for i in targets}
     global_ok = True
 
@@ -345,8 +337,8 @@ def cmd_build(
 ) -> int:
     """Build one image locally. Never publishes.
 
-    Builds whether or not the image is due. A child builds on its parent's published
-    latest.json, so the parent has to be published first.
+    Builds whether or not the image is due. An image builds on its parent's published
+    latest.json, so the parent has to be published first; an upstream node downloads its pin.
     """
     catalog = project()
     root = catalog.root
@@ -424,15 +416,16 @@ def cmd_publish(
     env = packer.environment(root, build.packer_cache_dir(root), build.install_collections(root))
     build.packer_init(root, due_images, env)
 
-    def publisher(result: publish.Build, image_path: Path, sbom_path: Path) -> None:
+    def publisher(result: publish.Build, image_path: Path, sbom_path: Path | None) -> None:
         meta = publish.publish(catalog, store, result, image_path, sbom_path)
         print(f"{result.image.name}: published {meta['IMAGE_URL']}", flush=True)
         for key in publish.prune(catalog, store, result.image):
             print(f"{result.image.name}: pruned {key}", flush=True)
         index = publish.write_index(catalog, store, result.image)
         print(f"{result.image.name}: indexed {len(index['BUILDS'])} builds", flush=True)
-        findings = scan.scan(sbom_path)
-        print(scan.report(result.image.name, findings), flush=True)
+        if sbom_path is not None:
+            findings = scan.scan(sbom_path)
+            print(scan.report(result.image.name, findings), flush=True)
 
     def build_one(image: Image) -> None:
         print(f"{image.name}: building", flush=True)
@@ -475,6 +468,34 @@ def cmd_index(
             continue
         print(f"{image.name}: indexed {len(index['BUILDS'])} builds")
     return 1 if failed else 0
+
+
+@command("purge")
+def cmd_purge(
+    yes: Annotated[bool, typer.Option("--yes", help="Delete without asking.")] = False,
+) -> int:
+    """Delete every object in the bucket, old versions and delete markers included.
+
+    Unpublishes every image: consumers have nothing to read until the next `publish`, which
+    builds the whole tree again. The bucket and its policy stay. Needs S3_ACCESS_KEY_ID and
+    S3_SECRET_ACCESS_KEY.
+    """
+    catalog = project()
+    bucket = catalog.s3.bucket
+    store = publish.Store(catalog, publish.s3_client(catalog))
+    versions = store.list_versions()
+    if not versions:
+        print(f"{bucket} is empty")
+        return 0
+    keys = {v["Key"] for v in versions}
+    print(f"{bucket}: {len(keys)} objects, {len(versions)} versions and delete markers")
+    if not yes:
+        answer = typer.prompt(f"type {bucket} to delete them all", default="", show_default=False)
+        if answer != bucket:
+            return fail("not confirmed, nothing deleted")
+    store.delete_objects(versions)
+    print(f"{bucket}: deleted {len(versions)} versions and delete markers")
+    return 0
 
 
 @command("upstream")

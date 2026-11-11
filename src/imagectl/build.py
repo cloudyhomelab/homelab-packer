@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from collections.abc import Callable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
 from contextlib import contextmanager, suppress
@@ -25,7 +26,9 @@ BUILD_DIR = "build"
 CACHE_ENTRY_RE = re.compile(r"^([0-9a-f]{40})\.")
 
 LatestReader = Callable[[Image], "Latest | None"]
-Publisher = Callable[[Build, Path, Path], None]
+# the SBOM path is None for an upstream node
+Publisher = Callable[[Build, Path, Path | None], None]
+Download = Callable[[str, Path], None]
 
 
 class BuildError(Exception):
@@ -145,8 +148,8 @@ def prune_packer_cache(cache: Path, current_checksums: set[str]) -> list[str]:
 
 
 def current_checksums(catalog: Catalog, latest: dict[str, Latest | None]) -> set[str]:
-    """Checksums of every image's current source: upstream pins and parents' latest.json."""
-    sums = {up.checksum for up in catalog.upstreams.values()}
+    """Checksums of every image's current source: its parent's latest.json."""
+    sums = set()
     for image in catalog.ordered():
         parent_latest = latest.get(image.name)
         if image.children and parent_latest and parent_latest.get("IMAGE_CHECKSUM"):
@@ -155,8 +158,9 @@ def current_checksums(catalog: Catalog, latest: dict[str, Latest | None]) -> set
 
 
 def resolve_source(catalog: Catalog, image: Image, read_latest: LatestReader) -> Source:
-    if image.parent is None:
+    if image.upstream is not None:
         return catalog.upstream_source(image)
+    assert image.parent is not None
     parent = catalog.get(image.parent)
     latest = read_latest(parent)
     if latest is None:
@@ -170,6 +174,52 @@ class BuildOptions:
     keep: bool = False
 
 
+def download(url: str, dest: Path) -> None:
+    with urllib.request.urlopen(url, timeout=60) as response, dest.open("wb") as f:
+        shutil.copyfileobj(response, f, 1024 * 1024)
+
+
+def verify(path: Path, checksum: str) -> None:
+    algorithm, expected = checksum.split(":", 1)
+    with path.open("rb") as f:
+        actual = hashlib.file_digest(f, algorithm).hexdigest()
+    if actual != expected:
+        raise BuildError(f"{path.name}: {algorithm} {actual} does not match {checksum}")
+
+
+def run_upstream(
+    catalog: Catalog,
+    image: Image,
+    options: BuildOptions,
+    publisher: Publisher | None = None,
+    fetch: Download = download,
+) -> Path:
+    """Download an upstream node's pin and verify it; publish it if a publisher is given."""
+    root = catalog.root
+    source = catalog.upstream_source(image)
+    up = catalog.root_upstream(image)
+    with image_lock(root, image.name):
+        # the upstream version names the build, so a copy's folder says what it is
+        clock = packer.Clock(up.version, packer.Clock.now().build_timestamp)
+        build_dir = build_root(root) / image.name / clock.build_version
+        # nothing to debug in a failed download, and a leftover must not block the retry
+        if build_dir.exists():
+            shutil.rmtree(build_dir)
+        build_dir.mkdir(parents=True)
+        image_path = build_dir / packer.image_file(image, clock)
+        try:
+            fetch(source.url, image_path)
+        except OSError as e:
+            raise BuildError(f"{source.url}: {e}") from None
+        verify(image_path, source.checksum)
+        if publisher is not None:
+            git = packer.git_info(root)
+            publisher(Build(image, source, clock, "", git), image_path, None)
+        if not options.keep:
+            remove_build_dir(build_dir)
+        return build_dir
+
+
 def run_build(
     catalog: Catalog,
     image: Image,
@@ -178,6 +228,8 @@ def run_build(
     publisher: Publisher | None = None,
 ) -> Path:
     """Build one image; publish it if a publisher is given. Returns the build dir."""
+    if image.upstream is not None:
+        return run_upstream(catalog, image, options, publisher)
     root = catalog.root
     missing = packer.missing_files(root, image)
     if missing:

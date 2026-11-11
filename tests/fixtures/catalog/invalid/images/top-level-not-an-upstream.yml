@@ -1,4 +1,4 @@
-# error: a top-level image must set from
+# error: a top-level item is an upstream, and 'base' is not a key in upstream.yml
 config:
   s3:
     endpoint: https://s3.example.net

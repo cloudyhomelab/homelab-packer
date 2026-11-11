@@ -1,9 +1,11 @@
 import json
 
+import boto3
 import pytest
+from botocore.stub import Stubber
 from typer.testing import CliRunner
 
-from imagectl import cli
+from imagectl import cli, publish
 
 runner = CliRunner()
 
@@ -40,10 +42,15 @@ def test_list_prints_tree_with_sources(in_root):
     assert result.exit_code == 0
     out = result.stdout.splitlines()
     assert out[0].split() == ["IMAGE", "PLAYBOOK", "DISK", "MEMORY", "CPUS", "SOURCE"]
-    assert out[1].startswith("debian-base ")
-    assert "debian-cloud https://cdimage.debian.org/" in out[1]
-    assert out[4].startswith("    debian-edge ")
-    assert out[4].rstrip().endswith("debian-container")
+    assert out[1].split() == [
+        "debian-cloud",
+        "https://cdimage.debian.org/images/cloud/trixie/20260914-2601/"
+        "debian-13-genericcloud-amd64-20260914-2601.qcow2",
+    ]
+    assert out[2].startswith("  debian-base ")
+    assert out[2].rstrip().endswith("debian-cloud")
+    assert out[5].startswith("      debian-edge ")
+    assert out[5].rstrip().endswith("debian-container")
 
 
 def test_unknown_image(in_root):
@@ -123,3 +130,53 @@ def test_storage_lists_the_datasets(in_root):
 
     result = imagectl("storage", "debian-base")
     assert result.stdout == "debian-base mounts no storage\n"
+
+
+VERSIONS = [{"Key": "debian/debian-base/latest.json", "VersionId": "1"}]
+
+
+@pytest.fixture
+def s3_stub(in_root, monkeypatch):
+    client = boto3.client(
+        "s3",
+        endpoint_url="https://s3.example.net",
+        region_name="home",
+        aws_access_key_id="k",
+        aws_secret_access_key="s",
+        config=publish.CLIENT_CONFIG,
+    )
+    monkeypatch.setattr(publish, "s3_client", lambda catalog: client)
+    with Stubber(client) as stub:
+        stub.add_response(
+            "list_object_versions", {"Versions": VERSIONS}, {"Bucket": "os-image-staging"}
+        )
+        yield stub
+
+
+def expect_delete(stub):
+    stub.add_response(
+        "delete_objects",
+        {},
+        {"Bucket": "os-image-staging", "Delete": {"Objects": VERSIONS, "Quiet": True}},
+    )
+
+
+def test_purge_deletes_after_the_bucket_name_is_typed(s3_stub):
+    expect_delete(s3_stub)
+    result = runner.invoke(cli.app, ["purge"], input="os-image-staging\n")
+    assert result.exit_code == 0
+    assert "1 objects, 1 versions and delete markers" in result.stdout
+    s3_stub.assert_no_pending_responses()
+
+
+def test_purge_deletes_nothing_without_confirmation(s3_stub):
+    result = runner.invoke(cli.app, ["purge"], input="yes\n")
+    assert result.exit_code == 1
+    assert "nothing deleted" in result.stderr
+    s3_stub.assert_no_pending_responses()
+
+
+def test_purge_yes_skips_the_prompt(s3_stub):
+    expect_delete(s3_stub)
+    assert imagectl("purge", "--yes").exit_code == 0
+    s3_stub.assert_no_pending_responses()

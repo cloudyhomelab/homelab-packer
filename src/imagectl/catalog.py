@@ -15,7 +15,9 @@ IMAGES_FILE = "images.yml"
 UPSTREAM_FILE = "upstream.yml"
 
 SETTINGS = ("disk_size", "memory", "cpus", "max_age_days", "retain_images")
-IMAGE_FIELDS = {"from", "children", *SETTINGS}
+IMAGE_FIELDS = {"children", *SETTINGS}
+# an upstream node is a download, so only how many copies to keep applies
+UPSTREAM_NODE_FIELDS = {"children", "retain_images"}
 UPSTREAM_FIELDS = ("os", "index", "image_file", "checksum_file", "version", "checksum")
 UPSTREAM_OPTIONAL_FIELDS = ("security",)
 NAMING_FIELDS = ("image_name", "playbook", "s3_prefix")
@@ -68,7 +70,7 @@ class Upstream:
 
 @dataclass(frozen=True)
 class Source:
-    """The image a build starts from: an upstream pin or a parent's latest build."""
+    """The image a build starts from: an upstream download or a parent's latest build."""
 
     name: str
     url: str
@@ -80,6 +82,7 @@ class Image:
     key: str
     os: str
     name: str
+    # empty for an upstream node
     playbook: str
     s3_prefix: str
     disk_size: str
@@ -88,6 +91,7 @@ class Image:
     max_age_days: int
     retain_images: int
     parent: str | None
+    # set on an upstream node only: the upstream.yml key it copies to S3
     upstream: str | None
     depth: int
     children: list[str] = field(default_factory=list)
@@ -115,6 +119,10 @@ class Catalog:
     def ordered(self) -> list[Image]:
         """Images in tree order: every parent comes before its children."""
         return list(self.images.values())
+
+    def built(self) -> list[Image]:
+        """The images Packer builds, in tree order: every image but the upstream nodes."""
+        return [i for i in self.ordered() if i.upstream is None]
 
     def get(self, name: str) -> Image:
         try:
@@ -144,10 +152,11 @@ class Catalog:
         return self.upstreams[top.upstream]
 
     def upstream_source(self, image: Image) -> Source:
+        """Where an upstream node downloads from; it has no parent, so no name."""
         if image.upstream is None:
-            raise ValueError(f"{image.name} is not a top-level image")
+            raise ValueError(f"{image.name} is not an upstream node")
         up = self.upstreams[image.upstream]
-        return Source(name=up.key, url=up.url, checksum=up.checksum)
+        return Source(name="", url=up.url, checksum=up.checksum)
 
     def image_prefix(self, image: Image) -> str:
         return f"{image.s3_prefix}/{image.name}"
@@ -427,29 +436,14 @@ def parse_catalog(root: Path, images_data: object, upstream_data: object) -> Cat
                 errors.append(f"{item_where}: key must be lowercase letters, digits and -")
                 continue
 
+            if parent is None:
+                upstream_node(key, body, item_where)
+                continue
+
             unknown_fields = set(body) - IMAGE_FIELDS
             if unknown_fields:
                 errors.append(f"{item_where}: unknown fields {sorted(unknown_fields)}")
-
-            upstream_key = None
             image_os = os_name
-            if parent is None:
-                if "from" not in body:
-                    errors.append(f"{item_where}: a top-level image must set from")
-                    continue
-                upstream_key = body["from"]
-                if upstream_key not in upstreams:
-                    errors.append(
-                        f"{item_where}: from {upstream_key!r} is not a key in {UPSTREAM_FILE}"
-                    )
-                    continue
-                image_os = upstreams[upstream_key].os
-            elif "from" in body:
-                errors.append(
-                    f"{item_where}: only a top-level image sets from; "
-                    "a nested image builds on the image it sits under"
-                )
-                continue
             assert image_os is not None
 
             seen = keys_per_os.setdefault(image_os, set())
@@ -475,16 +469,48 @@ def parse_catalog(root: Path, images_data: object, upstream_data: object) -> Cat
                 name=name,
                 playbook=fill(naming["playbook"], image_os, key),
                 s3_prefix=fill(naming["s3_prefix"], image_os, key),
-                parent=parent.name if parent else None,
-                upstream=str(upstream_key) if upstream_key else None,
+                parent=parent.name,
+                upstream=None,
                 depth=depth,
                 **resolved,
             )
             images[name] = image
-            if parent is not None:
-                parent.children.append(name)
+            parent.children.append(name)
             if "children" in body:
                 walk(body["children"], image, image_os, depth + 1, f"{item_where}.children")
+
+    def upstream_node(key: str, body: dict, where: str) -> None:
+        if key not in upstreams:
+            errors.append(
+                f"{where}: a top-level item is an upstream, and {key!r} is not a key in "
+                f"{UPSTREAM_FILE}"
+            )
+            return
+        unknown_fields = set(body) - UPSTREAM_NODE_FIELDS
+        if unknown_fields:
+            errors.append(f"{where}: unknown fields {sorted(unknown_fields)}")
+        own, setting_errors = _parse_settings(where, body, required=False)
+        if setting_errors:
+            errors.extend(setting_errors)
+            return
+        if key in images:
+            errors.append(f"{where}: image name {key!r} collides with another image")
+            return
+        image_os = upstreams[key].os
+        node = Image(
+            key=key,
+            os=image_os,
+            name=key,
+            playbook="",
+            s3_prefix=fill(naming["s3_prefix"], image_os, key),
+            parent=None,
+            upstream=key,
+            depth=0,
+            **{**defaults, **own},
+        )
+        images[key] = node
+        if "children" in body:
+            walk(body["children"], node, image_os, 1, f"{where}.children")
 
     walk(tree, None, None, 0, f"{IMAGES_FILE}: images")
 

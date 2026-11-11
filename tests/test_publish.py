@@ -112,6 +112,40 @@ def test_upload_order_puts_latest_json_last(catalog, client, build, image_path, 
     assert meta["IMAGE_CHECKSUM"] == "sha512:" + publish.sha512_file(image_path)
 
 
+def test_upstream_copy_is_published_without_an_sbom(catalog, client, image_path):
+    node = catalog.get("debian-cloud")
+    up = catalog.upstreams["debian-cloud"]
+    clock = Clock(up.version, CLOCK.build_timestamp)
+    copy = Build(node, catalog.upstream_source(node), clock, "", GIT)
+    prefix = f"debian/debian-cloud/{up.version}"
+    name = f"debian-cloud-{up.version}.qcow2"
+    with Stubber(client) as stub:
+        expect_put(stub, f"{prefix}/{name}", "application/octet-stream")
+        expect_put(stub, f"{prefix}/{name}.sha512", "text/plain")
+        expect_put(stub, f"{prefix}/metadata.json")
+        stub.add_response(
+            "head_object", {}, {"Bucket": "os-image-staging", "Key": f"{prefix}/{name}"}
+        )
+        expect_put(stub, "debian/debian-cloud/latest.json")
+        meta = publish.publish(catalog, Store(catalog, client), copy, image_path, None, no_check)
+        stub.assert_no_pending_responses()
+    assert meta["IMAGE_URL"] == f"{BASE_URL}/{prefix}/{name}"
+    assert (meta["PARENT"], meta["PARENT_URL"], meta["PARENT_CHECKSUM"]) == (
+        "",
+        up.url,
+        up.checksum,
+    )
+    assert (meta["CHECK_HASH"], meta["STORAGE"]) == ("", [])
+
+
+def test_prune_orders_versions_numerically(catalog):
+    image = catalog.get("fedora-cloud")
+    image.retain_images = 1
+    keys = build_keys("fedora/fedora-cloud", ["1.9", "1.10"])
+    doomed = builds_to_prune(catalog, image, keys, set())
+    assert {k.split("/")[2] for k in doomed} == {"1.9"}
+
+
 def test_failure_before_latest_json_leaves_it_untouched(
     catalog, client, build, image_path, sbom_path
 ):
@@ -274,3 +308,42 @@ def test_credentials_are_required(catalog, monkeypatch):
     monkeypatch.setenv("AWS_ACCESS_KEY_ID", "fallback")
     with pytest.raises(publish.PublishError, match="S3_ACCESS_KEY_ID"):
         publish.s3_client(catalog)
+
+
+def test_list_versions_returns_versions_and_delete_markers(catalog, client):
+    with Stubber(client) as stub:
+        stub.add_response(
+            "list_object_versions",
+            {
+                "Versions": [{"Key": "a", "VersionId": "1"}, {"Key": "a", "VersionId": "2"}],
+                "DeleteMarkers": [{"Key": "b", "VersionId": "3"}],
+            },
+            {"Bucket": "os-image-staging"},
+        )
+        versions = Store(catalog, client).list_versions()
+    assert versions == [
+        {"Key": "a", "VersionId": "1"},
+        {"Key": "a", "VersionId": "2"},
+        {"Key": "b", "VersionId": "3"},
+    ]
+
+
+def test_delete_objects_batches_by_1000_and_raises_on_errors(catalog, client):
+    objects = [{"Key": f"k{i}", "VersionId": "v"} for i in range(1001)]
+    with Stubber(client) as stub:
+        for batch in (objects[:1000], objects[1000:]):
+            stub.add_response(
+                "delete_objects",
+                {},
+                {"Bucket": "os-image-staging", "Delete": {"Objects": batch, "Quiet": True}},
+            )
+        Store(catalog, client).delete_objects(objects)
+        stub.assert_no_pending_responses()
+
+        stub.add_response(
+            "delete_objects",
+            {"Errors": [{"Key": "k0", "Code": "AccessDenied"}]},
+            {"Bucket": "os-image-staging", "Delete": {"Objects": objects[:1], "Quiet": True}},
+        )
+        with pytest.raises(publish.PublishError, match="AccessDenied"):
+            Store(catalog, client).delete_objects(objects[:1])

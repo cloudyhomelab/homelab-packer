@@ -17,7 +17,8 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
+  - debian-cloud:
       children:
-        - [edge, media]
+        - base:
+            children:
+              - [edge, media]

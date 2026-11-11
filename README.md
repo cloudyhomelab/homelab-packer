@@ -5,8 +5,8 @@ Builds the homelab VM images (Debian and Fedora) with Packer and Ansible, and pu
 The images are for ephemeral VMs: a VM is replaced from a newer image, never upgraded in place. A
 change to an image does not need to stay compatible with earlier builds or clean up after them.
 
-- `images.yml`: global config and the image tree. Every image builds on its parent's latest
-  published build; top-level images build on an upstream cloud image.
+- `images.yml`: global config and the image tree. Each tree starts at an upstream from
+  `upstream.yml`; every image builds on its parent's latest published build.
 - `upstream.yml`: the upstream cloud images, their pinned versions, and the Packages indexes of
   their security suites (`security`, optional).
 - `.check_hash`: the files that feed each image's `CHECK_HASH`; a change to them rebuilds the image.
@@ -35,6 +35,7 @@ uv run imagectl plan                          # images that are due, and why
 uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
 uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
 uv run imagectl index [IMAGE...]              # rebuild index.json from S3, needs S3_*
+uv run imagectl purge [--yes]                 # empty the bucket, old versions too, needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
 uv run imagectl test IMAGE --no-network       # boot with DHCP but no route beyond the host
@@ -46,7 +47,10 @@ uv run pytest
 
 `-v` on `build` and `publish` streams Packer output while building.
 
-`build` of a child needs its parent published; it builds on the parent's `latest.json`.
+`build` of an image needs its parent published; it builds on the parent's `latest.json`. An
+upstream node is published like an image: its build downloads the pin from upstream and checks it
+against the pinned checksum, so no image build depends on the upstream still hosting that version.
+An upstream node is due only when it was never published or its pin moved.
 
 `test` boots on a throwaway overlay with the serial console attached; log in as `test`/`test`.
 Logging out powers the VM off and ends the run.
@@ -190,7 +194,8 @@ they call the control plane on the `controlplane` image, which runs the matching
 The bucket and its anonymous read policy are set up outside the driver.
 
 Each build lands at `<bucket>/<os>/<image>/<build_version>/` with the qcow2, its `.sha512`, the
-CycloneDX SBOM `sbom.cdx.json` and `metadata.json`; `<bucket>/<os>/<image>/latest.json` is a copy
+CycloneDX SBOM `sbom.cdx.json` and `metadata.json`; an upstream node's build version is the
+upstream version, and it has no SBOM, `CHECK_HASH` or `STORAGE`; `<bucket>/<os>/<image>/latest.json` is a copy
 of the newest `metadata.json`. `<bucket>/<os>/<image>/index.json` lists every build in S3 for that
 image, newest first, as
 `{"IMAGE": ..., "BUILDS": [<metadata.json>, ...]}`; consumers that mirror the published builds,
