@@ -1,0 +1,28 @@
+[Unit]
+Description=Fetch the wildcard certificate and reload caddy-lab when it changed
+Wants=network-online.target
+After=network-online.target caddy-lab-storage.service
+Requires=caddy-lab-storage.service
+
+[Container]
+SubUIDMap=caddy-lab
+SubGIDMap=caddy-lab
+User=1000:1000
+ContainerName=caddy-lab-cert
+Image=caddy-lab-rclone.image
+EnvironmentFile=/var/app/caddy-lab/config/rclone.env
+EnvironmentFile=/run/app/caddy-lab/private/s3.env
+Volume=/srv/caddy-lab/data:/data
+# the key lands owner-only
+PodmanArgs=--umask=0077
+ReadOnly=true
+LogDriver=journald
+# exits 9 when nothing was copied, so 0 means a new certificate
+Exec=copy certs:acme-certs /data/wildcard --checksum --error-on-no-transfer
+
+[Service]
+Type=oneshot
+TimeoutStartSec=10min
+SuccessExitStatus=9
+# reset-failed: a Caddy that gave up on a missing certificate comes back once one arrives
+ExecStopPost=/bin/sh -c 'if [ "$$EXIT_STATUS" = 0 ]; then systemctl reset-failed caddy-lab.service; systemctl --no-block reload-or-restart caddy-lab.service; fi'

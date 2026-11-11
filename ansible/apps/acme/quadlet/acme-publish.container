@@ -1,0 +1,28 @@
+[Unit]
+Description=Copy the wildcard certificate to the bucket
+# ordered after the issuer but not dependent on it: a push that failed earlier is retried even
+# when today's renewal check fails
+After=acme-issue.service acme-storage.service
+Requires=acme-storage.service
+
+[Container]
+SubUIDMap=acme
+SubGIDMap=acme
+User=1000:1000
+ContainerName=acme-publish
+Image=acme-rclone.image
+Environment=RCLONE_CONFIG_CERTS_TYPE=s3
+Environment=RCLONE_CONFIG_CERTS_PROVIDER=Other
+Environment=RCLONE_CONFIG_CERTS_ENDPOINT=http://moria.ip.cloudyhome.net:9000
+Environment=RCLONE_CONFIG_CERTS_REGION=home
+# the key may only write objects; it cannot create the bucket
+Environment=RCLONE_CONFIG_CERTS_NO_CHECK_BUCKET=true
+EnvironmentFile=/run/app/acme/private/s3.env
+Volume=/srv/acme/data:/data:ro
+ReadOnly=true
+LogDriver=journald
+Exec=copy /data/certificates certs:acme-certs --checksum \
+     --include _.cloudyhome.net.crt --include _.cloudyhome.net.key
+
+[Service]
+Type=oneshot

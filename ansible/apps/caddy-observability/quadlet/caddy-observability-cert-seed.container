@@ -1,0 +1,32 @@
+[Unit]
+Description=Fetch the wildcard certificate before the first start of caddy-observability
+Before=caddy-observability.service
+Wants=network-online.target
+After=network-online.target caddy-observability-storage.service
+Requires=caddy-observability-storage.service
+
+[Container]
+SubUIDMap=caddy-observability
+SubGIDMap=caddy-observability
+User=1000:1000
+ContainerName=caddy-observability-cert-seed
+Image=caddy-observability-rclone.image
+EnvironmentFile=/var/app/caddy-observability/config/rclone.env
+EnvironmentFile=/run/app/caddy-observability/private/s3.env
+Volume=/srv/caddy-observability/data:/data
+# the key lands owner-only
+PodmanArgs=--umask=0077
+ReadOnly=true
+LogDriver=journald
+# only an empty dataset waits for S3; every later boot starts Caddy from the copy on NFS.
+# Checked in the container: host root is squashed on NFS and cannot see into the dataset.
+Entrypoint=/bin/sh
+Exec=-c "test -f /data/wildcard/_.cloudyhome.net.key || exec rclone copy certs:acme-certs /data/wildcard --checksum"
+
+[Service]
+Type=oneshot
+# the longest a first boot without S3 holds Caddy; the hourly fetch keeps trying after
+TimeoutStartSec=2min
+
+[Install]
+WantedBy=caddy-observability.service

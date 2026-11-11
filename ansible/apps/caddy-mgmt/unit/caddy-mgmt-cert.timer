@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly wildcard certificate fetch for caddy-mgmt
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1h
+RandomizedDelaySec=5min
+
+[Install]
+WantedBy=timers.target

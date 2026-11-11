@@ -1,8 +1,6 @@
-{
-    acme_dns porkbun {
-        api_key {$PORKBUN_API_KEY}
-        api_secret_key {$PORKBUN_API_SECRET_KEY}
-    }
+# issued centrally by the acme app and fetched by caddy-iot-cert
+(wildcard) {
+    tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
 }
 
 (upstream) {
@@ -10,6 +8,8 @@
 }
 
 homeassistant.cloudyhome.net {
+    import wildcard
+
     reverse_proxy http://homeassistant.ip.cloudyhome.net:8123 {
         import upstream
     }

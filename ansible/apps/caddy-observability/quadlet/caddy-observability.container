@@ -16,7 +16,6 @@ ContainerName=caddy-observability
 Image=caddy-observability.image
 Network=observability.network
 Volume=/var/app/caddy-observability/config/Caddyfile:/etc/caddy/Caddyfile:ro
-EnvironmentFile=/run/app/caddy-observability/private/porkbun.env
 Volume=/srv/caddy-observability/data:/data
 Volume=caddy-config.volume:/config:U
 ReadOnly=true
@@ -26,6 +25,7 @@ LogDriver=journald
 [Service]
 Restart=always
 RestartSec=5
+ExecReload=/usr/bin/podman exec caddy-observability caddy reload --config /etc/caddy/Caddyfile
 
 [Install]
 WantedBy=multi-user.target

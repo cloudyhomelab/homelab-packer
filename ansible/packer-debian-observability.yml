@@ -41,3 +41,10 @@
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: caddy-observability
+
+  post_tasks:
+    # enabled, not started: the fetch needs the age key, which the vm gets at boot
+    - name: enable the caddy-observability certificate fetch timer at boot
+      ansible.builtin.systemd:
+        name: caddy-observability-cert.timer
+        enabled: true

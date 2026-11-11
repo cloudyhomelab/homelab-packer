@@ -1,0 +1,23 @@
+[Unit]
+Description=Obtain or renew the wildcard certificate
+Wants=network-online.target acme-publish.service
+After=network-online.target acme-storage.service
+Requires=acme-storage.service
+
+[Container]
+SubUIDMap=acme
+SubGIDMap=acme
+User=1000:1000
+ContainerName=acme-issue
+Image=acme-lego.image
+EnvironmentFile=/run/app/acme/private/porkbun.env
+Volume=/srv/acme/data:/data
+ReadOnly=true
+LogDriver=journald
+Exec=run --path /data --accept-tos --dns porkbun \
+     --domains *.cloudyhome.net --domains cloudyhome.net
+
+[Service]
+Type=oneshot
+# lego's random pre-renewal sleep plus Porkbun's propagation timeout
+TimeoutStartSec=30min

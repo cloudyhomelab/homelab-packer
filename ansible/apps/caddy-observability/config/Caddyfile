@@ -1,8 +1,6 @@
-{
-    acme_dns porkbun {
-        api_key {$PORKBUN_API_KEY}
-        api_secret_key {$PORKBUN_API_SECRET_KEY}
-    }
+# issued centrally by the acme app and fetched by caddy-observability-cert
+(wildcard) {
+    tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
 }
 
 (upstream) {
@@ -10,12 +8,16 @@
 }
 
 grafana.cloudyhome.net {
+    import wildcard
+
     reverse_proxy grafana:3000 {
         import upstream
     }
 }
 
 prometheus.cloudyhome.net {
+    import wildcard
+
     @ingest {
         method POST
         path /api/v1/write
@@ -31,6 +33,8 @@ prometheus.cloudyhome.net {
 }
 
 loki.cloudyhome.net {
+    import wildcard
+
     @ingest {
         method POST
         path /loki/api/v1/push
