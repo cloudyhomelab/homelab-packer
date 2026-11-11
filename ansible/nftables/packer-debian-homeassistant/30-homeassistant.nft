@@ -1,6 +1,9 @@
+# 21064 and 21065: the HomeKit Bridge entries; each has its own port, set in its HA config entry
 add element inet base-filter base-open {
     tcp . 8123,
     udp . 1900,
     udp . 5353,
     udp . 5540,
+    tcp . 21064,
+    tcp . 21065,
 }
