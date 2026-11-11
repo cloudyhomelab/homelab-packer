@@ -1,0 +1,32 @@
+[Unit]
+Description=Fetch the wildcard certificate before the first start of caddy-lab
+Before=caddy-lab.service
+Wants=network-online.target
+After=network-online.target caddy-lab-storage.service
+Requires=caddy-lab-storage.service
+
+[Container]
+SubUIDMap=caddy-lab
+SubGIDMap=caddy-lab
+User=1000:1000
+ContainerName=caddy-lab-cert-seed
+Image=caddy-lab-rclone.image
+EnvironmentFile=/var/app/caddy-lab/config/rclone.env
+EnvironmentFile=/run/app/caddy-lab/private/s3.env
+Volume=/srv/caddy-lab/data:/data
+# the key lands owner-only
+PodmanArgs=--umask=0077
+ReadOnly=true
+LogDriver=journald
+# only an empty dataset waits for S3; every later boot starts Caddy from the copy on NFS.
+# Checked in the container: host root is squashed on NFS and cannot see into the dataset.
+Entrypoint=/bin/sh
+Exec=-c "test -f /data/wildcard/_.cloudyhome.net.key || exec rclone copy certs:acme-certs /data/wildcard --checksum"
+
+[Service]
+Type=oneshot
+# rclone's retries and their sleeps fit inside this
+TimeoutStartSec=10min
+
+[Install]
+WantedBy=caddy-lab.service

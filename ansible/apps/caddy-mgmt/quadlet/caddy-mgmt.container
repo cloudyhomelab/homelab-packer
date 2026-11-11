@@ -26,6 +26,7 @@ LogDriver=journald
 [Service]
 Restart=always
 RestartSec=5
+ExecReload=/usr/bin/podman exec caddy-mgmt caddy reload --config /etc/caddy/Caddyfile
 
 [Install]
 WantedBy=multi-user.target

@@ -26,6 +26,7 @@ LogDriver=journald
 [Service]
 Restart=always
 RestartSec=5
+ExecReload=/usr/bin/podman exec caddy-iot caddy reload --config /etc/caddy/Caddyfile
 
 [Install]
 WantedBy=multi-user.target

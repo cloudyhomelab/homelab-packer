@@ -33,3 +33,9 @@
       ansible.builtin.systemd:
         name: acme.timer
         enabled: true
+
+    # enabled, not started: the fetch needs the age key, which the vm gets at boot
+    - name: enable the caddy-mgmt certificate fetch timer at boot
+      ansible.builtin.systemd:
+        name: caddy-mgmt-cert.timer
+        enabled: true
