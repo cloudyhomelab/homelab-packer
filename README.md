@@ -35,6 +35,7 @@ uv run imagectl plan                          # images that are due, and why
 uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
 uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
 uv run imagectl index [IMAGE...]              # rebuild index.json from S3, needs S3_*
+uv run imagectl purge [--yes]                 # empty the bucket, old versions too, needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
 uv run imagectl test IMAGE --no-network       # boot with DHCP but no route beyond the host

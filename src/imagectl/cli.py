@@ -470,6 +470,34 @@ def cmd_index(
     return 1 if failed else 0
 
 
+@command("purge")
+def cmd_purge(
+    yes: Annotated[bool, typer.Option("--yes", help="Delete without asking.")] = False,
+) -> int:
+    """Delete every object in the bucket, old versions and delete markers included.
+
+    Unpublishes every image: consumers have nothing to read until the next `publish`, which
+    builds the whole tree again. The bucket and its policy stay. Needs S3_ACCESS_KEY_ID and
+    S3_SECRET_ACCESS_KEY.
+    """
+    catalog = project()
+    bucket = catalog.s3.bucket
+    store = publish.Store(catalog, publish.s3_client(catalog))
+    versions = store.list_versions()
+    if not versions:
+        print(f"{bucket} is empty")
+        return 0
+    keys = {v["Key"] for v in versions}
+    print(f"{bucket}: {len(keys)} objects, {len(versions)} versions and delete markers")
+    if not yes:
+        answer = typer.prompt(f"type {bucket} to delete them all", default="", show_default=False)
+        if answer != bucket:
+            return fail("not confirmed, nothing deleted")
+    store.delete_objects(versions)
+    print(f"{bucket}: deleted {len(versions)} versions and delete markers")
+    return 0
+
+
 @command("upstream")
 def cmd_upstream(
     upstreams: Annotated[

@@ -93,11 +93,22 @@ class Store:
         return keys
 
     def delete(self, keys: list[str]) -> None:
-        for start in range(0, len(keys), 1000):
-            batch = keys[start : start + 1000]
+        self.delete_objects([{"Key": k} for k in keys])
+
+    def list_versions(self) -> list[dict[str, str]]:
+        """Every object version and delete marker in the bucket, as delete_objects takes them."""
+        versions = []
+        paginator = self.client.get_paginator("list_object_versions")
+        for page in paginator.paginate(Bucket=self.bucket):
+            for entry in [*page.get("Versions", []), *page.get("DeleteMarkers", [])]:
+                versions.append({"Key": entry["Key"], "VersionId": entry["VersionId"]})
+        return versions
+
+    def delete_objects(self, objects: list[dict[str, str]]) -> None:
+        for start in range(0, len(objects), 1000):
+            batch = objects[start : start + 1000]
             response = self.client.delete_objects(
-                Bucket=self.bucket,
-                Delete={"Objects": [{"Key": k} for k in batch], "Quiet": True},
+                Bucket=self.bucket, Delete={"Objects": batch, "Quiet": True}
             )
             if response.get("Errors"):
                 raise PublishError(f"delete failed: {response['Errors']}")
