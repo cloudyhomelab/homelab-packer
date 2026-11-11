@@ -17,7 +17,8 @@ Environment=LISTEN_ADDRESS=127.0.0.1
 Environment=MATTER_LOG_FORMAT=plain
 # the HAOS app's controller identity (storage server-2-134b); other values start an empty controller
 Environment=FABRIC_ID=2
-Environment=VENDOR_ID=0x134B
+# decimal 0x134B; the server reads a hex value as 0 and refuses to start
+Environment=VENDOR_ID=4939
 # as the HAOS app's time_sync default (auto) on an NTP-synced host
 Environment=ENABLE_TIME_SYNC=true
 
