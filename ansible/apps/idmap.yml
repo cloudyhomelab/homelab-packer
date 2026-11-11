@@ -13,3 +13,4 @@ slots:
   homeassistant: 8
   jellyfin: 9
   audiobookshelf: 10
+  acme: 11

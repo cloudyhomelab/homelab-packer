@@ -22,3 +22,14 @@
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: caddy-mgmt
+
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: acme
+
+  post_tasks:
+    # enabled, not started: the certificate units need the age key, which the vm gets at boot
+    - name: enable the certificate renewal timer at boot
+      ansible.builtin.systemd:
+        name: acme.timer
+        enabled: true
