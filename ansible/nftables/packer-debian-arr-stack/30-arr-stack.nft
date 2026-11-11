@@ -1,3 +1,5 @@
 add element inet base-filter base-open {
     tcp . 3087,
+    tcp . 8096,
+    tcp . 13378,
 }
