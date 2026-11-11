@@ -14,10 +14,7 @@ EnvironmentFile=/run/app/acme/private/porkbun.env
 Volume=/srv/acme/data:/data
 ReadOnly=true
 LogDriver=journald
-# public resolvers: the internal servers are authoritative for cloudyhome.net and never see the
-# TXT record Porkbun publishes
 Exec=run --path /data --accept-tos --dns porkbun \
-     --dns.resolvers 1.1.1.1:53 --dns.resolvers 9.9.9.9:53 \
      --domains *.cloudyhome.net --domains cloudyhome.net
 
 [Service]
