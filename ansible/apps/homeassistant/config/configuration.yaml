@@ -1,0 +1,39 @@
+# Mounted read-only over /config/configuration.yaml; everything set in the UI stays in /config.
+default_config:
+
+frontend:
+  themes: !include_dir_merge_named themes
+
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+rest_command:
+  opnsense_wol:
+    url: !secret opnsense_wol_url
+    method: POST
+    authentication: basic
+    username: !secret opnsense_api_key
+    password: !secret opnsense_api_secret
+    content_type: "application/json"
+    verify_ssl: true
+    payload: >
+      {
+        "uuid": {{ uuid | tojson }}
+      }
+
+recorder:
+  db_url: !secret recorder_db_url
+
+# hass_ingress, from the Marketplace
+ingress:
+  zigbee2mqtt:
+    title: Zigbee2MQTT
+    icon: mdi:zigbee
+    url: http://127.0.0.1:8080
+    require_admin: true
+  matter:
+    title: Matter
+    icon: mdi:access-point-network
+    url: http://127.0.0.1:5580
+    require_admin: true

@@ -1,0 +1,21 @@
+[Unit]
+Description=Home Assistant MQTT broker
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+User=1883:1883
+ContainerName=mosquitto
+Image=homeassistant-mosquitto.image
+Network=homeassistant.network
+NetworkAlias=mosquitto
+PublishPort=127.0.0.1:1883:1883
+Volume=/var/app/homeassistant/config/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+# U: the decrypted file is root-only, and host root is outside the app's ID range
+Volume=/run/app/homeassistant/private/mosquitto.passwd:/mosquitto/config/passwd:ro,U
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

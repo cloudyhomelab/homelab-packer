@@ -1,0 +1,31 @@
+[Unit]
+Description=Matter server
+After=homeassistant-storage.service
+Requires=homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+User=1000:1000
+ContainerName=matter-server
+Image=homeassistant-matter.image
+# Matter and Thread need IPv6 link-local multicast on the VM's interface
+Network=host
+Volume=/srv/homeassistant/matter:/data
+# the WebSocket API has no authentication; only Home Assistant on this VM uses it
+Environment=LISTEN_ADDRESS=127.0.0.1
+Environment=MATTER_LOG_FORMAT=plain
+# the dashboard is served through Home Assistant's ingress panel, a path it does not detect itself
+Environment=PRODUCTION_MODE=true
+# the HAOS app's controller identity (storage server-2-134b); other values start an empty controller
+Environment=FABRIC_ID=2
+# decimal 0x134B; the server reads a hex value as 0 and refuses to start
+Environment=VENDOR_ID=4939
+# as the HAOS app's time_sync default (auto) on an NTP-synced host
+Environment=ENABLE_TIME_SYNC=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+[Unit]
+Description=Home Assistant
+After=homeassistant-database.service homeassistant-mosquitto.service homeassistant-matter.service homeassistant-storage.service
+Requires=homeassistant-database.service homeassistant-storage.service
+
+[Container]
+SubUIDMap=homeassistant
+SubGIDMap=homeassistant
+ContainerName=homeassistant
+Image=homeassistant.image
+# discovery (mDNS, SSDP) and Matter need the VM's own interface
+Network=host
+Volume=/srv/homeassistant/config:/config
+Volume=/srv/homeassistant/backups:/config/backups
+Volume=/var/app/homeassistant/config/configuration.yaml:/config/configuration.yaml:ro
+# U: the decrypted file is root-only, and host root is outside the app's ID range
+Volume=/run/app/homeassistant/private/secrets.yaml:/config/secrets.yaml:ro,U
+HealthCmd=curl -fsS http://127.0.0.1:8123/manifest.json -o /dev/null
+HealthInterval=30s
+HealthStartPeriod=5m
+HealthRetries=5
+
+[Service]
+Restart=always
+ExecStartPre=/bin/sh /var/app/homeassistant/config/ensure-includes.sh
+
+[Install]
+WantedBy=multi-user.target

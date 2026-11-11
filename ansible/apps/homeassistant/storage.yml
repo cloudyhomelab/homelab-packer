@@ -1,0 +1,13 @@
+datasets:
+  config:
+    owner: "0:0"
+  backups:
+    owner: "0:0"
+    recordsize: 1M
+  db:
+    owner: "70:70"
+    recordsize: 32K
+  matter:
+    owner: "1000:1000"
+  zigbee2mqtt:
+    owner: "1000:1000"

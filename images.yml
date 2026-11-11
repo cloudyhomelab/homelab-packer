@@ -33,6 +33,7 @@ images:
               - dns-primary
               - dns-secondary
               - edge
+              - homeassistant
               - iot-ingress-control
               - lab-ingress-control
               - management-ingress-control
