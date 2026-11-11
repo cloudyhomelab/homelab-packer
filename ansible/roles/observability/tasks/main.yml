@@ -55,6 +55,14 @@
     group: alloy
     mode: '0640'
 
+# the directory: alloy loads every *.alloy in it as one config, so other roles add components
+# beside config.alloy without owning it
+- name: load every alloy config file in /etc/alloy
+  ansible.builtin.lineinfile:
+    path: /etc/default/alloy
+    regexp: '^CONFIG_FILE='
+    line: 'CONFIG_FILE="/etc/alloy"'
+
 - name: disable alloy usage reporting
   ansible.builtin.lineinfile:
     path: /etc/default/alloy
