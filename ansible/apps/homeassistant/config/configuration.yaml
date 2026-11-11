@@ -22,11 +22,6 @@ rest_command:
         "uuid": {{ uuid | tojson }}
       }
 
-http:
-  use_x_forwarded_for: true
-  # set at unit start by resolve-proxy.sh
-  trusted_proxies: !env_var HA_TRUSTED_PROXY
-
 recorder:
   db_url: !secret recorder_db_url
 
