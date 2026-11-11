@@ -47,7 +47,10 @@ APP_METADATA = "addon.json"
 # history starts fresh; the image mounts its own configuration.yaml and secrets.yaml over these
 HA_SKIP = re.compile(r"^(home-assistant_v2\.db.*|configuration\.yaml|secrets\.yaml)$")
 # Zigbee2MQTT generates these when they are missing and forms a new network on the coordinator
-NETWORK_KEYS = ("network_key", "pan_id", "ext_pan_id", "channel")
+NETWORK_KEYS = ("network_key", "pan_id", "ext_pan_id")
+# Zigbee2MQTT's advanced.channel when unset; checked against the coordinator backup instead
+DEFAULT_CHANNEL = 11
+COORDINATOR_BACKUP = "coordinator_backup.json"
 # Zigbee2MQTT's indirection to secret.yaml, written as a quoted string rather than a YAML tag
 SECRET_PREFIX = "!secret "
 STOPPED_STATES = {"inactive", "failed"}
@@ -61,6 +64,7 @@ class Staged:
     zigbee2mqtt_options: dict = field(default_factory=dict)
     matter: Path | None = None
     matter_options: dict = field(default_factory=dict)
+    notes: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
@@ -95,7 +99,8 @@ def app_options(staging: Path, app_glob: str) -> dict:
         metadata_path = app_dir / APP_METADATA
         if metadata_path.is_file():
             metadata = json.loads(metadata_path.read_text())
-            return metadata.get("user", {})
+            # the rest of "user" holds the app's Supervisor tokens, which must not be printed
+            return metadata.get("user", {}).get("options", {})
     return {}
 
 
@@ -167,6 +172,8 @@ def check_zigbee2mqtt(staged: Staged) -> None:
         value = resolve_secret(advanced.get(key), secrets)
         if value in (None, "") or str(value).upper() == "GENERATE":
             staged.errors.append(f"{config_path}: advanced.{key} is missing or GENERATE")
+    channel = resolve_secret(advanced.get("channel"), secrets)
+    check_channel(staged, config_path, channel)
 
     serial = config.get("serial") or {}
     port = str(resolve_secret(serial.get("port"), secrets) or "")
@@ -180,10 +187,33 @@ def check_zigbee2mqtt(staged: Staged) -> None:
     if not serial.get("adapter"):
         staged.warnings.append(f"{config_path}: no serial adapter; Zigbee2MQTT then probes for it")
 
-    if not (staged.zigbee2mqtt / "coordinator_backup.json").is_file():
+    if not (staged.zigbee2mqtt / COORDINATOR_BACKUP).is_file():
         staged.warnings.append(
             f"{staged.zigbee2mqtt}: no coordinator_backup.json, the fallback if the network breaks"
         )
+
+
+def check_channel(staged: Staged, config_path: Path, channel: object) -> None:
+    """The channel Zigbee2MQTT will use must be the one the coordinator's network is on."""
+    expected = DEFAULT_CHANNEL if channel is None else int(channel)
+    backup_path = staged.zigbee2mqtt / COORDINATOR_BACKUP
+    if not backup_path.is_file():
+        if channel is None:
+            staged.errors.append(
+                f"{config_path}: advanced.channel is unset and there is no {COORDINATOR_BACKUP} "
+                f"to confirm the default {DEFAULT_CHANNEL}"
+            )
+        return
+    backup = json.loads(backup_path.read_text())
+    actual = backup.get("channel")
+    if actual != expected:
+        staged.errors.append(
+            f"{config_path}: Zigbee2MQTT would use channel {expected}, "
+            f"the coordinator backup says {actual}; set advanced.channel: {actual}"
+        )
+        return
+    source = "default" if channel is None else "configured"
+    staged.notes.append(f"Zigbee channel {expected} ({source}) matches the coordinator backup")
 
 
 def report(staged: Staged) -> None:
@@ -193,6 +223,8 @@ def report(staged: Staged) -> None:
     # the image sets these itself; compare, so no HAOS app setting is dropped silently
     print(f"HAOS Zigbee2MQTT app options:   {staged.zigbee2mqtt_options or 'none'}")
     print(f"HAOS Matter Server app options: {staged.matter_options or 'none'}")
+    for note in staged.notes:
+        print(note)
     for warning in staged.warnings:
         print(f"warning: {warning}")
     for error in staged.errors:
