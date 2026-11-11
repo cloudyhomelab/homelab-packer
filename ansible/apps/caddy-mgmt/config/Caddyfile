@@ -7,6 +7,14 @@
     header_up Host {host}
 }
 
+# the edge routes by SNI, but browsers reuse an HTTP/2 connection for any host the wildcard
+# certificate covers; 421 makes them retry on a new connection that reaches the right caddy
+*.cloudyhome.net {
+    import wildcard
+
+    respond 421
+}
+
 gateway.cloudyhome.net {
     import wildcard
 
