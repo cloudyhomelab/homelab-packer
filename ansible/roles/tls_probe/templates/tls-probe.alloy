@@ -1,0 +1,28 @@
+// a TLS handshake only: probe_ssl_earliest_cert_expiry without depending on what the site answers
+prometheus.exporter.blackbox "tls_probe" {
+	config = "{ modules: { tls_connect: { prober: tcp, timeout: {{ tls_probe_timeout }}, tcp: { tls: true } } } }"
+{% for target in tls_probe_targets %}
+
+	target {
+		name    = "{{ target.name }}"
+		address = "{{ target.address }}"
+		module  = "tls_connect"
+	}
+{% endfor %}
+}
+
+// the exporter sets instance to its component ID; the probed endpoint is what an alert should name
+discovery.relabel "tls_probe" {
+	targets = prometheus.exporter.blackbox.tls_probe.targets
+
+	rule {
+		source_labels = ["__param_target"]
+		target_label  = "instance"
+	}
+}
+
+prometheus.scrape "tls_probe" {
+	targets         = discovery.relabel.tls_probe.output
+	scrape_interval = "{{ tls_probe_interval }}"
+	forward_to      = [prometheus.remote_write.central.receiver]
+}

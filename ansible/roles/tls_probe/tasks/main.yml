@@ -1,0 +1,14 @@
+---
+- name: check that there is something to probe
+  ansible.builtin.assert:
+    that:
+      - tls_probe_targets | length > 0
+    fail_msg: tls_probe_targets must list at least one {name, address}
+
+- name: add the TLS probe to alloy
+  ansible.builtin.template:
+    src: tls-probe.alloy
+    dest: /etc/alloy/tls-probe.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
