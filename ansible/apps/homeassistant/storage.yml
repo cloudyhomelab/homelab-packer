@@ -11,3 +11,5 @@ datasets:
     owner: "1000:1000"
   zigbee2mqtt:
     owner: "1000:1000"
+  music-assistant:
+    owner: "0:0"

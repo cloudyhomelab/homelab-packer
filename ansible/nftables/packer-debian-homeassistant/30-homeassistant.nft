@@ -1,8 +1,10 @@
 # 1400: Sonos speakers push state changes to Home Assistant
 # 21064 and 21065: the HomeKit Bridge entries; each has its own port, set in its HA config entry
+# 8097: Music Assistant's stream port, which the speakers pull audio from; its UI is a HA ingress panel
 add element inet base-filter base-open {
     tcp . 1400,
     tcp . 8123,
+    tcp . 8097,
     udp . 1900,
     udp . 5353,
     udp . 5540,

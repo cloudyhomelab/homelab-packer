@@ -37,3 +37,8 @@ ingress:
     icon: mdi:access-point-network
     url: http://127.0.0.1:5580
     require_admin: true
+  music_assistant:
+    title: Music Assistant
+    icon: mdi:music
+    url: http://127.0.0.1:8095
+    require_admin: true
