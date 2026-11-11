@@ -115,7 +115,8 @@ def own_datasets(root: Path, image: Image) -> list[Dataset]:
 def image_datasets(catalog: Catalog, image: Image) -> list[Dataset]:
     """Every dataset a VM of this image mounts: its ancestors' layers and its own."""
     layers = [*reversed(catalog.ancestors(image.name)), image]
-    datasets = [d for layer in layers for d in own_datasets(catalog.root, layer)]
+    built = [layer for layer in layers if layer.upstream is None]
+    datasets = [d for layer in built for d in own_datasets(catalog.root, layer)]
     seen: set[str] = set()
     for dataset in datasets:
         if dataset.path in seen:
@@ -210,7 +211,7 @@ def quadlet_problems(root: Path, app: str) -> list[str]:
 def problems(catalog: Catalog) -> dict[str, list[str]]:
     """Per image name, what is wrong with the storage it declares."""
     out: dict[str, list[str]] = {}
-    for image in catalog.ordered():
+    for image in catalog.built():
         try:
             image_datasets(catalog, image)
             own = own_datasets(catalog.root, image)

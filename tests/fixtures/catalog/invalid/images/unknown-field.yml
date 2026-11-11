@@ -17,6 +17,7 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
-      playbook: custom
+  - debian-cloud:
+      children:
+        - base:
+            playbook: custom

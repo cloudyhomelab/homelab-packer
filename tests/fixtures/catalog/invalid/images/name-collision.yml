@@ -17,7 +17,9 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
-  - base:
-      from: fedora-cloud
+  - debian-cloud:
+      children:
+        - base:
+  - fedora-cloud:
+      children:
+        - base:

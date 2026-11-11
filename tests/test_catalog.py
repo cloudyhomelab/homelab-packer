@@ -32,12 +32,14 @@ def test_invalid_upstream_yml(tmp_path, case):
 
 def test_every_image_is_resolved(catalog):
     assert [i.name for i in catalog.ordered()] == [
+        "debian-cloud",
         "debian-base",
         "debian-kubernetes",
         "debian-container",
         "debian-edge",
         "debian-honeypot",
         "debian-media",
+        "fedora-cloud",
         "fedora-base",
         "fedora-kubernetes",
         "fedora-container",
@@ -96,8 +98,9 @@ def test_parents_and_tree_order(catalog):
         if image.parent:
             assert names.index(image.parent) < names.index(image.name)
     assert catalog.get("debian-honeypot").parent == "debian-container"
-    assert catalog.get("debian-base").upstream == "debian-cloud"
-    assert catalog.get("debian-container").upstream is None
+    assert catalog.get("debian-base").parent == "debian-cloud"
+    assert catalog.get("debian-base").upstream is None
+    assert catalog.get("debian-cloud").upstream == "debian-cloud"
     assert [i.name for i in catalog.descendants("debian-container")] == [
         "debian-edge",
         "debian-honeypot",
@@ -106,18 +109,33 @@ def test_parents_and_tree_order(catalog):
     assert [i.name for i in catalog.ancestors("debian-media")] == [
         "debian-container",
         "debian-base",
+        "debian-cloud",
     ]
+    assert "debian-cloud" not in [i.name for i in catalog.built()]
+
+
+def test_upstream_node(catalog):
+    node = catalog.get("debian-cloud")
+    assert (node.name, node.os, node.playbook, node.s3_prefix) == (
+        "debian-cloud",
+        "debian",
+        "",
+        "debian",
+    )
+    assert (node.parent, node.depth, node.retain_images) == (None, 0, 3)
+    assert catalog.get("fedora-cloud").retain_images == 5
+    assert catalog.root_upstream(catalog.get("debian-media")).key == "debian-cloud"
 
 
 def test_upstream_source_url_for_both_lookup_shapes(catalog):
-    debian = catalog.upstream_source(catalog.get("debian-base"))
-    assert debian.name == "debian-cloud"
+    debian = catalog.upstream_source(catalog.get("debian-cloud"))
+    assert debian.name == ""
     assert debian.url == (
         "https://cdimage.debian.org/images/cloud/trixie/20260914-2601/"
         "debian-13-genericcloud-amd64-20260914-2601.qcow2"
     )
     assert debian.checksum == "sha512:" + "a" * 128
-    fedora = catalog.upstream_source(catalog.get("fedora-base"))
+    fedora = catalog.upstream_source(catalog.get("fedora-cloud"))
     assert fedora.url.endswith("/Fedora-Cloud-Base-Generic-44-1.7.x86_64.qcow2")
     assert fedora.checksum == "sha256:" + "b" * 64
 

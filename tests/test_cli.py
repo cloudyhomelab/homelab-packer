@@ -40,10 +40,15 @@ def test_list_prints_tree_with_sources(in_root):
     assert result.exit_code == 0
     out = result.stdout.splitlines()
     assert out[0].split() == ["IMAGE", "PLAYBOOK", "DISK", "MEMORY", "CPUS", "SOURCE"]
-    assert out[1].startswith("debian-base ")
-    assert "debian-cloud https://cdimage.debian.org/" in out[1]
-    assert out[4].startswith("    debian-edge ")
-    assert out[4].rstrip().endswith("debian-container")
+    assert out[1].split() == [
+        "debian-cloud",
+        "https://cdimage.debian.org/images/cloud/trixie/20260914-2601/"
+        "debian-13-genericcloud-amd64-20260914-2601.qcow2",
+    ]
+    assert out[2].startswith("  debian-base ")
+    assert out[2].rstrip().endswith("debian-cloud")
+    assert out[5].startswith("      debian-edge ")
+    assert out[5].rstrip().endswith("debian-container")
 
 
 def test_unknown_image(in_root):

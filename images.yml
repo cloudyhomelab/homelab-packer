@@ -19,26 +19,27 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
+  - debian-cloud:
       children:
-        - kubernetes:
+        - base:
             children:
-              - kubernetes-control
-              - kubernetes-worker
-        - container:
-            children:
-              - arr-stack
-              - controlplane
-              - dns-primary
-              - dns-secondary
-              - edge
-              - homeassistant
-              - iot-ingress-control
-              - lab-ingress-control
-              - management-ingress-control
-              - media
-              - netbox
-              - observability
-              - runner
-              - unifi
+              - kubernetes:
+                  children:
+                    - kubernetes-control
+                    - kubernetes-worker
+              - container:
+                  children:
+                    - arr-stack
+                    - controlplane
+                    - dns-primary
+                    - dns-secondary
+                    - edge
+                    - homeassistant
+                    - iot-ingress-control
+                    - lab-ingress-control
+                    - management-ingress-control
+                    - media
+                    - netbox
+                    - observability
+                    - runner
+                    - unifi

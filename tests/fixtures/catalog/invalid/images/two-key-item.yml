@@ -17,9 +17,10 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
+  - debian-cloud:
       children:
-        # settings level with the name instead of indented below it
-        - container:
-          disk_size: 3G
+        - base:
+            children:
+              # settings level with the name instead of indented below it
+              - container:
+                disk_size: 3G

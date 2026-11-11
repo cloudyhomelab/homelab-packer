@@ -172,7 +172,7 @@ def test_settings_are_part_of_the_hash(tree):
     images = (
         (tree / "images.yml")
         .read_text()
-        .replace("- kubernetes\n", "- kubernetes:\n" + " " * 12 + "memory: 4096\n", 1)
+        .replace("- kubernetes\n", "- kubernetes:\n" + " " * 18 + "memory: 4096\n", 1)
     )
     (tree / "images.yml").write_text(images)
     after = hashes(tree)
@@ -186,7 +186,7 @@ def test_max_age_and_retain_are_not_part_of_the_hash(tree):
         .read_text()
         .replace(
             "- kubernetes\n",
-            "- kubernetes:\n" + " " * 12 + "max_age_days: 1\n" + " " * 12 + "retain_images: 2\n",
+            "- kubernetes:\n" + " " * 18 + "max_age_days: 1\n" + " " * 18 + "retain_images: 2\n",
             1,
         )
     )
@@ -221,7 +221,7 @@ def test_missing_playbook_is_a_per_image_error(tree):
     (tree / "ansible/packer-debian-container.yml").unlink()
     result = check_hash.compute_all(load(tree))
     assert "does not exist" in result.errors["debian-container"]
-    assert set(result.hashes) == set(load(tree).images) - {"debian-container"}
+    assert set(result.hashes) == {i.name for i in load(tree).built()} - {"debian-container"}
 
 
 def test_apps_resolved_from_role_entries_and_include_role(tree):

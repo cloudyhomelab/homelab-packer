@@ -292,7 +292,7 @@ def compute_all(catalog: Catalog, images: list[Image] | None = None) -> Result:
     root = catalog.root
     rules = read_rules(root)
     files = list_files(root)
-    targets = images if images is not None else catalog.ordered()
+    targets = images if images is not None else catalog.built()
     result = Result(hashes={}, errors={}, unmatched=[], files={})
     matched: set[int] = set()
     for image in targets:

@@ -19,5 +19,6 @@ defaults:
 pins: {}
 
 images:
-  - base:
-      from: debian-cloud
+  - debian-cloud:
+      children:
+        - base:

@@ -50,7 +50,7 @@ def missing_roles(catalog: Catalog) -> dict[str, list[str]]:
     root = catalog.root
     requirements = read_requirements(root)
     problems: dict[str, list[str]] = {}
-    for image in catalog.ordered():
+    for image in catalog.built():
         present = []
         for req in requirements:
             folder = req.folder.replace("{playbook}", image.playbook)

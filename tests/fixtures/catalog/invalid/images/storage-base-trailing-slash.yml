@@ -20,6 +20,7 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
-      disk_size: 3G
+  - debian-cloud:
+      children:
+        - base:
+            disk_size: 3G

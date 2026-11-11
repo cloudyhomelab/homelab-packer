@@ -106,12 +106,13 @@ def test_plan_marks_descendants_of_a_due_image(catalog):
 def test_upstream_pin_change_makes_the_tree_due(catalog):
     published = published_current(catalog)
     catalog.get("debian-honeypot").max_age_days = 7
-    published["debian-base"]["PARENT_CHECKSUM"] = "sha512:" + "0" * 128
+    published["debian-cloud"]["PARENT_CHECKSUM"] = "sha512:" + "0" * 128
 
     due, _ = plan(
         catalog, dict.fromkeys(published, "sha256:h"), lambda image: published[image.name], NOW
     )
     assert [d.image for d in due] == [
+        "debian-cloud",
         "debian-base",
         "debian-kubernetes",
         "debian-container",
@@ -120,6 +121,48 @@ def test_upstream_pin_change_makes_the_tree_due(catalog):
         "debian-media",
     ]
     assert due[0].reason == "source changed"
+    assert due[1].reason == "parent due (debian-cloud)"
+
+
+def test_a_new_copy_of_the_upstream_makes_its_children_due(catalog):
+    published = published_current(catalog)
+    catalog.get("debian-honeypot").max_age_days = 7
+    published["debian-cloud"]["IMAGE_CHECKSUM"] = "sha512:recopied"
+
+    due, _ = plan(
+        catalog, dict.fromkeys(published, "sha256:h"), lambda image: published[image.name], NOW
+    )
+    assert (due[0].image, due[0].reason) == ("debian-base", "source changed")
+
+
+def test_an_upstream_node_never_ages_and_has_no_check_hash(catalog):
+    published = published_current(catalog)
+    catalog.get("debian-honeypot").max_age_days = 7
+    for name in ("debian-cloud", "fedora-cloud"):
+        published[name] |= {"BUILD_DATE": "2020-01-01 00:00:00 +0000", "CHECK_HASH": ""}
+    hashes = {i.name: "sha256:h" for i in catalog.built()}
+
+    def extra_check(image, entry):
+        assert image.upstream is None
+        return None
+
+    due, _ = plan(catalog, hashes, lambda image: published[image.name], NOW, extra_check)
+    assert due == []
+
+
+def test_an_unpublished_upstream_node_is_due_with_its_tree(catalog):
+    published = published_current(catalog)
+    catalog.get("debian-honeypot").max_age_days = 7
+    del published["fedora-cloud"]
+
+    due, _ = plan(
+        catalog, dict.fromkeys(published, "sha256:h"), lambda image: published.get(image.name), NOW
+    )
+    assert [(d.image, d.reason) for d in due][:2] == [
+        ("fedora-cloud", "never built"),
+        ("fedora-base", "parent due (fedora-cloud)"),
+    ]
+    assert all(d.image.startswith("fedora-") for d in due)
 
 
 def test_extra_check_makes_a_current_image_due(catalog):

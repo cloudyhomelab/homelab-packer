@@ -112,6 +112,40 @@ def test_upload_order_puts_latest_json_last(catalog, client, build, image_path, 
     assert meta["IMAGE_CHECKSUM"] == "sha512:" + publish.sha512_file(image_path)
 
 
+def test_upstream_copy_is_published_without_an_sbom(catalog, client, image_path):
+    node = catalog.get("debian-cloud")
+    up = catalog.upstreams["debian-cloud"]
+    clock = Clock(up.version, CLOCK.build_timestamp)
+    copy = Build(node, catalog.upstream_source(node), clock, "", GIT)
+    prefix = f"debian/debian-cloud/{up.version}"
+    name = f"debian-cloud-{up.version}.qcow2"
+    with Stubber(client) as stub:
+        expect_put(stub, f"{prefix}/{name}", "application/octet-stream")
+        expect_put(stub, f"{prefix}/{name}.sha512", "text/plain")
+        expect_put(stub, f"{prefix}/metadata.json")
+        stub.add_response(
+            "head_object", {}, {"Bucket": "os-image-staging", "Key": f"{prefix}/{name}"}
+        )
+        expect_put(stub, "debian/debian-cloud/latest.json")
+        meta = publish.publish(catalog, Store(catalog, client), copy, image_path, None, no_check)
+        stub.assert_no_pending_responses()
+    assert meta["IMAGE_URL"] == f"{BASE_URL}/{prefix}/{name}"
+    assert (meta["PARENT"], meta["PARENT_URL"], meta["PARENT_CHECKSUM"]) == (
+        "",
+        up.url,
+        up.checksum,
+    )
+    assert (meta["CHECK_HASH"], meta["STORAGE"]) == ("", [])
+
+
+def test_prune_orders_versions_numerically(catalog):
+    image = catalog.get("fedora-cloud")
+    image.retain_images = 1
+    keys = build_keys("fedora/fedora-cloud", ["1.9", "1.10"])
+    doomed = builds_to_prune(catalog, image, keys, set())
+    assert {k.split("/")[2] for k in doomed} == {"1.9"}
+
+
 def test_failure_before_latest_json_leaves_it_untouched(
     catalog, client, build, image_path, sbom_path
 ):

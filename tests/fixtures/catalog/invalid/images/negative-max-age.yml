@@ -17,6 +17,7 @@ defaults:
   retain_images: 5
 
 images:
-  - base:
-      from: debian-cloud
-      max_age_days: -1
+  - debian-cloud:
+      children:
+        - base:
+            max_age_days: -1
