@@ -19,9 +19,10 @@ from .idmap import load as load_idmap
 
 STORAGE_ROLE = "app_storage"
 MOUNT_ROOT = "/srv"
-DATASET_FIELDS = {"owner", "recordsize", "dirs"}
+DATASET_FIELDS = {"owner", "recordsize", "dirs", "mode"}
 OWNER_RE = re.compile(r"^[0-9]+:[0-9]+$")
 RECORDSIZE_RE = re.compile(r"^[1-9][0-9]*[KM]$")
+MODE_RE = re.compile(r"^0[0-7]{3}$")
 # quadlet keys that set a container's user namespace; only the app's named range is allowed
 USERNS_KEYS = ("UIDMap", "GIDMap", "UserNS", "SubUIDMap", "SubGIDMap")
 
@@ -33,6 +34,7 @@ class Dataset:
     owner: str
     recordsize: str | None
     dirs: tuple[str, ...]
+    mode: str | None = None
 
     @property
     def path(self) -> str:
@@ -83,6 +85,9 @@ def read_app(root: Path, app: str) -> list[Dataset]:
             not isinstance(recordsize, str) or not RECORDSIZE_RE.match(recordsize)
         ):
             errors.append(f"{at}: recordsize must be a size like 16K or 1M, got {recordsize!r}")
+        mode = body.get("mode")
+        if mode is not None and (not isinstance(mode, str) or not MODE_RE.match(mode)):
+            errors.append(f"{at}: mode must be a quoted octal mode like '0755', got {mode!r}")
         dirs = body.get("dirs", [])
         if not isinstance(dirs, list) or not all(
             isinstance(d, str) and KEY_RE.match(d) for d in dirs
@@ -98,6 +103,7 @@ def read_app(root: Path, app: str) -> list[Dataset]:
                 owner=str(owner),
                 recordsize=str(recordsize) if recordsize is not None else None,
                 dirs=tuple(str(d) for d in dirs),
+                mode=str(mode) if mode is not None else None,
             )
         )
     if errors:
@@ -174,13 +180,14 @@ def ansible_vars(
     ]
     apps: dict[str, list[dict[str, object]]] = {}
     for d in datasets:
-        apps.setdefault(d.app, []).append(
-            {
-                "where": d.path,
-                "owner": shifted_owner(ranges, d),
-                "dirs": [f"{d.path}/{x}" for x in d.dirs],
-            }
-        )
+        entry: dict[str, object] = {
+            "where": d.path,
+            "owner": shifted_owner(ranges, d),
+            "dirs": [f"{d.path}/{x}" for x in d.dirs],
+        }
+        if d.mode:
+            entry["mode"] = d.mode
+        apps.setdefault(d.app, []).append(entry)
     return {
         "app_storage_mounts": mounts,
         "app_storage_apps": [

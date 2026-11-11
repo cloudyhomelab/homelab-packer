@@ -5,6 +5,8 @@ datasets:
   media:
     owner: "1000:1000"
     recordsize: 1M
+    # other apps mount it read-only and read it as other
+    mode: "0755"
   data:
     owner: "1000:1000"
     dirs: [config, jobs, images]

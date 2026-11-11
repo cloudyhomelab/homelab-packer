@@ -106,6 +106,19 @@ def test_ansible_vars(root):
     }
 
 
+def test_ansible_vars_pass_a_dataset_mode(root):
+    write(
+        root,
+        "ansible/apps/youtarr/storage.yml",
+        "datasets:\n  media:\n    owner: '1:1'\n    mode: '0755'\n",
+    )
+    config = StorageConfig("nfs.example.net", "/mnt/tank/apps")
+    found = storage.ansible_vars(config, RANGES, storage.read_app(root, "youtarr"))
+    assert found["app_storage_apps"][0]["datasets"] == [
+        {"where": "/srv/youtarr/media", "owner": "2065537:2065537", "dirs": [], "mode": "0755"}
+    ]
+
+
 def test_ansible_vars_without_storage_need_no_config():
     assert storage.ansible_vars(None, None, []) == {
         "app_storage_mounts": [],
@@ -133,6 +146,8 @@ def test_mount_unit_escapes_dashes():
         ("datasets:\n  Db:\n    owner: '1:1'\n", "name must be lowercase"),
         ("datasets:\n  db:\n    owner: '1:1'\n    dirs: [a, a]\n", "dirs has duplicates"),
         ("datasets:\n  db:\n    owner: '1:1'\n    dirs: [a/b]\n", "dirs must be a list"),
+        ("datasets:\n  db:\n    owner: '1:1'\n    mode: 755\n", "mode must be a quoted octal"),
+        ("datasets:\n  db:\n    owner: '1:1'\n    mode: '0778'\n", "mode must be a quoted octal"),
     ],
 )
 def test_invalid_storage_yml(root, text, error):

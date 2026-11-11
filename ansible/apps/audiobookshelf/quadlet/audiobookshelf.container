@@ -1,0 +1,30 @@
+[Unit]
+Description=Audiobookshelf
+After=audiobookshelf-storage.service
+Requires=audiobookshelf-storage.service
+RequiresMountsFor=/srv/youtarr/media
+
+[Container]
+SubUIDMap=audiobookshelf
+SubGIDMap=audiobookshelf
+User=1000:1000
+ContainerName=audiobookshelf
+Image=audiobookshelf.image
+Volume=/srv/audiobookshelf/config:/config
+Volume=/srv/audiobookshelf/metadata:/metadata
+Volume=/srv/youtarr/media:/media/youtarr:ro
+# the image's port 80 is privileged for a non-root user
+Environment=PORT=13378
+PublishPort=13378:13378
+# the image has busybox wget but no curl
+HealthCmd=wget -q -O /dev/null http://127.0.0.1:13378/healthcheck
+HealthInterval=30s
+HealthStartPeriod=1m
+HealthRetries=5
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

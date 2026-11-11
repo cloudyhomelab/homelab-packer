@@ -9,7 +9,7 @@ RemainAfterExit=yes
 {% set paths = [dataset.where] + dataset.dirs %}
 ExecStart=/usr/bin/mkdir -p {{ paths | join(' ') }}
 ExecStart=/usr/bin/chown {{ dataset.owner }} {{ paths | join(' ') }}
-ExecStart=/usr/bin/chmod {{ app_storage_dir_mode }} {{ paths | join(' ') }}
+ExecStart=/usr/bin/chmod {{ dataset.mode | default(app_storage_dir_mode) }} {{ paths | join(' ') }}
 {% endfor %}
 
 [Install]

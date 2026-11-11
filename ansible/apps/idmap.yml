@@ -11,3 +11,5 @@ slots:
   netbox: 6
   immich: 7
   homeassistant: 8
+  jellyfin: 9
+  audiobookshelf: 10

@@ -26,3 +26,15 @@ youtarr.cloudyhome.net {
         import upstream
     }
 }
+
+jellyfin.cloudyhome.net {
+    reverse_proxy arr-stack.ip.cloudyhome.net:8096 {
+        import upstream
+    }
+}
+
+audiobookshelf.cloudyhome.net {
+    reverse_proxy arr-stack.ip.cloudyhome.net:13378 {
+        import upstream
+    }
+}

@@ -139,6 +139,9 @@ datasets:
   data:
     owner: "1000:1000"
     dirs: [config, jobs]  # optional, made below the mount at boot
+  media:
+    owner: "1000:1000"
+    mode: "0755"          # optional, default 0750; for a dataset other apps mount read-only
 ```
 
 Dataset `<key>` of app `<app>` is exported from `config.storage` in `images.yml` as

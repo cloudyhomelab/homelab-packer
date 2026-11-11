@@ -1,0 +1,6 @@
+datasets:
+  config:
+    owner: "1000:1000"
+    recordsize: 32K
+  metadata:
+    owner: "1000:1000"
