@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/grafana/grafana:13.2.4
+Image=docker.io/grafana/grafana:13.3.1
