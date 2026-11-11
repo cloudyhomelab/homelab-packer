@@ -32,3 +32,8 @@ ingress:
     icon: mdi:zigbee
     url: http://127.0.0.1:8080
     require_admin: true
+  matter:
+    title: Matter
+    icon: mdi:access-point-network
+    url: http://127.0.0.1:5580
+    require_admin: true
