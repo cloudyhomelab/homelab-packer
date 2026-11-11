@@ -1,7 +1,7 @@
 ---
 # One entry per NFS mount: {unit, what, where}
 app_storage_mounts: []
-# One entry per app: {app, id_base, id_count, datasets: [{where, owner, dirs}]}; each gets
+# One entry per app: {app, id_base, id_count, datasets: [{where, owner, dirs, mode?}]}; each gets
 # <app>-storage.service and the ID range its containers name with SubUIDMap and SubGIDMap
 app_storage_apps: []
 
