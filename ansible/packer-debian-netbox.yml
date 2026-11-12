@@ -20,6 +20,9 @@
   roles:
     - role: app_storage
 
+    - role: app_idmap
+      app_idmap_app: netbox
+
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: netbox

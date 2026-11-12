@@ -38,6 +38,9 @@
       systemd_app_kind: source
       systemd_app_name: observability
 
+    - role: app_idmap
+      app_idmap_app: caddy-observability
+
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: caddy-observability

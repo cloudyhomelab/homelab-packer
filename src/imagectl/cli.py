@@ -27,6 +27,7 @@ from . import (
     storage,
     testvm,
     upstream,
+    userns,
 )
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
@@ -192,7 +193,8 @@ def cmd_validate(
         ),
     ] = None,
 ) -> int:
-    """Validate templates, scripts, .check_hash rules, required roles, storage and playbooks.
+    """Validate templates, scripts, .check_hash rules, required roles, storage, ID ranges and
+    playbooks.
 
     Reads no latest.json, so an image validates without a published parent. An upstream node
     has nothing to validate.
@@ -218,6 +220,7 @@ def cmd_validate(
         global_ok = False
     missing_roles = required_roles.missing_roles(catalog)
     storage_problems = storage.problems(catalog)
+    userns_problems = userns.problems(catalog)
 
     git = packer.git_info(root)
     clock = packer.Clock.now()
@@ -232,6 +235,7 @@ def cmd_validate(
                 failures[image.name].append(f"CHECK_HASH: {hashes.errors[image.name]}")
             failures[image.name].extend(missing_roles.get(image.name, []))
             failures[image.name].extend(storage_problems.get(image.name, []))
+            failures[image.name].extend(userns_problems.get(image.name, []))
             # a broken storage.yml is reported above; validate the template without it
             unreadable = image.name in hashes.errors or image.name in storage_problems
             own = [] if unreadable else storage.own_datasets(root, image)

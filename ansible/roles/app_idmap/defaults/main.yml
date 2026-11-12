@@ -1,0 +1,3 @@
+---
+# app_idmap_app: the app whose containers name the range with SubUIDMap and SubGIDMap
+app_idmap_file: "{{ playbook_dir }}/apps/idmap.yml"

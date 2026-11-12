@@ -156,31 +156,34 @@ def resolve_roles(root: Path, playbook: str) -> list[str]:
     return sorted(found)
 
 
-def _app_name(params: object, where: str) -> str:
-    name = params.get("systemd_app_name") if isinstance(params, dict) else None
-    if not isinstance(name, str) or not name:
-        raise CheckHashError(f"{where}: {SYSTEMD_APP_ROLE} call without a systemd_app_name")
-    if "{{" in name or "{%" in name:
-        raise CheckHashError(f"{where}: app name {name!r} is templated and cannot be resolved")
-    return name
+def _param(params: object, role: str, key: str, where: str) -> str:
+    value = params.get(key) if isinstance(params, dict) else None
+    if not isinstance(value, str) or not value:
+        raise CheckHashError(f"{where}: {role} call without a {key}")
+    if "{{" in value or "{%" in value:
+        raise CheckHashError(f"{where}: {key} {value!r} is templated and cannot be resolved")
+    return value
 
 
-def _included_apps(node: object, where: str) -> Iterable[str]:
-    """Apps deployed by include_role/import_role of systemd_app anywhere below node."""
+def _included_params(node: object, role: str, key: str, where: str) -> Iterable[str]:
+    """`key` of every include_role/import_role of `role` anywhere below node."""
     if isinstance(node, dict):
-        for key, value in node.items():
-            if key in ROLE_INCLUDE_KEYS:
-                if isinstance(value, dict) and value.get("name") == SYSTEMD_APP_ROLE:
-                    yield _app_name(node.get("vars"), where)
+        for name, value in node.items():
+            if name in ROLE_INCLUDE_KEYS:
+                if isinstance(value, dict) and value.get("name") == role:
+                    yield _param(node.get("vars"), role, key, where)
             else:
-                yield from _included_apps(value, where)
+                yield from _included_params(value, role, key, where)
     elif isinstance(node, list):
         for item in node:
-            yield from _included_apps(item, where)
+            yield from _included_params(item, role, key, where)
 
 
-def resolve_apps(root: Path, playbook: str, roles: list[str]) -> list[str]:
-    """Apps a playbook deploys with systemd_app, from its plays and the roles it pulls in."""
+def resolve_role_params(
+    root: Path, playbook: str, roles: list[str], role: str, key: str
+) -> list[str]:
+    """The values a playbook passes as `key` to `role`, from its plays and the roles it pulls
+    in; every call must pass it literally."""
     ansible = root / ANSIBLE_DIR
     playbook_path = ansible / f"{playbook}.yml"
     found: set[str] = set()
@@ -188,14 +191,19 @@ def resolve_apps(root: Path, playbook: str, roles: list[str]) -> list[str]:
         if not isinstance(play, dict):
             continue
         for entry in play.get("roles") or []:
-            if isinstance(entry, dict) and entry.get("role", entry.get("name")) == SYSTEMD_APP_ROLE:
-                found.add(_app_name(entry, str(playbook_path)))
-        for key in PLAY_TASK_KEYS:
-            found.update(_included_apps(play.get(key), str(playbook_path)))
-    for role in roles:
-        for path in sorted((ansible / "roles" / role / "tasks").glob("**/*.y*ml")):
-            found.update(_included_apps(_yaml_docs(path), str(path)))
+            if isinstance(entry, dict) and entry.get("role", entry.get("name")) == role:
+                found.add(_param(entry, role, key, str(playbook_path)))
+        for task_key in PLAY_TASK_KEYS:
+            found.update(_included_params(play.get(task_key), role, key, str(playbook_path)))
+    for name in roles:
+        for path in sorted((ansible / "roles" / name / "tasks").glob("**/*.y*ml")):
+            found.update(_included_params(_yaml_docs(path), role, key, str(path)))
     return sorted(found)
+
+
+def resolve_apps(root: Path, playbook: str, roles: list[str]) -> list[str]:
+    """Apps a playbook deploys with systemd_app, from its plays and the roles it pulls in."""
+    return resolve_role_params(root, playbook, roles, SYSTEMD_APP_ROLE, "systemd_app_name")
 
 
 def expand(rule: Rule, image: Image, lists: dict[str, list[str]]) -> list[str]:
@@ -242,34 +250,36 @@ def select_files(
     return ImageFiles(sorted(selected), matched_rules)
 
 
-def storage_inputs(catalog: Catalog, apps: list[str]) -> dict[str, object] | None:
-    """The shared settings that shape an image's mounts: none for an image without storage,
-    and of idmap.yml only the slots of its own apps, so a new app rebuilds no other image."""
+def shared_inputs(catalog: Catalog, apps: list[str]) -> dict[str, object] | None:
+    """The shared settings an image depends on: the storage config only for an image with
+    storage, so a new NFS server rebuilds just those, and of idmap.yml only the slots of its own
+    apps, so a new app rebuilds no other image."""
     root = catalog.root
-    with_storage = [a for a in apps if (root / ANSIBLE_DIR / "apps" / a / STORAGE_FILE).is_file()]
-    if not with_storage:
-        return None
+    with_storage = {a for a in apps if (root / ANSIBLE_DIR / "apps" / a / STORAGE_FILE).is_file()}
     ranges = idmap.load(root)
+    slotted = {a for a in apps if ranges is not None and a in ranges.slots}
+    mapped = sorted(with_storage | slotted)
+    if not mapped:
+        return None
     return {
-        "config": asdict(catalog.storage) if catalog.storage else None,
+        "config": asdict(catalog.storage) if with_storage and catalog.storage else None,
         "idmap": None
         if ranges is None
         else {
             "start": ranges.start,
             "size": ranges.size,
-            "slots": {a: ranges.slots.get(a) for a in with_storage},
+            "slots": {a: ranges.slots.get(a) for a in mapped},
         },
     }
 
 
 def compute(
-    root: Path, image: Image, selected: list[str], storage: dict[str, object] | None = None
+    root: Path, image: Image, selected: list[str], shared: dict[str, object] | None = None
 ) -> str:
     h = hashlib.sha256()
     h.update(json.dumps(image.settings(), sort_keys=True).encode())
-    # only images that mount storage, so a new NFS server rebuilds just those
-    if storage is not None:
-        h.update(json.dumps(storage, sort_keys=True).encode())
+    if shared is not None:
+        h.update(json.dumps(shared, sort_keys=True).encode())
     for name in selected:
         h.update(b"\0" + name.encode() + b"\0")
         h.update(hashlib.sha256((root / name).read_bytes()).digest())
@@ -306,11 +316,11 @@ def compute_all(catalog: Catalog, images: list[Image] | None = None) -> Result:
         matched |= picked.matched_rules
         result.files[image.name] = picked.files
         try:
-            storage = storage_inputs(catalog, apps)
+            shared = shared_inputs(catalog, apps)
         except CatalogError as e:
             result.errors[image.name] = "; ".join(e.errors)
             continue
-        result.hashes[image.name] = compute(root, image, picked.files, storage)
+        result.hashes[image.name] = compute(root, image, picked.files, shared)
     if images is None:
         result.unmatched = [rule for rule in rules if rule.line_no not in matched]
     return result

@@ -1,8 +1,7 @@
 ---
 # One entry per NFS mount: {unit, what, where}
 app_storage_mounts: []
-# One entry per app: {app, id_base, id_count, datasets: [{where, owner, dirs, mode?}]}; each gets
-# <app>-storage.service and the ID range its containers name with SubUIDMap and SubGIDMap
+# One entry per app: {app, datasets: [{where, owner, dirs, mode?}]}; each gets <app>-storage.service
 app_storage_apps: []
 
 # hard: a database blocks while the server is away rather than seeing write errors

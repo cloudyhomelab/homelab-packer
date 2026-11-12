@@ -270,14 +270,24 @@ def test_storage_config_rebuilds_only_images_that_mount_storage(tree):
     assert after["debian-media"] == before["debian-media"]
 
 
-def test_a_new_slot_rebuilds_only_the_app_it_is_for(tree):
+def test_a_slot_rebuilds_only_the_images_of_its_app(tree):
     write(tree, "ansible/apps/haproxy/storage.yml", "datasets:\n  data:\n    owner: '1:1'\n")
     idmap = "start: 2000000\nsize: 65536\nslots:\n  haproxy: 1\n"
     write(tree, "ansible/apps/idmap.yml", idmap)
     before = hashes(tree)
-    write(tree, "ansible/apps/idmap.yml", idmap + "  immich: 2\n")
+    write(tree, "ansible/apps/idmap.yml", idmap + "  unused: 2\n")
     assert hashes(tree) == before
     write(tree, "ansible/apps/idmap.yml", idmap.replace("haproxy: 1", "haproxy: 3"))
     after = hashes(tree)
     assert after["debian-edge"] != before["debian-edge"]
     assert after["debian-media"] == before["debian-media"]
+
+
+def test_a_slot_rebuilds_an_app_without_storage_too(tree):
+    idmap = "start: 2000000\nsize: 65536\nslots:\n  haproxy: 1\n"
+    write(tree, "ansible/apps/idmap.yml", idmap)
+    before = hashes(tree)
+    write(tree, "ansible/apps/idmap.yml", idmap + "  immich: 2\n")
+    after = hashes(tree)
+    assert after["debian-media"] != before["debian-media"]
+    assert after["debian-edge"] == before["debian-edge"]

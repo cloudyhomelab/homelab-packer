@@ -1,0 +1,16 @@
+- name: look up the app's ID range
+  ansible.builtin.set_fact:
+    app_idmap_range: "{{ lookup('ansible.builtin.file', app_idmap_file) | from_yaml | app_id_range(app_idmap_app) }}"
+
+- name: give the app its ID range
+  ansible.builtin.lineinfile:
+    path: "{{ item }}"
+    regexp: "^{{ app_idmap_app }}:"
+    line: "{{ app_idmap_app }}:{{ app_idmap_range.base }}:{{ app_idmap_range.count }}"
+    create: true
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - /etc/subuid
+    - /etc/subgid

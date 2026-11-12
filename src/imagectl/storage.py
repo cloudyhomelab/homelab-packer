@@ -2,8 +2,8 @@
 
 Each dataset is one NFS export mounted at /srv/<app>/<dataset>. The image bakes the mount
 units; whatever deploys the image creates the datasets and exports from the published list.
-An app with storage runs its containers in its own ID range (idmap.py), so its files on the
-NFS server are owned by IDs no other app and no NAS account uses.
+An app with storage needs a slot in idmap.py, so its files on the NFS server are owned by IDs
+no other app and no NAS account uses.
 """
 
 from __future__ import annotations
@@ -23,8 +23,6 @@ DATASET_FIELDS = {"owner", "recordsize", "dirs", "mode"}
 OWNER_RE = re.compile(r"^[0-9]+:[0-9]+$")
 RECORDSIZE_RE = re.compile(r"^[1-9][0-9]*[KM]$")
 MODE_RE = re.compile(r"^0[0-7]{3}$")
-# quadlet keys that set a container's user namespace; only the app's named range is allowed
-USERNS_KEYS = ("UIDMap", "GIDMap", "UserNS", "SubUIDMap", "SubGIDMap")
 
 
 @dataclass(frozen=True)
@@ -151,8 +149,8 @@ def shifted_owner(ranges: IdMap, dataset: Dataset) -> str:
 def ansible_vars(
     config: StorageConfig | None, ranges: IdMap | None, datasets: list[Dataset]
 ) -> dict[str, object]:
-    """What the app_storage role renders: one mount per dataset; per app its ID range and a
-    unit that prepares its directories."""
+    """What the app_storage role renders: one mount per dataset; per app a unit that prepares
+    its directories."""
     if not datasets:
         return {"app_storage_mounts": [], "app_storage_apps": []}
     if config is None:
@@ -190,29 +188,8 @@ def ansible_vars(
         apps.setdefault(d.app, []).append(entry)
     return {
         "app_storage_mounts": mounts,
-        "app_storage_apps": [
-            {"app": app, "id_base": ranges.base(app), "id_count": ranges.size, "datasets": ds}
-            for app, ds in apps.items()
-        ],
+        "app_storage_apps": [{"app": app, "datasets": ds} for app, ds in apps.items()],
     }
-
-
-def quadlet_problems(root: Path, app: str) -> list[str]:
-    """An app with storage must run every container in its named ID range, and nothing else."""
-    out = []
-    quadlets = sorted((root / ANSIBLE_DIR / "apps" / app / "quadlet").glob("*.container"))
-    for path in quadlets:
-        lines = [line.strip() for line in path.read_text(encoding="utf-8").splitlines()]
-        found = {line for line in lines if line.split("=", 1)[0] in USERNS_KEYS}
-        wanted = {f"SubUIDMap={app}", f"SubGIDMap={app}"}
-        where = f"apps/{app}/quadlet/{path.name}"
-        missing = sorted(wanted - found)
-        if missing:
-            out.append(f"{where}: needs {' and '.join(missing)}")
-        other = sorted(found - wanted)
-        if other:
-            out.append(f"{where}: {', '.join(other)} conflicts with the app's ID range")
-    return out
 
 
 def problems(catalog: Catalog) -> dict[str, list[str]]:
@@ -235,8 +212,6 @@ def problems(catalog: Catalog) -> dict[str, list[str]]:
             found.append(
                 f"its apps declare storage but the playbook does not run role {STORAGE_ROLE}"
             )
-        for app in sorted({d.app for d in own}):
-            found.extend(quadlet_problems(catalog.root, app))
         if found:
             out[image.name] = found
     return out

@@ -91,8 +91,6 @@ def test_ansible_vars(root):
         "app_storage_apps": [
             {
                 "app": "youtarr",
-                "id_base": 2065536,
-                "id_count": 65536,
                 "datasets": [
                     {"where": "/srv/youtarr/db", "owner": "2066535:2066535", "dirs": []},
                     {
@@ -186,24 +184,6 @@ def test_owner_must_fit_the_app_range(root):
     small = IdMap(start=2000000, size=1000, slots={"youtarr": 1})
     with pytest.raises(CatalogError, match="owner 1000:1000 is outside the app's 1000 IDs"):
         storage.ansible_vars(config, small, storage.read_app(root, "youtarr"))
-
-
-@pytest.mark.parametrize(
-    ("quadlet", "error"),
-    [
-        ("[Container]\nSubUIDMap=youtarr\n", "needs SubGIDMap=youtarr"),
-        ("[Container]\n", "needs SubGIDMap=youtarr and SubUIDMap=youtarr"),
-        (QUADLET + "UserNS=auto\n", "UserNS=auto conflicts with the app's ID range"),
-        (
-            "[Container]\nSubUIDMap=other\nSubGIDMap=youtarr\n",
-            "SubUIDMap=other conflicts with the app's ID range",
-        ),
-    ],
-)
-def test_containers_of_an_app_with_storage_use_its_range(root, quadlet, error):
-    write(root, "ansible/apps/youtarr/quadlet/youtarr.container", quadlet)
-    problems = storage.problems(load(root))
-    assert any(error in p for p in problems["debian-edge"]), problems
 
 
 def test_missing_idmap_is_a_problem(root):
