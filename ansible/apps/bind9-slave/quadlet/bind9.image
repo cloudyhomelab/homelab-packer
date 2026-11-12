@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/ubuntu/bind9:latest
+Image=docker.io/internetsystemsconsortium/bind9:9.20
