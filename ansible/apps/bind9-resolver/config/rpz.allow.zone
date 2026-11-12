@@ -1,0 +1,8 @@
+$TTL 300
+@ SOA localhost. root.localhost. 1 3600 600 86400 300
+  NS  localhost.
+;
+; Names here are answered normally even when rpz.block lists them.
+; A blocklist entry covers subdomains through its own wildcard, so allow both forms:
+;   example.com    CNAME rpz-passthru.
+;   *.example.com  CNAME rpz-passthru.
