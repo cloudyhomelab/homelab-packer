@@ -4,7 +4,13 @@
   "dependencyDashboard": false,
   "semanticCommits": "enabled",
   "platformCommit": "enabled",
+  "minimumReleaseAge": "3 days",
   "packageRules": [
+    {
+      "description": "same tag rebuilt upstream, mostly base-image CVE fixes; merge once validation passes",
+      "matchUpdateTypes": ["digest"],
+      "automerge": true
+    },
     {
       "description": "server and machine-learning must run the same release",
       "matchDepNames": ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
