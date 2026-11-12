@@ -1,0 +1,6 @@
+add element inet base-filter base-open {
+    udp . 53,
+    tcp . 53,
+}
+
+add rule inet base-filter base-input-dropins ip protocol vrrp ip daddr 224.0.0.18 accept

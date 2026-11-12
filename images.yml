@@ -29,6 +29,7 @@ images:
                     - arr-stack
                     - controlplane
                     - dns-primary
+                    - dns-resolver
                     - dns-secondary
                     - edge
                     - homeassistant
