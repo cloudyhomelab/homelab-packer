@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": ["quadlet"],
-  "dependencyDashboard": false,
+  "dependencyDashboard": true,
   "semanticCommits": "enabled",
   "platformCommit": "enabled",
   "minimumReleaseAge": "3 days",
