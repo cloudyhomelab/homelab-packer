@@ -1,0 +1,28 @@
+---
+- name: check the VRRP settings
+  ansible.builtin.assert:
+    that:
+      - keepalived_vip | length > 0
+      - keepalived_interface | length > 0
+      - keepalived_router_id | int >= 1
+      - keepalived_router_id | int <= 255
+    fail_msg: keepalived_vip, keepalived_interface and keepalived_router_id (1-255) must be set
+
+- name: install keepalived
+  ansible.builtin.apt:
+    name: keepalived
+    state: present
+    install_recommends: false
+
+- name: configure keepalived
+  ansible.builtin.template:
+    src: keepalived.conf
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: enable keepalived
+  ansible.builtin.systemd_service:
+    name: keepalived
+    enabled: true

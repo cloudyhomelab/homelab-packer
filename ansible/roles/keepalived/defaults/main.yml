@@ -1,0 +1,9 @@
+---
+# Address with prefix that moves between the peers, e.g. 192.0.2.10/24; required
+keepalived_vip: ""
+# VRRP router id, 1-255, unique among VRRP users on the segment; required
+keepalived_router_id: 0
+# Interface the address lives on; required
+keepalived_interface: ""
+# systemd unit that must be active for this node to hold the address; empty tracks nothing
+keepalived_track_unit: ""
