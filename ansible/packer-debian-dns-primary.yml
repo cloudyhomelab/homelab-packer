@@ -48,3 +48,10 @@
           group: "53"
 
     - role: nftables_dropins
+
+  post_tasks:
+    # enabled, not started: the list is fetched on the deployed VM, not baked into the image
+    - name: enable the blocklist fetch timer at boot
+      ansible.builtin.systemd:
+        name: bind9-rpz-fetch.timer
+        enabled: true

@@ -24,6 +24,8 @@ LogDriver=journald
 ExecStartPre=/bin/chown 53:53 /run/app/bind9-master/private/tsig.keys
 # seed zone files once; after that bind owns them (dynamic updates, journals)
 ExecStartPre=/bin/sh -c 'for f in /var/app/bind9-master/config/zones/*.zone; do cp --update=none "$$f" /var/app/bind9-master/records/; done'
+# a first boot has no blocklist until the fetch timer runs; an empty one keeps the zone loadable
+ExecStartPre=/bin/sh -c 'test -f /var/app/bind9-master/cache/rpz.block.zone || cp /var/app/bind9-master/config/rpz.empty.zone /var/app/bind9-master/cache/rpz.block.zone'
 Restart=always
 RestartSec=5
 

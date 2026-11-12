@@ -12,13 +12,10 @@ Network=host
 # -f, not -g: -g ignores the logging block. -d 1 only feeds the debug channel, every other one stays at info
 Exec=-f -d 1 -c /etc/bind/named.conf
 Volume=/var/app/bind9-resolver/config/named.conf:/etc/bind/named.conf:ro
-Volume=/var/app/bind9-resolver/config/rpz.allow.zone:/etc/bind/rpz.allow.zone:ro
 Volume=/var/app/bind9-resolver/cache:/var/cache/bind
 LogDriver=journald
 
 [Service]
-# a first boot has no list until the fetch timer runs; an empty one keeps the policy zone loadable
-ExecStartPre=/bin/sh -c 'test -f /var/app/bind9-resolver/cache/rpz.block.zone || cp /var/app/bind9-resolver/config/rpz.empty.zone /var/app/bind9-resolver/cache/rpz.block.zone'
 Restart=always
 RestartSec=5
 

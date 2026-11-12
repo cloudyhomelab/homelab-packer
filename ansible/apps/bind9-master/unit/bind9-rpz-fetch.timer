@@ -1,5 +1,5 @@
 [Unit]
-Description=Periodic blocklist refresh for the bind9 resolver
+Description=Periodic blocklist refresh for the primary
 
 [Timer]
 OnBootSec=2min
