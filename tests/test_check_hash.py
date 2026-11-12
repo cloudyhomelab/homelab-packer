@@ -260,16 +260,6 @@ def test_app_call_without_a_name_is_an_error(tree):
     assert "without a systemd_app_name" in result.errors["debian-edge"]
 
 
-def test_storage_config_rebuilds_only_images_that_mount_storage(tree):
-    write(tree, "ansible/apps/haproxy/storage.yml", "datasets:\n  data:\n    owner: '1:1'\n")
-    before = hashes(tree)
-    images = (tree / "images.yml").read_text()
-    (tree / "images.yml").write_text(images.replace("nfs.example.net", "nfs2.example.net"))
-    after = hashes(tree)
-    assert after["debian-edge"] != before["debian-edge"]
-    assert after["debian-media"] == before["debian-media"]
-
-
 def test_a_slot_rebuilds_only_the_images_of_its_app(tree):
     write(tree, "ansible/apps/haproxy/storage.yml", "datasets:\n  data:\n    owner: '1:1'\n")
     idmap = "start: 2000000\nsize: 65536\nslots:\n  haproxy: 1\n"

@@ -6,7 +6,7 @@ import hashlib
 import json
 import subprocess
 from collections.abc import Iterable
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 
 import pathspec
@@ -250,27 +250,16 @@ def select_files(
     return ImageFiles(sorted(selected), matched_rules)
 
 
-def shared_inputs(catalog: Catalog, apps: list[str]) -> dict[str, object] | None:
-    """The shared settings an image depends on: the storage config only for an image with
-    storage, so a new NFS server rebuilds just those, and of idmap.yml only the slots of its own
-    apps, so a new app rebuilds no other image."""
-    root = catalog.root
-    with_storage = {a for a in apps if (root / ANSIBLE_DIR / "apps" / a / STORAGE_FILE).is_file()}
-    ranges = idmap.load(root)
-    slotted = {a for a in apps if ranges is not None and a in ranges.slots}
-    mapped = sorted(with_storage | slotted)
-    if not mapped:
+def idmap_inputs(catalog: Catalog, apps: list[str]) -> dict[str, object] | None:
+    """Of idmap.yml only the slots of the image's own apps, so a new app rebuilds no other
+    image."""
+    ranges = idmap.load(catalog.root)
+    if ranges is None:
         return None
-    return {
-        "config": asdict(catalog.storage) if with_storage and catalog.storage else None,
-        "idmap": None
-        if ranges is None
-        else {
-            "start": ranges.start,
-            "size": ranges.size,
-            "slots": {a: ranges.slots.get(a) for a in mapped},
-        },
-    }
+    slots = {a: ranges.slots[a] for a in apps if a in ranges.slots}
+    if not slots:
+        return None
+    return {"start": ranges.start, "size": ranges.size, "slots": slots}
 
 
 def compute(
@@ -316,7 +305,7 @@ def compute_all(catalog: Catalog, images: list[Image] | None = None) -> Result:
         matched |= picked.matched_rules
         result.files[image.name] = picked.files
         try:
-            shared = shared_inputs(catalog, apps)
+            shared = idmap_inputs(catalog, apps)
         except CatalogError as e:
             result.errors[image.name] = "; ".join(e.errors)
             continue

@@ -18,16 +18,14 @@
     systemd_app_slice: cloudyhome
   roles:
     - role: app_storage
-
-    - role: app_idmap
-      app_idmap_app: caddy-mgmt
+      app_storage_app: caddy-mgmt
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: caddy-mgmt
 
-    - role: app_idmap
-      app_idmap_app: acme
+    - role: app_storage
+      app_storage_app: acme
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

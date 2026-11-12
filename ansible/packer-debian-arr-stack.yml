@@ -19,23 +19,21 @@
 
   roles:
     - role: app_storage
-
-    - role: app_idmap
-      app_idmap_app: youtarr
+      app_storage_app: youtarr
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: youtarr
 
-    - role: app_idmap
-      app_idmap_app: jellyfin
+    - role: app_storage
+      app_storage_app: jellyfin
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: jellyfin
 
-    - role: app_idmap
-      app_idmap_app: audiobookshelf
+    - role: app_storage
+      app_storage_app: audiobookshelf
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

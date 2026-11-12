@@ -17,7 +17,7 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import check_hash, idmap, packer, storage
+from . import check_hash, packer, storage
 from .catalog import Catalog, Image, Source
 from .preflight import Latest, source_from_latest
 from .publish import Build
@@ -247,9 +247,6 @@ def run_build(
             raise BuildError(f"{build_dir} already exists") from None
         log_path = build_dir / "packer.log"
         env = packer.environment(root, packer_cache_dir(root), collections_dir(root))
-        own = storage.own_datasets(root, image)
-        ranges = idmap.load(root) if own else None
-        storage_vars = storage.ansible_vars(catalog.storage, ranges, own)
 
         with tempfile.TemporaryDirectory(prefix=f"imagectl-{image.name}-") as tmp:
             inputs = packer.BuildInputs(
@@ -262,7 +259,6 @@ def run_build(
                 sbom_file=(build_dir / packer.SBOM_FILE).resolve(),
                 accelerator=packer.detect_accelerator(),
                 ssh=packer.generate_ssh(Path(tmp)),
-                storage_vars=storage_vars,
             )
             run_logged(
                 packer.build_command(inputs), root, env, log_path, options.verbose, image.name

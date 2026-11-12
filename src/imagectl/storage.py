@@ -1,9 +1,9 @@
 """Persistent storage the apps declare in ansible/apps/<app>/storage.yml.
 
-Each dataset is one NFS export mounted at /srv/<app>/<dataset>. The image bakes the mount
-units; whatever deploys the image creates the datasets and exports from the published list.
-An app with storage needs a slot in idmap.py, so its files on the NFS server are owned by IDs
-no other app and no NAS account uses.
+Each dataset is one NFS export mounted at /srv/<app>/<dataset>. The app_storage role bakes the
+mount units from the file; whatever deploys the image creates the datasets and exports from the
+published list. An app with storage needs a slot in idmap.py, so its files on the NFS server are
+owned by IDs no other app and no NAS account uses.
 """
 
 from __future__ import annotations
@@ -12,12 +12,20 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from .catalog import KEY_RE, Catalog, CatalogError, Image, StorageConfig, read_yaml
-from .check_hash import ANSIBLE_DIR, STORAGE_FILE, CheckHashError, resolve_apps, resolve_roles
+from .catalog import KEY_RE, Catalog, CatalogError, Image, read_yaml
+from .check_hash import (
+    ANSIBLE_DIR,
+    STORAGE_FILE,
+    CheckHashError,
+    resolve_apps,
+    resolve_role_params,
+    resolve_roles,
+)
 from .idmap import IDMAP_FILE, IdMap
 from .idmap import load as load_idmap
 
 STORAGE_ROLE = "app_storage"
+STORAGE_APP_KEY = "app_storage_app"
 MOUNT_ROOT = "/srv"
 DATASET_FIELDS = {"owner", "recordsize", "dirs", "mode"}
 OWNER_RE = re.compile(r"^[0-9]+:[0-9]+$")
@@ -129,89 +137,57 @@ def image_datasets(catalog: Catalog, image: Image) -> list[Dataset]:
     return datasets
 
 
-def export_path(config: StorageConfig, dataset: Dataset) -> str:
-    return f"{config.base}/{dataset.app}/{dataset.name}"
-
-
-def mount_unit(path: str) -> str:
-    """systemd's unit name for a mount point; names here are limited to [a-z0-9-]."""
-    parts = path.strip("/").split("/")
-    return "-".join(part.replace("-", "\\x2d") for part in parts) + ".mount"
-
-
-def shifted_owner(ranges: IdMap, dataset: Dataset) -> str:
-    """The dataset's owner as the VM and the NFS server see it."""
-    base = ranges.base(dataset.app)
-    uid, gid = (int(part) for part in dataset.owner.split(":"))
-    return f"{base + uid}:{base + gid}"
-
-
-def ansible_vars(
-    config: StorageConfig | None, ranges: IdMap | None, datasets: list[Dataset]
-) -> dict[str, object]:
-    """What the app_storage role renders: one mount per dataset; per app a unit that prepares
-    its directories."""
+def range_problems(ranges: IdMap | None, datasets: list[Dataset]) -> list[str]:
+    """Every app with storage has a slot, and every dataset owner fits in the app's range."""
     if not datasets:
-        return {"app_storage_mounts": [], "app_storage_apps": []}
-    if config is None:
-        raise CatalogError(["apps declare storage but images.yml has no config.storage"])
+        return []
     if ranges is None:
-        raise CatalogError([f"apps declare storage but {IDMAP_FILE} does not exist"])
+        return [f"apps declare storage but {IDMAP_FILE} does not exist"]
     unmapped = sorted({d.app for d in datasets} - set(ranges.slots))
     if unmapped:
-        raise CatalogError([f"{IDMAP_FILE}: no slot for {', '.join(unmapped)}"])
-    too_big = [
+        return [f"{IDMAP_FILE}: no slot for {', '.join(unmapped)}"]
+    return [
         f"apps/{d.app}/{STORAGE_FILE}: {d.name}: owner {d.owner} is outside the app's "
         f"{ranges.size} IDs"
         for d in datasets
         if any(int(part) >= ranges.size for part in d.owner.split(":"))
     ]
-    if too_big:
-        raise CatalogError(too_big)
-    mounts = [
-        {
-            "unit": mount_unit(d.path),
-            "what": f"{config.server}:{export_path(config, d)}",
-            "where": d.path,
-        }
-        for d in datasets
-    ]
-    apps: dict[str, list[dict[str, object]]] = {}
-    for d in datasets:
-        entry: dict[str, object] = {
-            "where": d.path,
-            "owner": shifted_owner(ranges, d),
-            "dirs": [f"{d.path}/{x}" for x in d.dirs],
-        }
-        if d.mode:
-            entry["mode"] = d.mode
-        apps.setdefault(d.app, []).append(entry)
-    return {
-        "app_storage_mounts": mounts,
-        "app_storage_apps": [{"app": app, "datasets": ds} for app, ds in apps.items()],
-    }
 
 
 def problems(catalog: Catalog) -> dict[str, list[str]]:
     """Per image name, what is wrong with the storage it declares."""
+    root = catalog.root
     out: dict[str, list[str]] = {}
     for image in catalog.built():
         try:
             image_datasets(catalog, image)
-            own = own_datasets(catalog.root, image)
-            ansible_vars(catalog.storage, load_idmap(catalog.root), own)
-            roles = resolve_roles(catalog.root, image.playbook) if own else []
+            own = own_datasets(root, image)
+            ranges = load_idmap(root) if own else None
+            roles = resolve_roles(root, image.playbook)
+            apps = resolve_apps(root, image.playbook, roles)
+            given = resolve_role_params(root, image.playbook, roles, STORAGE_ROLE, STORAGE_APP_KEY)
         except CatalogError as e:
             out[image.name] = e.errors
             continue
         except CheckHashError:
             # validate already reports it as the image's CHECK_HASH error
             continue
-        found = []
-        if own and STORAGE_ROLE not in roles:
-            found.append(
-                f"its apps declare storage but the playbook does not run role {STORAGE_ROLE}"
-            )
+        found = range_problems(ranges, own)
+        with_storage = {d.app for d in own}
+        found.extend(
+            f"{app} declares storage, but the playbook does not run {STORAGE_ROLE} for it"
+            for app in sorted(with_storage - set(given))
+        )
+        found.extend(
+            f"the playbook runs {STORAGE_ROLE} for {app}, which has no {STORAGE_FILE}"
+            for app in given
+            if not storage_file(root, app).is_file()
+        )
+        found.extend(
+            f"the playbook runs {STORAGE_ROLE} for {app}, but does not deploy it"
+            for app in given
+            if app not in apps
+        )
         if found:
             out[image.name] = found
     return out

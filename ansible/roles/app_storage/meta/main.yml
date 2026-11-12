@@ -1,0 +1,5 @@
+---
+# the datasets' owners are IDs in the app's range
+dependencies:
+  - role: app_idmap
+    app_idmap_app: "{{ app_storage_app }}"

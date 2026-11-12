@@ -18,9 +18,7 @@
     systemd_app_slice: cloudyhome
   roles:
     - role: app_storage
-
-    - role: app_idmap
-      app_idmap_app: caddy-iot
+      app_storage_app: caddy-iot
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

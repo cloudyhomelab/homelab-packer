@@ -4,6 +4,13 @@
     state: present
     install_recommends: false
 
+- name: work out the app's mounts
+  ansible.builtin.set_fact:
+    app_storage_mounts: >-
+      {{ (lookup('ansible.builtin.file', app_storage_file) | from_yaml).datasets
+         | app_storage_mounts(app_storage_app, app_idmap_ranges[app_storage_app].base,
+                              app_storage_server, app_storage_base, app_storage_mount_root) }}
+
 - name: install the mount units
   ansible.builtin.template:
     src: storage.mount
@@ -16,16 +23,13 @@
     label: "{{ item.unit }}"
 
 # a mount hides whatever the image put below it, so the directories are made after mounting
-- name: install the units that prepare each app's directories
+- name: install the unit that prepares the app's directories
   ansible.builtin.template:
     src: app-storage.service
-    dest: "/etc/systemd/system/{{ item.app }}-storage.service"
+    dest: "/etc/systemd/system/{{ app_storage_app }}-storage.service"
     owner: root
     group: root
     mode: '0644'
-  loop: "{{ app_storage_apps }}"
-  loop_control:
-    label: "{{ item.app }}"
 
 # enabled only: the build VM is not allowed by any export
 - name: enable the mount units
@@ -37,10 +41,7 @@
   loop_control:
     label: "{{ item.unit }}"
 
-- name: enable the directory units
+- name: enable the directory unit
   ansible.builtin.systemd_service:
-    name: "{{ item.app }}-storage.service"
+    name: "{{ app_storage_app }}-storage.service"
     enabled: true
-  loop: "{{ app_storage_apps }}"
-  loop_control:
-    label: "{{ item.app }}"

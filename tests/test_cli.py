@@ -121,8 +121,8 @@ def test_storage_lists_the_datasets(in_root):
     result = imagectl("storage", "debian-edge")
     assert result.exit_code == 0, result.output
     assert [line.split() for line in result.stdout.splitlines()] == [
-        ["EXPORT", "RECORDSIZE", "MOUNT"],
-        ["nfs.example.net:/mnt/tank/apps/web/db", "16K", "/srv/web/db"],
+        ["APP", "DATASET", "RECORDSIZE", "MOUNT"],
+        ["web", "db", "16K", "/srv/web/db"],
     ]
 
     result = imagectl("storage", "--json", "debian-edge")

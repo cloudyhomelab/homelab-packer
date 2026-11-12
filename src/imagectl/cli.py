@@ -17,7 +17,6 @@ import typer
 from . import (
     build,
     check_hash,
-    idmap,
     packer,
     preflight,
     publish,
@@ -153,12 +152,9 @@ def cmd_storage(
     if not datasets:
         print(f"{image} mounts no storage")
         return 0
-    if catalog.storage is None:
-        raise CatalogError(["apps declare storage but images.yml has no config.storage"])
-    rows = [["EXPORT", "RECORDSIZE", "MOUNT"]]
+    rows = [["APP", "DATASET", "RECORDSIZE", "MOUNT"]]
     for d in datasets:
-        export = f"{catalog.storage.server}:{storage.export_path(catalog.storage, d)}"
-        rows.append([export, d.recordsize or "default", d.path])
+        rows.append([d.app, d.name, d.recordsize or "default", d.path])
     print(table(rows))
     return 0
 
@@ -236,11 +232,6 @@ def cmd_validate(
             failures[image.name].extend(missing_roles.get(image.name, []))
             failures[image.name].extend(storage_problems.get(image.name, []))
             failures[image.name].extend(userns_problems.get(image.name, []))
-            # a broken storage.yml is reported above; validate the template without it
-            unreadable = image.name in hashes.errors or image.name in storage_problems
-            own = [] if unreadable else storage.own_datasets(root, image)
-            ranges = idmap.load(root) if own else None
-            storage_vars = storage.ansible_vars(catalog.storage, ranges, own)
             inputs = packer.BuildInputs(
                 image=image,
                 source=validate_source(catalog, image),
@@ -251,7 +242,6 @@ def cmd_validate(
                 sbom_file=(build.build_root(root) / image.name / packer.SBOM_FILE).resolve(),
                 accelerator="none",
                 ssh=ssh,
-                storage_vars=storage_vars,
             )
             print(f"--- packer validate {image.name}", flush=True)
             result = subprocess.run(

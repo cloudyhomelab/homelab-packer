@@ -1,3 +1,4 @@
 ---
-# app_idmap_app: the app whose containers name the range with SubUIDMap and SubGIDMap
+# app_idmap_app: the app whose containers name the range with SubUIDMap and SubGIDMap; the role
+# also records the range in app_idmap_ranges[app] as {base, count}
 app_idmap_file: "{{ playbook_dir }}/apps/idmap.yml"

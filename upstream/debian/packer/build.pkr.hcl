@@ -28,7 +28,6 @@ build {
     user          = var.username
     extra_arguments = [
       "--extra-vars", "image_playbook=${local.playbook_name}",
-      "--extra-vars", var.storage_vars,
     ]
   }
 

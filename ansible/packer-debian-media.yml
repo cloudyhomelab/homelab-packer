@@ -19,9 +19,7 @@
 
   roles:
     - role: app_storage
-
-    - role: app_idmap
-      app_idmap_app: immich
+      app_storage_app: immich
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
