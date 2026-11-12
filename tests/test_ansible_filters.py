@@ -67,3 +67,12 @@ def test_app_storage_mounts():
             "mode": "0755",
         },
     ]
+
+
+def test_app_id_lines_are_sorted_by_app():
+    filters = load_filters("app_idmap", "app_idmap")
+    ranges = filters["app_id_ranges"](IDMAP, ["youtarr", "immich"])
+    assert filters["app_id_lines"](ranges, ["youtarr", "immich"]) == [
+        {"app": "immich", "line": "immich:2458752:65536"},
+        {"app": "youtarr", "line": "youtarr:2065536:65536"},
+    ]

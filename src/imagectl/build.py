@@ -17,7 +17,7 @@ from contextlib import contextmanager, suppress
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import check_hash, packer, storage
+from . import check_hash, packer, storage, userns
 from .catalog import Catalog, Image, Source
 from .preflight import Latest, source_from_latest
 from .publish import Build
@@ -234,6 +234,13 @@ def run_build(
     missing = packer.missing_files(root, image)
     if missing:
         raise BuildError(f"{image.name}: missing {', '.join(missing)}")
+    # the roles only fail once the build VM runs, and an owner outside its range does not fail
+    found = [
+        *storage.problems(catalog).get(image.name, []),
+        *userns.problems(catalog).get(image.name, []),
+    ]
+    if found:
+        raise BuildError(f"{image.name}: {'; '.join(found)}")
 
     with image_lock(root, image.name):
         source = resolve_source(catalog, image, read_latest)

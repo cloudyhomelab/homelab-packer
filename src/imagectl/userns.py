@@ -19,12 +19,10 @@ from .check_hash import (
 )
 from .idmap import IDMAP_FILE
 from .idmap import load as load_idmap
+from .storage import STORAGE_APPS_KEY, STORAGE_ROLE
 
 IDMAP_ROLE = "app_idmap"
 IDMAP_APPS_KEY = "app_idmap_apps"
-# app_storage's meta dependency runs app_idmap for the same app
-STORAGE_ROLE = "app_storage"
-STORAGE_APPS_KEY = "app_storage_apps"
 # quadlet keys that set a container's user namespace; an app with a slot allows only its range
 USERNS_KEYS = ("UIDMap", "GIDMap", "UserNS", "SubUIDMap", "SubGIDMap")
 NAMED_KEYS = ("SubUIDMap", "SubGIDMap")
@@ -76,6 +74,7 @@ def problems(catalog: Catalog) -> dict[str, list[str]]:
                 *resolve_role_params(
                     root, image.playbook, roles, IDMAP_ROLE, IDMAP_APPS_KEY, many=True
                 ),
+                # app_storage's meta dependency runs app_idmap for the same apps
                 *resolve_role_params(
                     root, image.playbook, roles, STORAGE_ROLE, STORAGE_APPS_KEY, many=True
                 ),

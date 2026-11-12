@@ -7,12 +7,12 @@
 - name: give each app its ID range
   ansible.builtin.lineinfile:
     path: "{{ item.0 }}"
-    regexp: "^{{ item.1 }}:"
-    line: "{{ item.1 }}:{{ app_idmap_ranges[item.1].base }}:{{ app_idmap_ranges[item.1].count }}"
+    regexp: "^{{ item.1.app }}:"
+    line: "{{ item.1.line }}"
     create: true
     owner: root
     group: root
     mode: '0644'
-  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_idmap_apps) | list }}"
+  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_idmap_ranges | app_id_lines(app_idmap_apps)) | list }}"
   loop_control:
-    label: "{{ item.0 }} {{ item.1 }}"
+    label: "{{ item.0 }} {{ item.1.app }}"

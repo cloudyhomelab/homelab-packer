@@ -32,13 +32,13 @@
         - {name: grafana, owner: "472", group: "0"}
 
   roles:
-    - role: binarycodes.homelab.systemd_app
-      systemd_app_kind: source
-      systemd_app_name: observability
-
     - role: app_storage
       app_storage_apps:
         - caddy-observability
+
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: observability
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

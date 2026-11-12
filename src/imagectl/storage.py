@@ -2,7 +2,7 @@
 
 Each dataset is one NFS export mounted at /srv/<app>/<dataset>. The app_storage role bakes the
 mount units from the file; whatever deploys the image creates the datasets and exports from the
-published list. An app with storage needs a slot in idmap.py, so its files on the NFS server are
+published list. An app with storage needs a slot in idmap.yml, so its files on the NFS server are
 owned by IDs no other app and no NAS account uses.
 """
 

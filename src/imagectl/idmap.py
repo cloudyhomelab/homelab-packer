@@ -19,10 +19,6 @@ class IdMap:
     size: int
     slots: dict[str, int]
 
-    def base(self, app: str) -> int:
-        """The VM's ID for the app's container ID 0."""
-        return self.start + self.slots[app] * self.size
-
 
 def load(root: Path) -> IdMap | None:
     path = root / IDMAP_FILE

@@ -1,3 +1,11 @@
+- name: check the export base
+  ansible.builtin.assert:
+    that:
+      - app_storage_base is match('/')
+      - app_storage_base is not match('.*/$')
+    fail_msg: "app_storage_base must be an absolute path without a trailing /, got {{ app_storage_base }}"
+    quiet: true
+
 - name: install the NFS client
   ansible.builtin.apt:
     name: nfs-common

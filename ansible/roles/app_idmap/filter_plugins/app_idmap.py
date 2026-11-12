@@ -15,6 +15,15 @@ def app_id_ranges(idmap: dict, apps: list[str]) -> dict[str, dict[str, int]]:
     return {app: {"base": idmap["start"] + slots[app] * size, "count": size} for app in apps}
 
 
+def app_id_lines(ranges: dict[str, dict[str, int]], apps: list[str]) -> list[dict[str, str]]:
+    """The apps' /etc/subuid and /etc/subgid lines, sorted by app so the files do not depend on
+    the order a playbook lists the apps in."""
+    return [
+        {"app": app, "line": f"{app}:{ranges[app]['base']}:{ranges[app]['count']}"}
+        for app in sorted(apps)
+    ]
+
+
 class FilterModule:
     def filters(self) -> dict[str, object]:
-        return {"app_id_ranges": app_id_ranges}
+        return {"app_id_ranges": app_id_ranges, "app_id_lines": app_id_lines}
