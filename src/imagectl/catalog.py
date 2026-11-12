@@ -22,7 +22,6 @@ UPSTREAM_FIELDS = ("os", "index", "image_file", "checksum_file", "version", "che
 UPSTREAM_OPTIONAL_FIELDS = ("security",)
 NAMING_FIELDS = ("image_name", "playbook", "s3_prefix")
 S3_FIELDS = ("endpoint", "region", "bucket")
-STORAGE_FIELDS = ("server", "base")
 
 HASH_LENGTHS = {"sha256": 64, "sha384": 96, "sha512": 128}
 CHECKSUM_RE = re.compile(r"^(sha256|sha384|sha512):([0-9a-f]+)$")
@@ -41,14 +40,6 @@ class S3Config:
     endpoint: str
     region: str
     bucket: str
-
-
-@dataclass(frozen=True)
-class StorageConfig:
-    """Where the NFS exports of the apps' datasets live."""
-
-    server: str
-    base: str
 
 
 @dataclass(frozen=True)
@@ -114,7 +105,6 @@ class Catalog:
     naming: dict[str, str]
     upstreams: dict[str, Upstream]
     images: dict[str, Image]
-    storage: StorageConfig | None = None
 
     def ordered(self) -> list[Image]:
         """Images in tree order: every parent comes before its children."""
@@ -301,24 +291,6 @@ def _parse_settings(where: str, data: object, required: bool) -> tuple[dict, lis
     return out, errors
 
 
-def _parse_storage(data: object) -> tuple[StorageConfig | None, list[str]]:
-    where = f"{IMAGES_FILE}: config.storage"
-    if not isinstance(data, dict):
-        return None, [f"{where} must be a mapping"]
-    errors = []
-    unknown = set(data) - set(STORAGE_FIELDS)
-    if unknown:
-        errors.append(f"{where}: unknown fields {sorted(unknown)}")
-    missing = [f for f in STORAGE_FIELDS if not isinstance(data.get(f), str) or not data.get(f)]
-    if missing:
-        errors.append(f"{where}: missing or non-string {missing}")
-    elif not data["base"].startswith("/") or data["base"].endswith("/"):
-        errors.append(f"{where}: base must be an absolute path without a trailing /")
-    if errors:
-        return None, errors
-    return StorageConfig(server=str(data["server"]), base=str(data["base"])), []
-
-
 def _split_item(item: object, where: str) -> tuple[str | None, dict, list[str]]:
     """An item is a bare name or a one-key mapping from the name to its settings."""
     if isinstance(item, str):
@@ -356,12 +328,11 @@ def parse_catalog(root: Path, images_data: object, upstream_data: object) -> Cat
 
     config = images_data.get("config")
     s3 = None
-    storage = None
     naming: dict[str, str] = {}
     if not isinstance(config, dict):
         errors.append(f"{IMAGES_FILE}: config must be a mapping")
     else:
-        unknown = set(config) - {"s3", "naming", "storage"}
+        unknown = set(config) - {"s3", "naming"}
         if unknown:
             errors.append(f"{IMAGES_FILE}: config: unknown fields {sorted(unknown)}")
         s3_data = config.get("s3")
@@ -376,9 +347,6 @@ def parse_catalog(root: Path, images_data: object, upstream_data: object) -> Cat
                 errors.append(f"{IMAGES_FILE}: config.s3: missing or non-string {missing}")
             else:
                 s3 = S3Config(**{f: str(s3_data[f]) for f in S3_FIELDS})
-        if "storage" in config:
-            storage, storage_errors = _parse_storage(config["storage"])
-            errors.extend(storage_errors)
         naming_data = config.get("naming")
         if not isinstance(naming_data, dict):
             errors.append(f"{IMAGES_FILE}: config.naming must be a mapping")
@@ -517,9 +485,7 @@ def parse_catalog(root: Path, images_data: object, upstream_data: object) -> Cat
     if errors:
         raise CatalogError(errors)
     assert s3 is not None
-    return Catalog(
-        root=root, s3=s3, naming=naming, upstreams=upstreams, images=images, storage=storage
-    )
+    return Catalog(root=root, s3=s3, naming=naming, upstreams=upstreams, images=images)
 
 
 def load(root: Path) -> Catalog:

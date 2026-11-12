@@ -144,17 +144,20 @@ datasets:
     mode: "0755"          # optional, default 0750; for a dataset other apps mount read-only
 ```
 
-Dataset `<key>` of app `<app>` is exported from `config.storage` in `images.yml` as
-`<server>:<base>/<app>/<key>` and mounted at `/srv/<app>/<key>`. The playbook runs the
-`app_storage` role, which bakes the mount units and `<app>-storage.service`; that service creates
-the `dirs` and sets ownership after mounting, since the mount hides anything the image put there.
-The app's units order themselves after it (`Requires=` and `After=`). Mounts are enabled, not
-started, during the build.
+The playbook runs the `app_storage` role with the app in `app_storage_apps`. Dataset `<key>` is
+exported from the NFS server in the role's defaults as `<server>:<base>/<app>/<key>` and
+mounted at `/srv/<app>/<key>`. The role bakes the mount units and `<app>-storage.service`; that
+service creates the `dirs` and sets ownership after mounting, since the mount hides anything the
+image put there. The app's units order themselves after it (`Requires=` and `After=`). Mounts are
+enabled, not started, during the build.
 
-Each app with storage runs its containers in its own ID range, so its files on the NFS server are
-owned by IDs that no other app and no account on the server uses. `ansible/apps/idmap.yml` gives
-the app a slot; container ID `n` becomes `start + slot * size + n`. The role writes the range to
-`/etc/subuid` and `/etc/subgid` under the app's name, and every `.container` of the app names it:
+An app with a slot in `ansible/apps/idmap.yml` runs its containers in its own ID range: container
+ID `n` becomes `start + slot * size + n`, so root in a container is an unprivileged ID on the VM.
+Storage needs a slot, so the app's files on the NFS server are owned by IDs that no other app and
+no account on the server uses; a slot does not need storage. The `app_idmap` role, given the app
+in `app_idmap_apps`, writes the range to `/etc/subuid` and `/etc/subgid` under the app's
+name; `app_storage` runs it as a dependency, so a playbook names `app_idmap` only for an app
+without storage. Every `.container` of the app names the range:
 
 ```ini
 [Container]
@@ -174,9 +177,10 @@ image mounts, its ancestors' included, under `STORAGE` (`app`, `dataset`, `recor
 `imagectl storage IMAGE` prints the same from the checkout. Whatever deploys the image creates the
 missing datasets (preset Generic, so the VM can `chmod`) and exports each to the VM only, with
 root mapped to root, before the VM boots. A dataset belongs to the app, so moving an app to
-another image keeps its data. `validate` checks the files, the slots and the containers' ID
-lines, that no dataset is declared twice for one image, and that the playbook runs
-`app_storage`.
+another image keeps its data. `validate` checks the files, that every app with storage has a
+slot, that no dataset is declared twice for one image, and that the playbook runs `app_storage`
+for exactly the apps it deploys with storage; for every app with a slot, that the playbook gives
+it its range and its containers' ID lines.
 
 ## Publishing
 

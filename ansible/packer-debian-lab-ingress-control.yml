@@ -18,6 +18,8 @@
     systemd_app_slice: cloudyhome
   roles:
     - role: app_storage
+      app_storage_apps:
+        - caddy-lab
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

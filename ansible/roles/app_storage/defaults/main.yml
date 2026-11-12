@@ -1,9 +1,12 @@
 ---
-# One entry per NFS mount: {unit, what, where}
-app_storage_mounts: []
-# One entry per app: {app, id_base, id_count, datasets: [{where, owner, dirs, mode?}]}; each gets
-# <app>-storage.service and the ID range its containers name with SubUIDMap and SubGIDMap
+# app_storage_apps: the apps whose ansible/apps/<app>/storage.yml is mounted, dataset <key> at
+# <mount_root>/<app>/<key>; each gets <app>-storage.service
 app_storage_apps: []
+app_storage_apps_dir: "{{ playbook_dir }}/apps"
+# dataset <key> of app <app> is exported as <server>:<base>/<app>/<key>
+app_storage_server: moria.ip.cloudyhome.net
+app_storage_base: /mnt/zpool0/cloudyhome_app_data
+app_storage_mount_root: /srv
 
 # hard: a database blocks while the server is away rather than seeing write errors
 app_storage_mount_options: nfsvers=4,hard

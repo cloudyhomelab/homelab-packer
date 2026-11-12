@@ -43,10 +43,8 @@ def test_variables(catalog, tmp_path):
         sbom_file=Path("/b/sbom.cdx.json"),
         accelerator="none",
         ssh=ssh,
-        storage_vars={"app_storage_mounts": []},
     )
     values = packer.variables(inputs)
-    assert values["storage_vars"] == '{"app_storage_mounts": []}'
     assert values["playbook_file"] == "ansible/packer-debian-edge.yml"
     assert values["parent_name"] == "debian-container"
     assert values["disk_size"] == "5G"
@@ -71,6 +69,5 @@ def test_template_variables_match_the_driver(catalog, tmp_path):
         tmp_path / "sbom.cdx.json",
         "none",
         ssh,
-        {},
     )
     assert declared == set(packer.variables(inputs))

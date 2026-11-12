@@ -12,14 +12,6 @@ def write_idmap(root: Path, text: str) -> None:
     path.write_text(text)
 
 
-def test_base_is_start_plus_slot_ranges(tmp_path):
-    write_idmap(tmp_path, "start: 2000000\nsize: 65536\nslots:\n  youtarr: 1\n  immich: 2\n")
-    ranges = idmap.load(tmp_path)
-    assert ranges is not None
-    assert ranges.base("youtarr") == 2065536
-    assert ranges.base("immich") == 2131072
-
-
 def test_missing_file_is_none(tmp_path):
     assert idmap.load(tmp_path) is None
 

@@ -5,7 +5,6 @@ Listed in .check_hash: a change here rebuilds every image.
 
 from __future__ import annotations
 
-import json
 import os
 import re
 import secrets
@@ -122,8 +121,6 @@ class BuildInputs:
     sbom_file: Path
     accelerator: str
     ssh: SshMaterial
-    # extra vars of the app_storage role, see storage.ansible_vars
-    storage_vars: dict[str, object]
 
 
 def image_file(image: Image, clock: Clock) -> str:
@@ -155,7 +152,6 @@ def variables(inputs: BuildInputs) -> dict[str, str]:
         "ssh_user_ca_public_key_file": str(inputs.ssh.ca_public_key),
         "ssh_private_key_file": str(inputs.ssh.private_key),
         "ssh_certificate_file": str(inputs.ssh.certificate),
-        "storage_vars": json.dumps(inputs.storage_vars, sort_keys=True),
     }
 
 

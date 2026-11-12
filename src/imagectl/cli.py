@@ -17,7 +17,6 @@ import typer
 from . import (
     build,
     check_hash,
-    idmap,
     packer,
     preflight,
     publish,
@@ -27,6 +26,7 @@ from . import (
     storage,
     testvm,
     upstream,
+    userns,
 )
 from .catalog import IMAGES_FILE, Catalog, CatalogError, Image, Source, load
 
@@ -152,12 +152,9 @@ def cmd_storage(
     if not datasets:
         print(f"{image} mounts no storage")
         return 0
-    if catalog.storage is None:
-        raise CatalogError(["apps declare storage but images.yml has no config.storage"])
-    rows = [["EXPORT", "RECORDSIZE", "MOUNT"]]
+    rows = [["APP", "DATASET", "RECORDSIZE", "MOUNT"]]
     for d in datasets:
-        export = f"{catalog.storage.server}:{storage.export_path(catalog.storage, d)}"
-        rows.append([export, d.recordsize or "default", d.path])
+        rows.append([d.app, d.name, d.recordsize or "default", d.path])
     print(table(rows))
     return 0
 
@@ -192,7 +189,8 @@ def cmd_validate(
         ),
     ] = None,
 ) -> int:
-    """Validate templates, scripts, .check_hash rules, required roles, storage and playbooks.
+    """Validate templates, scripts, .check_hash rules, required roles, storage, ID ranges and
+    playbooks.
 
     Reads no latest.json, so an image validates without a published parent. An upstream node
     has nothing to validate.
@@ -218,6 +216,7 @@ def cmd_validate(
         global_ok = False
     missing_roles = required_roles.missing_roles(catalog)
     storage_problems = storage.problems(catalog)
+    userns_problems = userns.problems(catalog)
 
     git = packer.git_info(root)
     clock = packer.Clock.now()
@@ -232,11 +231,7 @@ def cmd_validate(
                 failures[image.name].append(f"CHECK_HASH: {hashes.errors[image.name]}")
             failures[image.name].extend(missing_roles.get(image.name, []))
             failures[image.name].extend(storage_problems.get(image.name, []))
-            # a broken storage.yml is reported above; validate the template without it
-            unreadable = image.name in hashes.errors or image.name in storage_problems
-            own = [] if unreadable else storage.own_datasets(root, image)
-            ranges = idmap.load(root) if own else None
-            storage_vars = storage.ansible_vars(catalog.storage, ranges, own)
+            failures[image.name].extend(userns_problems.get(image.name, []))
             inputs = packer.BuildInputs(
                 image=image,
                 source=validate_source(catalog, image),
@@ -247,7 +242,6 @@ def cmd_validate(
                 sbom_file=(build.build_root(root) / image.name / packer.SBOM_FILE).resolve(),
                 accelerator="none",
                 ssh=ssh,
-                storage_vars=storage_vars,
             )
             print(f"--- packer validate {image.name}", flush=True)
             result = subprocess.run(

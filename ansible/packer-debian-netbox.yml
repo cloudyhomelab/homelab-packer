@@ -19,6 +19,8 @@
 
   roles:
     - role: app_storage
+      app_storage_apps:
+        - netbox
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source

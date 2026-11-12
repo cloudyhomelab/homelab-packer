@@ -269,3 +269,19 @@ def test_clean_of_an_image_being_built_fails_on_the_lock(tmp_path):
     with image_lock(tmp_path, "debian-base"), pytest.raises(BuildError, match="being built"):
         build.clean(tmp_path, "debian-base")
     assert (tmp_path / "build" / "debian-base" / "20260927-1200").is_dir()
+
+
+@pytest.mark.parametrize("module", ["storage", "userns"])
+def test_build_stops_before_packer_on_a_storage_or_range_problem(catalog, monkeypatch, module):
+    monkeypatch.setattr(build.packer, "missing_files", lambda root, image: [])
+    monkeypatch.setattr(build.storage, "problems", lambda c: {})
+    monkeypatch.setattr(build.userns, "problems", lambda c: {})
+    monkeypatch.setattr(getattr(build, module), "problems", lambda c: {"debian-edge": ["bad"]})
+
+    def no_packer(*args, **kwargs):
+        raise AssertionError("packer ran")
+
+    monkeypatch.setattr(build, "run_logged", no_packer)
+    options = build.BuildOptions()
+    with pytest.raises(BuildError, match="debian-edge: bad"):
+        build.run_build(catalog, catalog.get("debian-edge"), lambda image: None, options)

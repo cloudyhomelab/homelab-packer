@@ -260,24 +260,51 @@ def test_app_call_without_a_name_is_an_error(tree):
     assert "without a systemd_app_name" in result.errors["debian-edge"]
 
 
-def test_storage_config_rebuilds_only_images_that_mount_storage(tree):
-    write(tree, "ansible/apps/haproxy/storage.yml", "datasets:\n  data:\n    owner: '1:1'\n")
-    before = hashes(tree)
-    images = (tree / "images.yml").read_text()
-    (tree / "images.yml").write_text(images.replace("nfs.example.net", "nfs2.example.net"))
-    after = hashes(tree)
-    assert after["debian-edge"] != before["debian-edge"]
-    assert after["debian-media"] == before["debian-media"]
-
-
-def test_a_new_slot_rebuilds_only_the_app_it_is_for(tree):
+def test_a_slot_rebuilds_only_the_images_of_its_app(tree):
     write(tree, "ansible/apps/haproxy/storage.yml", "datasets:\n  data:\n    owner: '1:1'\n")
     idmap = "start: 2000000\nsize: 65536\nslots:\n  haproxy: 1\n"
     write(tree, "ansible/apps/idmap.yml", idmap)
     before = hashes(tree)
-    write(tree, "ansible/apps/idmap.yml", idmap + "  immich: 2\n")
+    write(tree, "ansible/apps/idmap.yml", idmap + "  unused: 2\n")
     assert hashes(tree) == before
     write(tree, "ansible/apps/idmap.yml", idmap.replace("haproxy: 1", "haproxy: 3"))
     after = hashes(tree)
     assert after["debian-edge"] != before["debian-edge"]
     assert after["debian-media"] == before["debian-media"]
+
+
+def test_a_slot_rebuilds_an_app_without_storage_too(tree):
+    idmap = "start: 2000000\nsize: 65536\nslots:\n  haproxy: 1\n"
+    write(tree, "ansible/apps/idmap.yml", idmap)
+    before = hashes(tree)
+    write(tree, "ansible/apps/idmap.yml", idmap + "  immich: 2\n")
+    after = hashes(tree)
+    assert after["debian-media"] != before["debian-media"]
+    assert after["debian-edge"] == before["debian-edge"]
+
+
+def test_role_params_as_a_list(tree):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        "- hosts: all\n  roles:\n    - role: app_storage\n      app_storage_apps: [b, a]\n"
+        "  tasks:\n    - ansible.builtin.include_role:\n        name: app_storage\n"
+        "      vars:\n        app_storage_apps: [c]\n",
+    )
+    found = check_hash.resolve_role_params(
+        tree, "packer-debian-edge", [], "app_storage", "app_storage_apps", many=True
+    )
+    assert found == ["a", "b", "c"]
+
+
+@pytest.mark.parametrize("apps", ["a", '"{{ apps }}"', '["{{ app }}"]'])
+def test_role_params_list_must_be_literal(tree, apps):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        f"- hosts: all\n  roles:\n    - role: app_storage\n      app_storage_apps: {apps}\n",
+    )
+    with pytest.raises(check_hash.CheckHashError):
+        check_hash.resolve_role_params(
+            tree, "packer-debian-edge", [], "app_storage", "app_storage_apps", many=True
+        )
