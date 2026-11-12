@@ -9,7 +9,8 @@ StartLimitIntervalSec=300
 ContainerName=bind9
 Image=bind9.image
 Network=host
-Environment=BIND9_USER=root
+# -g, not the image's -L file: logs reach journald
+Exec=-g -c /etc/bind/named.conf
 Volume=/var/app/bind9-master/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-master/config/zone-master.conf:/etc/bind/zone-master.conf:ro
 # decrypted on the VM from private/
@@ -19,6 +20,8 @@ Volume=/var/app/bind9-master/records:/var/lib/bind
 LogDriver=journald
 
 [Service]
+# not the U volume option: the container starts as root and named only drops to bind itself, so U would chown to root
+ExecStartPre=/bin/chown 53:53 /run/app/bind9-master/private/tsig.keys
 # seed zone files once; after that bind owns them (dynamic updates, journals)
 ExecStartPre=/bin/sh -c 'for f in /var/app/bind9-master/config/zones/*.zone; do cp --update=none "$$f" /var/app/bind9-master/records/; done'
 Restart=always

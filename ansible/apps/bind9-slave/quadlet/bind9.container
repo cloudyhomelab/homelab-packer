@@ -9,7 +9,8 @@ StartLimitIntervalSec=300
 ContainerName=bind9
 Image=bind9.image
 Network=host
-Environment=BIND9_USER=root
+# -g, not the image's -L file: logs reach journald
+Exec=-g -c /etc/bind/named.conf
 Volume=/var/app/bind9-slave/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-slave/config/zone-slave.conf:/etc/bind/zone-slave.conf:ro
 Volume=/var/app/bind9-slave/cache:/var/cache/bind

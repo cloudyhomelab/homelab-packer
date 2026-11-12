@@ -41,6 +41,10 @@
       systemd_app_name: bind9-master
       systemd_app_data_dirs:
         - path: cache
+          owner: "53"
+          group: "53"
         - path: records
+          owner: "53"
+          group: "53"
 
     - role: nftables_dropins
