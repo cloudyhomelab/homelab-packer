@@ -27,6 +27,23 @@
       /usr/libexec/podman/quadlet -dryrun shows why
     quiet: true
 
+- name: read the Quadlet image files
+  ansible.builtin.slurp:
+    src: "{{ item.path }}"
+  loop: "{{ quadlet_prepull_sources.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  register: quadlet_prepull_contents
+
+# per host, so a VM can pull only its own apps' images, not every image any app uses
+- name: allow pulls of exactly these images' repositories
+  ansible.builtin.include_role:
+    name: podman
+    tasks_from: policy
+  vars:
+    podman_allowed_repositories: "{{ quadlet_prepull_contents.results | image_repositories }}"
+  when: quadlet_prepull_sources.matched > 0
+
 # Starting the unit runs the pull exactly as boot would, from the ref in the app's .image file.
 # The build VM is gone after a failure, so podman's own error has to reach the build log.
 - name: pull the container images into the image
