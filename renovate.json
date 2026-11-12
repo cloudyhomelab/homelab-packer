@@ -20,6 +20,11 @@
       "matchDepNames": ["docker.io/library/postgres", "docker.io/library/mariadb"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "BIND odd minor versions are development branches; stay on the stable even ones",
+      "matchDepNames": ["docker.io/internetsystemsconsortium/bind9"],
+      "allowedVersions": "/^9\\.\\d*[02468](\\.|$)/"
     }
   ]
 }
