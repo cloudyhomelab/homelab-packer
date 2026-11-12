@@ -1,0 +1,23 @@
+[Unit]
+Description=BIND9 recursive resolver
+Wants=network-online.target
+After=network-online.target
+StartLimitBurst=5
+StartLimitIntervalSec=300
+
+[Container]
+ContainerName=bind9
+Image=bind9.image
+Network=host
+# -g, not the image's -L file: logs reach journald
+Exec=-g -c /etc/bind/named.conf
+Volume=/var/app/bind9-resolver/config/named.conf:/etc/bind/named.conf:ro
+Volume=/var/app/bind9-resolver/cache:/var/cache/bind
+LogDriver=journald
+
+[Service]
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
