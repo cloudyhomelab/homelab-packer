@@ -9,8 +9,8 @@ StartLimitIntervalSec=300
 ContainerName=bind9
 Image=bind9.image
 Network=host
-# -g, not the image's -L file: logs reach journald
-Exec=-g -c /etc/bind/named.conf
+# -f, not -g: -g ignores the logging block. -d 1 only feeds the debug channel, every other one stays at info
+Exec=-f -d 1 -c /etc/bind/named.conf
 Volume=/var/app/bind9-resolver/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-resolver/cache:/var/cache/bind
 LogDriver=journald

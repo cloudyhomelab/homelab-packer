@@ -1,0 +1,8 @@
+$TTL 300
+@ SOA ns1.cloudyhome.net. hostmaster.cloudyhome.net. 1 12h 15m 3w 300
+  NS  ns1.cloudyhome.net.
+;
+; Names here are answered normally even when rpz.block lists them.
+; A blocklist entry covers subdomains through its own wildcard, so allow both forms:
+;   example.com    CNAME rpz-passthru.
+;   *.example.com  CNAME rpz-passthru.

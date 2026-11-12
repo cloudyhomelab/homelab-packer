@@ -1,10 +1,16 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "enabledManagers": ["quadlet"],
-  "dependencyDashboard": false,
+  "dependencyDashboard": true,
   "semanticCommits": "enabled",
   "platformCommit": "enabled",
+  "minimumReleaseAge": "3 days",
   "packageRules": [
+    {
+      "description": "same tag rebuilt upstream, mostly base-image CVE fixes; merge once validation passes",
+      "matchUpdateTypes": ["digest"],
+      "automerge": true
+    },
     {
       "description": "server and machine-learning must run the same release",
       "matchDepNames": ["ghcr.io/immich-app/immich-server", "ghcr.io/immich-app/immich-machine-learning"],
@@ -20,6 +26,11 @@
       "matchDepNames": ["docker.io/library/postgres", "docker.io/library/mariadb"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "BIND odd minor versions are development branches; stay on the stable even ones",
+      "matchDepNames": ["docker.io/internetsystemsconsortium/bind9"],
+      "allowedVersions": "/^9\\.\\d*[02468](\\.|$)/"
     }
   ]
 }
