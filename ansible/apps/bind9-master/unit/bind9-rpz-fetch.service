@@ -1,13 +1,11 @@
 [Unit]
 Description=Fetch the HaGeZi Multi NORMAL blocklist and reload the primary
-Wants=network-online.target
-After=network-online.target bind9.service
+Requires=bind9-rpz-download.service
+After=bind9-rpz-download.service bind9.service
 
 [Service]
 Type=oneshot
-Environment=RPZ_URL=https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/rpz/multi.txt
 Environment=RPZ_DIR=/var/app/bind9-master/cache
-ExecStart=/usr/bin/curl --fail --silent --show-error --location --retry 3 --max-filesize 64M --output ${RPZ_DIR}/rpz.block.zone.new ${RPZ_URL}
 # checked by the named that will load it, so a truncated or malformed download never replaces a good list
 ExecStart=/usr/bin/podman exec bind9 named-checkzone rpz.block /var/cache/bind/rpz.block.zone.new
 ExecStart=/bin/mv -f ${RPZ_DIR}/rpz.block.zone.new ${RPZ_DIR}/rpz.block.zone

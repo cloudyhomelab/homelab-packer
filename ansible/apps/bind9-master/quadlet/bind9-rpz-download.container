@@ -1,0 +1,17 @@
+[Unit]
+Description=Download the HaGeZi Multi NORMAL blocklist for the primary
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=bind9-rpz-download
+# the base image ships no HTTP client; rclone copyurl needs no remote config
+Image=bind9-rpz-rclone.image
+Volume=/var/app/bind9-master/cache:/data
+ReadOnly=true
+LogDriver=journald
+Exec=copyurl https://cdn.jsdelivr.net/gh/hagezi/dns-blocklists@latest/rpz/multi.txt /data/rpz.block.zone.new
+
+[Service]
+Type=oneshot
+TimeoutStartSec=10min
