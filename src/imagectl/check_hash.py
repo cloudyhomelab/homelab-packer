@@ -156,8 +156,7 @@ def resolve_roles(root: Path, playbook: str) -> list[str]:
     return sorted(found)
 
 
-def _param(params: object, role: str, key: str, where: str) -> str:
-    value = params.get(key) if isinstance(params, dict) else None
+def _literal(value: object, role: str, key: str, where: str) -> str:
     if not isinstance(value, str) or not value:
         raise CheckHashError(f"{where}: {role} call without a {key}")
     if "{{" in value or "{%" in value:
@@ -165,25 +164,34 @@ def _param(params: object, role: str, key: str, where: str) -> str:
     return value
 
 
-def _included_params(node: object, role: str, key: str, where: str) -> Iterable[str]:
+def _values(params: object, role: str, key: str, where: str, many: bool) -> list[str]:
+    value = params.get(key) if isinstance(params, dict) else None
+    if not many:
+        return [_literal(value, role, key, where)]
+    if not isinstance(value, list):
+        raise CheckHashError(f"{where}: {role} call without a literal list {key}")
+    return [_literal(item, role, key, where) for item in value]
+
+
+def _included_values(node: object, role: str, key: str, where: str, many: bool) -> Iterable[str]:
     """`key` of every include_role/import_role of `role` anywhere below node."""
     if isinstance(node, dict):
         for name, value in node.items():
             if name in ROLE_INCLUDE_KEYS:
                 if isinstance(value, dict) and value.get("name") == role:
-                    yield _param(node.get("vars"), role, key, where)
+                    yield from _values(node.get("vars"), role, key, where, many)
             else:
-                yield from _included_params(value, role, key, where)
+                yield from _included_values(value, role, key, where, many)
     elif isinstance(node, list):
         for item in node:
-            yield from _included_params(item, role, key, where)
+            yield from _included_values(item, role, key, where, many)
 
 
 def resolve_role_params(
-    root: Path, playbook: str, roles: list[str], role: str, key: str
+    root: Path, playbook: str, roles: list[str], role: str, key: str, *, many: bool = False
 ) -> list[str]:
     """The values a playbook passes as `key` to `role`, from its plays and the roles it pulls
-    in; every call must pass it literally."""
+    in; every call must pass it literally, as a list of strings when `many`."""
     ansible = root / ANSIBLE_DIR
     playbook_path = ansible / f"{playbook}.yml"
     found: set[str] = set()
@@ -192,12 +200,12 @@ def resolve_role_params(
             continue
         for entry in play.get("roles") or []:
             if isinstance(entry, dict) and entry.get("role", entry.get("name")) == role:
-                found.add(_param(entry, role, key, str(playbook_path)))
+                found.update(_values(entry, role, key, str(playbook_path), many))
         for task_key in PLAY_TASK_KEYS:
-            found.update(_included_params(play.get(task_key), role, key, str(playbook_path)))
+            found.update(_included_values(play.get(task_key), role, key, str(playbook_path), many))
     for name in roles:
         for path in sorted((ansible / "roles" / name / "tasks").glob("**/*.y*ml")):
-            found.update(_included_params(_yaml_docs(path), role, key, str(path)))
+            found.update(_included_values(_yaml_docs(path), role, key, str(path), many))
     return sorted(found)
 
 

@@ -18,7 +18,12 @@ def write(root: Path, rel: str, text: str) -> None:
 
 
 def deploys(*apps: str, ranges: tuple[str, ...] = ()) -> str:
-    items = "".join(f"    - role: app_idmap\n      app_idmap_app: {app}\n" for app in ranges)
+    items = (
+        "    - role: app_idmap\n      app_idmap_apps:\n"
+        + "".join(f"        - {app}\n" for app in ranges)
+        if ranges
+        else ""
+    )
     items += "".join(
         "    - role: binarycodes.homelab.systemd_app\n"
         "      systemd_app_kind: source\n"
@@ -76,11 +81,25 @@ def test_the_role_needs_an_idmap(root):
     assert any("app_idmap for youtarr" in p for p in problems["debian-edge"]), problems
 
 
-def test_a_templated_app_is_left_to_check_hash(root):
+@pytest.mark.parametrize("apps", ['"{{ apps }}"', '["{{ app }}"]', "youtarr"])
+def test_apps_must_be_a_literal_list(root, apps):
     write(
         root,
         "ansible/packer-debian-edge.yml",
-        '- hosts: all\n  roles:\n    - role: app_idmap\n      app_idmap_app: "{{ app }}"\n',
+        f"- hosts: all\n  roles:\n    - role: app_idmap\n      app_idmap_apps: {apps}\n",
+    )
+    problems = userns.problems(load(root))
+    assert len(problems["debian-edge"]) == 1
+    assert "app_idmap_apps" in problems["debian-edge"][0]
+
+
+def test_the_storage_role_gives_its_apps_their_ranges(root):
+    write(
+        root,
+        "ansible/packer-debian-edge.yml",
+        deploys("youtarr", "haproxy").replace(
+            "  roles:\n", "  roles:\n    - role: app_storage\n      app_storage_apps: [youtarr]\n"
+        ),
     )
     assert userns.problems(load(root)) == {}
 

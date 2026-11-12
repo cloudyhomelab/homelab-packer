@@ -1,4 +1,4 @@
 ---
-# app_storage depends on this role with "{{ app_storage_app }}"; that parameter is the same text
-# for every app, so without duplicates Ansible runs the dependency only for the first app
+# app_storage depends on this role with "{{ app_storage_apps }}"; that parameter is the same text
+# in every play, so without duplicates Ansible skips the dependency after its first run
 allow_duplicates: true

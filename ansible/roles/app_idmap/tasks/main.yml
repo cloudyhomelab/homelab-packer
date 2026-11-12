@@ -1,18 +1,18 @@
-- name: look up the app's ID range
+- name: look up the apps' ID ranges
   ansible.builtin.set_fact:
-    app_idmap_ranges: "{{ app_idmap_ranges | default({}) | combine({app_idmap_app: app_idmap_map | app_id_range(app_idmap_app)}) }}"
+    app_idmap_ranges: "{{ app_idmap_ranges | default({}) | combine(app_idmap_map | app_id_ranges(app_idmap_apps)) }}"
   vars:
     app_idmap_map: "{{ lookup('ansible.builtin.file', app_idmap_file) | from_yaml }}"
 
-- name: give the app its ID range
+- name: give each app its ID range
   ansible.builtin.lineinfile:
-    path: "{{ item }}"
-    regexp: "^{{ app_idmap_app }}:"
-    line: "{{ app_idmap_app }}:{{ app_idmap_ranges[app_idmap_app].base }}:{{ app_idmap_ranges[app_idmap_app].count }}"
+    path: "{{ item.0 }}"
+    regexp: "^{{ item.1 }}:"
+    line: "{{ item.1 }}:{{ app_idmap_ranges[item.1].base }}:{{ app_idmap_ranges[item.1].count }}"
     create: true
     owner: root
     group: root
     mode: '0644'
-  loop:
-    - /etc/subuid
-    - /etc/subgid
+  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_idmap_apps) | list }}"
+  loop_control:
+    label: "{{ item.0 }} {{ item.1 }}"

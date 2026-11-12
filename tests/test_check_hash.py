@@ -281,3 +281,30 @@ def test_a_slot_rebuilds_an_app_without_storage_too(tree):
     after = hashes(tree)
     assert after["debian-media"] != before["debian-media"]
     assert after["debian-edge"] == before["debian-edge"]
+
+
+def test_role_params_as_a_list(tree):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        "- hosts: all\n  roles:\n    - role: app_storage\n      app_storage_apps: [b, a]\n"
+        "  tasks:\n    - ansible.builtin.include_role:\n        name: app_storage\n"
+        "      vars:\n        app_storage_apps: [c]\n",
+    )
+    found = check_hash.resolve_role_params(
+        tree, "packer-debian-edge", [], "app_storage", "app_storage_apps", many=True
+    )
+    assert found == ["a", "b", "c"]
+
+
+@pytest.mark.parametrize("apps", ["a", '"{{ apps }}"', '["{{ app }}"]'])
+def test_role_params_list_must_be_literal(tree, apps):
+    write(
+        tree,
+        "ansible/packer-debian-edge.yml",
+        f"- hosts: all\n  roles:\n    - role: app_storage\n      app_storage_apps: {apps}\n",
+    )
+    with pytest.raises(check_hash.CheckHashError):
+        check_hash.resolve_role_params(
+            tree, "packer-debian-edge", [], "app_storage", "app_storage_apps", many=True
+        )

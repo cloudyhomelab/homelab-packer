@@ -25,7 +25,7 @@ from .idmap import IDMAP_FILE, IdMap
 from .idmap import load as load_idmap
 
 STORAGE_ROLE = "app_storage"
-STORAGE_APP_KEY = "app_storage_app"
+STORAGE_APPS_KEY = "app_storage_apps"
 MOUNT_ROOT = "/srv"
 DATASET_FIELDS = {"owner", "recordsize", "dirs", "mode"}
 OWNER_RE = re.compile(r"^[0-9]+:[0-9]+$")
@@ -165,12 +165,18 @@ def problems(catalog: Catalog) -> dict[str, list[str]]:
             ranges = load_idmap(root) if own else None
             roles = resolve_roles(root, image.playbook)
             apps = resolve_apps(root, image.playbook, roles)
-            given = resolve_role_params(root, image.playbook, roles, STORAGE_ROLE, STORAGE_APP_KEY)
         except CatalogError as e:
             out[image.name] = e.errors
             continue
         except CheckHashError:
             # validate already reports it as the image's CHECK_HASH error
+            continue
+        try:
+            given = resolve_role_params(
+                root, image.playbook, roles, STORAGE_ROLE, STORAGE_APPS_KEY, many=True
+            )
+        except CheckHashError as e:
+            out[image.name] = [str(e)]
             continue
         found = range_problems(ranges, own)
         with_storage = {d.app for d in own}

@@ -34,7 +34,12 @@ def write(root: Path, rel: str, text: str) -> None:
 
 
 def deploys(*apps: str, stored: tuple[str, ...] = ()) -> str:
-    items = "".join(f"    - role: app_storage\n      app_storage_app: {app}\n" for app in stored)
+    items = (
+        "    - role: app_storage\n      app_storage_apps:\n"
+        + "".join(f"        - {app}\n" for app in stored)
+        if stored
+        else ""
+    )
     items += "".join(
         "    - role: binarycodes.homelab.systemd_app\n"
         "      systemd_app_kind: source\n"
@@ -151,3 +156,14 @@ def test_missing_idmap_is_a_problem(root):
     assert storage.problems(load(root)) == {
         "debian-edge": ["apps declare storage but ansible/apps/idmap.yml does not exist"]
     }
+
+
+def test_storage_apps_must_be_a_literal_list(root):
+    write(
+        root,
+        "ansible/packer-debian-edge.yml",
+        '- hosts: all\n  roles:\n    - role: app_storage\n      app_storage_apps: "{{ apps }}"\n',
+    )
+    problems = storage.problems(load(root))
+    assert len(problems["debian-edge"]) == 1
+    assert "literal list app_storage_apps" in problems["debian-edge"][0]

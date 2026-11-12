@@ -21,10 +21,10 @@ from .idmap import IDMAP_FILE
 from .idmap import load as load_idmap
 
 IDMAP_ROLE = "app_idmap"
-IDMAP_APP_KEY = "app_idmap_app"
+IDMAP_APPS_KEY = "app_idmap_apps"
 # app_storage's meta dependency runs app_idmap for the same app
 STORAGE_ROLE = "app_storage"
-STORAGE_APP_KEY = "app_storage_app"
+STORAGE_APPS_KEY = "app_storage_apps"
 # quadlet keys that set a container's user namespace; an app with a slot allows only its range
 USERNS_KEYS = ("UIDMap", "GIDMap", "UserNS", "SubUIDMap", "SubGIDMap")
 NAMED_KEYS = ("SubUIDMap", "SubGIDMap")
@@ -68,12 +68,20 @@ def problems(catalog: Catalog) -> dict[str, list[str]]:
         try:
             roles = resolve_roles(root, image.playbook)
             apps = resolve_apps(root, image.playbook, roles)
-            given = {
-                *resolve_role_params(root, image.playbook, roles, IDMAP_ROLE, IDMAP_APP_KEY),
-                *resolve_role_params(root, image.playbook, roles, STORAGE_ROLE, STORAGE_APP_KEY),
-            }
         except CheckHashError:
             # validate already reports it as the image's CHECK_HASH error
+            continue
+        try:
+            given = {
+                *resolve_role_params(
+                    root, image.playbook, roles, IDMAP_ROLE, IDMAP_APPS_KEY, many=True
+                ),
+                *resolve_role_params(
+                    root, image.playbook, roles, STORAGE_ROLE, STORAGE_APPS_KEY, many=True
+                ),
+            }
+        except CheckHashError as e:
+            out[image.name] = [str(e)]
             continue
         found = [
             f"the playbook runs {IDMAP_ROLE} for {app}, but {IDMAP_FILE} has no slot for it"

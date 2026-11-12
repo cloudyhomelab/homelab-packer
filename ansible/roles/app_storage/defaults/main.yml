@@ -1,7 +1,8 @@
 ---
-# app_storage_app: the app whose ansible/apps/<app>/storage.yml is mounted, dataset <key> at
-# <mount_root>/<app>/<key>; it gets <app>-storage.service
-app_storage_file: "{{ playbook_dir }}/apps/{{ app_storage_app }}/storage.yml"
+# app_storage_apps: the apps whose ansible/apps/<app>/storage.yml is mounted, dataset <key> at
+# <mount_root>/<app>/<key>; each gets <app>-storage.service
+app_storage_apps: []
+app_storage_apps_dir: "{{ playbook_dir }}/apps"
 # dataset <key> of app <app> is exported as <server>:<base>/<app>/<key>
 app_storage_server: moria.ip.cloudyhome.net
 app_storage_base: /mnt/zpool0/cloudyhome_app_data

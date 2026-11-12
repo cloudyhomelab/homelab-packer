@@ -19,16 +19,18 @@ def load_filters(role: str, module: str) -> dict:
 IDMAP = {"start": 2000000, "size": 65536, "slots": {"youtarr": 1, "immich": 7}}
 
 
-def test_app_id_range():
-    app_id_range = load_filters("app_idmap", "app_idmap")["app_id_range"]
-    assert app_id_range(IDMAP, "youtarr") == {"base": 2065536, "count": 65536}
-    assert app_id_range(IDMAP, "immich") == {"base": 2458752, "count": 65536}
+def test_app_id_ranges():
+    app_id_ranges = load_filters("app_idmap", "app_idmap")["app_id_ranges"]
+    assert app_id_ranges(IDMAP, ["youtarr", "immich"]) == {
+        "youtarr": {"base": 2065536, "count": 65536},
+        "immich": {"base": 2458752, "count": 65536},
+    }
 
 
-def test_app_id_range_needs_a_slot():
-    app_id_range = load_filters("app_idmap", "app_idmap")["app_id_range"]
-    with pytest.raises(AnsibleFilterError, match="no slot for netbox"):
-        app_id_range(IDMAP, "netbox")
+def test_app_id_ranges_need_a_slot_for_every_app():
+    app_id_ranges = load_filters("app_idmap", "app_idmap")["app_id_ranges"]
+    with pytest.raises(AnsibleFilterError, match="no slot for netbox, jellyfin"):
+        app_id_ranges(IDMAP, ["youtarr", "netbox", "jellyfin"])
 
 
 DATASETS = {

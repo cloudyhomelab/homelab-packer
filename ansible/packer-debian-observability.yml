@@ -37,7 +37,8 @@
       systemd_app_name: observability
 
     - role: app_storage
-      app_storage_app: caddy-observability
+      app_storage_apps:
+        - caddy-observability
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
