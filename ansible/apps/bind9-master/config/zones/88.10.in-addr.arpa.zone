@@ -1,7 +1,7 @@
 $TTL 2d
 $ORIGIN 88.10.in-addr.arpa.
 @           IN      SOA     ns1.cloudyhome.net.                hostmaster.cloudyhome.net. (
-                            2026110801         ;serial
+                            2026111201         ;serial
                             12h                                 ;refresh
                             15m                                 ;retry
                             3w                                  ;expire
@@ -11,5 +11,5 @@ $ORIGIN 88.10.in-addr.arpa.
             IN      NS      ns1.cloudyhome.net.
             IN      NS      ns2.cloudyhome.net.
 
-11.16 IN PTR ns1.ip.cloudyhome.net.
-12.16 IN PTR ns2.ip.cloudyhome.net.
+11.53 IN PTR ns1.ip.cloudyhome.net.
+12.53 IN PTR ns2.ip.cloudyhome.net.

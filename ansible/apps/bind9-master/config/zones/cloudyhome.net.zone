@@ -1,7 +1,7 @@
 $TTL 2d
 $ORIGIN cloudyhome.net.
 @           IN      SOA     ns1.cloudyhome.net.                hostmaster.cloudyhome.net. (
-                            2026110803         ;serial
+                            2026111201         ;serial
                             12h                                 ;refresh
                             15m                                 ;retry
                             3w                                  ;expire
@@ -11,7 +11,7 @@ $ORIGIN cloudyhome.net.
             IN      NS      ns1.cloudyhome.net.
             IN      NS      ns2.cloudyhome.net.
 
-ns1 IN A 10.88.16.11
-ns2 IN A 10.88.16.12
+ns1 IN A 10.88.53.11
+ns2 IN A 10.88.53.12
 ip IN NS ns1.cloudyhome.net.
 ip IN NS ns2.cloudyhome.net.
