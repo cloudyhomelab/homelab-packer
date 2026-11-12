@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/internetsystemsconsortium/bind9:9.21@sha256:6727f43dfa4f0765eed6c14416c9376d9e543775006066cccc1ddcfe493f671a
+Image=docker.io/internetsystemsconsortium/bind9:9.20@sha256:66092edb53c081fa11b1fa8219e99065b0f497cb38f568ba789702a4c10e2590
