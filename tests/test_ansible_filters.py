@@ -1,3 +1,4 @@
+import base64
 import importlib.util
 from pathlib import Path
 
@@ -76,3 +77,69 @@ def test_app_id_lines_are_sorted_by_app():
         {"app": "immich", "line": "immich:2458752:65536"},
         {"app": "youtarr", "line": "youtarr:2065536:65536"},
     ]
+
+
+def slurped(files: dict[str, str]) -> list[dict]:
+    """What a looped ansible.builtin.slurp registers for these files."""
+    return [
+        {
+            "item": {"path": f"/etc/containers/systemd/{name}"},
+            "content": base64.b64encode(content.encode()).decode(),
+        }
+        for name, content in files.items()
+    ]
+
+
+def test_image_repositories_drop_tag_and_digest():
+    image_repositories = load_filters("quadlet_prepull", "quadlet_prepull")["image_repositories"]
+    files = {
+        "a.image": "[Image]\nImage=docker.io/library/caddy:2.10@sha256:" + "a" * 64 + "\n",
+        "b.image": "[Image]\nImage=ghcr.io/immich-app/immich-server:v2\n",
+        "c.image": "[Image]\nImage=registry.example:5000/team/app@sha256:" + "b" * 64 + "\n",
+        "d.image": "[Image]\nImage=docker.io/library/caddy:2.11\n",
+    }
+    assert image_repositories(slurped(files)) == [
+        "docker.io/library/caddy",
+        "ghcr.io/immich-app/immich-server",
+        "registry.example:5000/team/app",
+    ]
+
+
+@pytest.mark.parametrize("reference", ["caddy:2.10", "library/caddy", "docker.io"])
+def test_image_repositories_refuse_short_names(reference):
+    image_repositories = load_filters("quadlet_prepull", "quadlet_prepull")["image_repositories"]
+    with pytest.raises(AnsibleFilterError, match="not a fully qualified"):
+        image_repositories(slurped({"x.image": f"[Image]\nImage={reference}\n"}))
+
+
+def test_image_repositories_need_one_image_line():
+    image_repositories = load_filters("quadlet_prepull", "quadlet_prepull")["image_repositories"]
+    with pytest.raises(
+        AnsibleFilterError, match="x.image must have exactly one Image= line, found 0"
+    ):
+        image_repositories(slurped({"x.image": "[Image]\n"}))
+
+
+def test_every_app_image_file_gives_a_repository():
+    image_repositories = load_filters("quadlet_prepull", "quadlet_prepull")["image_repositories"]
+    files = {path.name: path.read_text() for path in ROLES.parent.glob("apps/*/quadlet/*.image")}
+    assert len(image_repositories(slurped(files))) == len(
+        {text.split("Image=", 1)[1].split("@")[0].rsplit(":", 1)[0] for text in files.values()}
+    )
+
+
+def test_podman_image_policy_rejects_all_but_the_repositories():
+    podman_image_policy = load_filters("podman", "podman_policy")["podman_image_policy"]
+    accept = [{"type": "insecureAcceptAnything"}]
+    assert podman_image_policy(["ghcr.io/a/b", "docker.io/library/caddy", "ghcr.io/a/b"]) == {
+        "default": [{"type": "reject"}],
+        "transports": {"docker": {"docker.io/library/caddy": accept, "ghcr.io/a/b": accept}},
+    }
+
+
+def test_podman_image_policy_without_repositories_accepts_nothing():
+    podman_image_policy = load_filters("podman", "podman_policy")["podman_image_policy"]
+    assert podman_image_policy([]) == {
+        "default": [{"type": "reject"}],
+        "transports": {"docker": {}},
+    }

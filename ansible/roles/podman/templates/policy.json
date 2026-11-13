@@ -1,0 +1,1 @@
+{{ podman_allowed_repositories | podman_image_policy | to_nice_json(indent=2) }}
