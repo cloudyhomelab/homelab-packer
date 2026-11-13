@@ -85,6 +85,14 @@
     group: root
     mode: '0644'
 
+- name: start alloy after cloud-init has set the hostname
+  ansible.builtin.copy:
+    src: 20-cloud-init.conf
+    dest: /etc/systemd/system/alloy.service.d/20-cloud-init.conf
+    owner: root
+    group: root
+    mode: '0644'
+
 - name: enable alloy service
   ansible.builtin.systemd_service:
     name: alloy.service

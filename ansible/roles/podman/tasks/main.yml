@@ -9,6 +9,16 @@
     - /etc/containers
     - /etc/containers/containers.conf.d
     - /etc/containers/systemd
+    - /etc/containers/systemd/container.d
+
+# applies to every .container unit on the host
+- name: start containers after cloud-init has configured the host
+  ansible.builtin.copy:
+    src: 10-cloud-init.conf
+    dest: /etc/containers/systemd/container.d/10-cloud-init.conf
+    owner: root
+    group: root
+    mode: "0644"
 
 - name: change default subnet configuration
   ansible.builtin.template:
