@@ -16,6 +16,12 @@ source "qemu" "image" {
   disk_discard       = "unmap"
   disk_detect_zeroes = "unmap"
 
+  # zstd over qemu-img's zlib default: faster to decompress and smaller; Proxmox converts on import
+  disk_compression = true
+  qemu_img_args {
+    convert = ["-o", "compression_type=zstd"]
+  }
+
   cd_files = [
     "${local.os_dir}/cloud-init/meta-data",
     "${local.os_dir}/cloud-init/network-config",
