@@ -82,8 +82,10 @@ def test_app_id_lines_are_sorted_by_app():
 def slurped(files: dict[str, str]) -> list[dict]:
     """What a looped ansible.builtin.slurp registers for these files."""
     return [
-        {"item": {"path": f"/etc/containers/systemd/{name}"},
-         "content": base64.b64encode(content.encode()).decode()}
+        {
+            "item": {"path": f"/etc/containers/systemd/{name}"},
+            "content": base64.b64encode(content.encode()).decode(),
+        }
         for name, content in files.items()
     ]
 
@@ -112,7 +114,9 @@ def test_image_repositories_refuse_short_names(reference):
 
 def test_image_repositories_need_one_image_line():
     image_repositories = load_filters("quadlet_prepull", "quadlet_prepull")["image_repositories"]
-    with pytest.raises(AnsibleFilterError, match="x.image must have exactly one Image= line, found 0"):
+    with pytest.raises(
+        AnsibleFilterError, match="x.image must have exactly one Image= line, found 0"
+    ):
         image_repositories(slurped({"x.image": "[Image]\n"}))
 
 
@@ -135,4 +139,7 @@ def test_podman_image_policy_rejects_all_but_the_repositories():
 
 def test_podman_image_policy_without_repositories_accepts_nothing():
     podman_image_policy = load_filters("podman", "podman_policy")["podman_image_policy"]
-    assert podman_image_policy([]) == {"default": [{"type": "reject"}], "transports": {"docker": {}}}
+    assert podman_image_policy([]) == {
+        "default": [{"type": "reject"}],
+        "transports": {"docker": {}},
+    }

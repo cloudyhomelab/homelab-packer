@@ -32,7 +32,9 @@ def image_repositories(slurped: list[dict]) -> list[str]:
             if line.strip().startswith("Image=")
         ]
         if len(images) != 1:
-            raise AnsibleFilterError(f"{name} must have exactly one Image= line, found {len(images)}")
+            raise AnsibleFilterError(
+                f"{name} must have exactly one Image= line, found {len(images)}"
+            )
         repositories.add(_repository(images[0]))
     return sorted(repositories)
 
