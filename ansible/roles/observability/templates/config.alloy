@@ -59,6 +59,20 @@ loki.relabel "journal" {
 		regex         = "(.+)"
 		target_label  = "service_name"
 	}
+
+	// podman events come from transient units named after the container ID
+	rule {
+		source_labels = ["__journal_podman_name"]
+		regex         = "(.+)"
+		target_label  = "service_name"
+	}
+
+	// one per healthcheck run; a failing check still logs as unhealthy
+	rule {
+		source_labels = ["__journal_podman_event", "__journal_podman_health_status"]
+		regex         = "health_status;healthy"
+		action        = "drop"
+	}
 }
 
 loki.source.journal "journal" {
