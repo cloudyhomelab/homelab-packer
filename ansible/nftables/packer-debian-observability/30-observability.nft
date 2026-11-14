@@ -1,0 +1,5 @@
+# syslog_receiver: tcp carries RFC 5424, udp RFC 3164
+add element inet base-filter base-open {
+    tcp . 1514,
+    udp . 1514,
+}

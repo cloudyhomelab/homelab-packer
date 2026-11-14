@@ -1,0 +1,129 @@
+{# variables are [[ ]] here (see tasks/main.yml): {{ }} is loki.process template syntax #}
+
+loki.source.syslog "syslog_receiver" {
+{% for listener in syslog_receiver_listeners %}
+	listener {
+		address       = "[[ listener.address ]]"
+		protocol      = "[[ listener.protocol ]]"
+		syslog_format = "[[ listener.format ]]"
+		labels        = {service_name = "syslog"}
+{% if listener.format == 'rfc5424' %}
+		use_incoming_timestamp = true
+{% else %}
+		// RFC 3164 timestamps carry no year or zone, so the receive time is kept
+{% endif %}
+	}
+{% endfor %}
+
+	relabel_rules = loki.relabel.syslog_receiver.rules
+	forward_to    = [loki.process.syslog_receiver.receiver]
+}
+
+loki.relabel "syslog_receiver" {
+	forward_to = []
+
+	// a sender that leaves the hostname out is named by its address
+	rule {
+		source_labels = ["__syslog_connection_ip_address"]
+		target_label  = "instance"
+	}
+
+	rule {
+		source_labels = ["__syslog_message_hostname"]
+		regex         = "(.+)"
+		target_label  = "instance"
+	}
+
+	rule {
+		source_labels = ["__syslog_message_app_name"]
+		regex         = "(.+)"
+		target_label  = "service_name"
+	}
+
+	rule {
+		source_labels = ["__syslog_message_severity"]
+		target_label  = "level"
+	}
+
+	// the journal's keyword, so one level filter covers both
+	rule {
+		source_labels = ["level"]
+		regex         = "informational"
+		replacement   = "info"
+		target_label  = "level"
+	}
+}
+
+loki.process "syslog_receiver" {
+	forward_to = [loki.write.central.receiver]
+
+	// pf filterlog CSV: IPv4 has 8 fields between version and length with the protocol name last;
+	// IPv6 has 5 with the name second to last. Ports follow only for TCP and UDP.
+	stage.match {
+		pipeline_name = "filterlog"
+		selector      = "{service_name=\"filterlog\"}"
+
+		stage.regex {
+			expression = "^(?P<rule>[^,]*),[^,]*,[^,]*,(?P<rule_id>[^,]*),(?P<interface>[^,]*),[^,]*,(?P<action>[^,]*),(?P<direction>[^,]*),(?:4,(?:[^,]*,){7}(?P<proto4>[^,]*)|6,(?:[^,]*,){3}(?P<proto6>[^,]*),[^,]*),[^,]*,(?P<src>[^,]*),(?P<dst>[^,]*)(?:,(?P<src_port>\\d+),(?P<dst_port>\\d+),\\d*(?:,(?P<tcp_flags>[A-Z.]*),)?)?"
+		}
+
+		stage.template {
+			source   = "proto"
+			template = "{{ if .proto4 }}{{ .proto4 }}{{ else }}{{ .proto6 }}{{ end }}"
+		}
+{% if syslog_receiver_filterlog_interfaces | length > 0 %}
+
+		stage.template {
+			source   = "interface"
+			template = "{% for device, name in syslog_receiver_filterlog_interfaces.items() %}{{ [[ 'if' if loop.first else 'else if' ]] eq .interface \"[[ device ]]\" }}[[ name ]]{% endfor %}{{ else }}{{ .interface }}{{ end }}"
+		}
+{% endif %}
+
+		// few values each; addresses and ports would make a stream per connection
+		stage.labels {
+			values = {action = "", interface = "", direction = ""}
+		}
+
+		stage.structured_metadata {
+			values = {
+				rule      = "",
+				rule_id   = "",
+				proto     = "",
+				src       = "",
+				dst       = "",
+				src_port  = "",
+				dst_port  = "",
+				tcp_flags = "",
+			}
+		}
+
+		// long-range panels read these from Prometheus instead of counting lines in Loki
+		stage.metrics {
+			metric.counter {
+				name        = "filterlog_entries_total"
+				description = "pf filterlog entries by sender, interface, action and direction"
+				match_all   = true
+				action      = "inc"
+			}
+		}
+	}
+}
+
+// stage.metrics counters are served only on alloy's own /metrics
+prometheus.scrape "syslog_receiver" {
+	targets         = [{"__address__" = "127.0.0.1:12345"}]
+	// keep the sender's instance label instead of renaming it exported_instance
+	honor_labels    = true
+	scrape_interval = "[[ syslog_receiver_metrics_interval ]]"
+	forward_to      = [prometheus.relabel.syslog_receiver.receiver]
+}
+
+prometheus.relabel "syslog_receiver" {
+	forward_to = [prometheus.remote_write.central.receiver]
+
+	rule {
+		source_labels = ["__name__"]
+		regex         = "loki_process_custom_filterlog_entries_total"
+		action        = "keep"
+	}
+}

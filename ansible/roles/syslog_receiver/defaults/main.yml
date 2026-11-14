@@ -1,0 +1,11 @@
+# One listener per wire format: {name, address, protocol (tcp|udp), format (rfc5424|rfc3164)}.
+# Ports stay above 1024: alloy runs unprivileged.
+syslog_receiver_listeners:
+  - {name: rfc5424_tcp, address: "0.0.0.0:1514", protocol: tcp, format: rfc5424}
+  - {name: rfc3164_udp, address: "0.0.0.0:1514", protocol: udp, format: rfc3164}
+
+# pf filterlog device name -> readable name for the interface label; unlisted devices keep their name
+syslog_receiver_filterlog_interfaces: {}
+
+# how often the filterlog counters are scraped into Prometheus
+syslog_receiver_metrics_interval: 60s

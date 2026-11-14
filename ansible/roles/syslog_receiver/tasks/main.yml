@@ -1,0 +1,17 @@
+- name: check the listeners
+  ansible.builtin.assert:
+    that:
+      - syslog_receiver_listeners | length > 0
+      - syslog_receiver_listeners | map(attribute='protocol') | difference(['tcp', 'udp']) | length == 0
+      - syslog_receiver_listeners | map(attribute='format') | difference(['rfc5424', 'rfc3164']) | length == 0
+    fail_msg: each listener needs protocol tcp or udp and format rfc5424 or rfc3164
+
+- name: add the syslog receiver to alloy
+  ansible.builtin.template:
+    src: syslog-receiver.alloy
+    dest: /etc/alloy/syslog-receiver.alloy
+    owner: root
+    group: alloy
+    mode: '0640'
+    variable_start_string: '[['
+    variable_end_string: ']]'
