@@ -1,0 +1,1237 @@
+{
+  "uid": "dns-queries",
+  "title": "DNS queries",
+  "tags": [
+    "dns",
+    "bind9"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-1h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Queries",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Queries received in the time range",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Blocked",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"rpz: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): rpz (?P<trigger>\\S+) (?P<action>\\S+) rewrite (?P<qname>[^/]+)/(?P<qtype>[^/]+)/\\S+ via (?P<rule>\\S+)` | action!=\"PASSTHRU\" | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Answers rewritten by rpz.block",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Failed",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"query failed\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query failed \\((?P<rcode>[^)]+)\\) for (?P<qname>[^/]+)/\\S+/(?P<qtype>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Queries answered with SERVFAIL or another error",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Clients",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range])))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Distinct client addresses",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Queries by type",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (qtype) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{qtype}}"
+        }
+      ],
+      "description": "Queries per interval, by record type",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Queries by client",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{client}}"
+        }
+      ],
+      "description": "Queries per interval, by client address",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Top domains",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (qname) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "qname"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this domain",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-domain=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Top clients",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 12,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "client"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this client",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-client=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Top blocked",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 12,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (qname, client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"rpz: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): rpz (?P<trigger>\\S+) (?P<action>\\S+) rewrite (?P<qname>[^/]+)/(?P<qtype>[^/]+)/\\S+ via (?P<rule>\\S+)` | action!=\"PASSTHRU\" | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "qname"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this domain",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-domain=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "client"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this client",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-client=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Responses by code",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (rcode) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"responses: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): response: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<rcode>\\S+) (?P<answers>\\d+) \\d+ \\d+` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{rcode}}"
+        }
+      ],
+      "description": "Answers per interval, by response code; rpz.block rewrites count as NXDOMAIN",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NOERROR"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "green"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NXDOMAIN"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "SERVFAIL"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "REFUSED"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "purple"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Top NXDOMAIN",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 22,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (qname, client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"responses: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): response: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<rcode>\\S+) (?P<answers>\\d+) \\d+ \\d+` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" | rcode=\"NXDOMAIN\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "qname"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this domain",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-domain=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "client"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this client",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-client=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "type": "table",
+      "title": "Top no data",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 22,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (qname, qtype) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"responses: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): response: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<rcode>\\S+) (?P<answers>\\d+) \\d+ \\d+` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" | rcode=\"NOERROR\" | answers=\"0\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "qname"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this domain",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-domain=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Failed queries",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 32,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(50, sum by (qname, qtype, rcode, client) (count_over_time({container=\"bind9\", instance=~\"$instance\"} |= \"query failed\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query failed \\((?P<rcode>[^)]+)\\) for (?P<qname>[^/]+)/\\S+/(?P<qtype>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Queries"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "qname"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this domain",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-domain=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "client"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Filter on this client",
+                    "url": "/d/dns-queries?${__url_time_range}&${instance:queryparam}&var-client=${__value.raw}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "type": "logs",
+      "title": "Query log",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 14
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{container=\"bind9\", instance=~\"$instance\"} |= \"queries: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): query: (?P<qname>\\S+) (?P<qclass>\\S+) (?P<qtype>\\S+) (?P<flags>\\S+)` | client=~\"$client\" | qname=~\"(?i).*$domain.*\" | line_format `{{ printf \"%-16s\" .client }} {{ printf \"%-6s\" .qtype }} {{ .qname }}  {{ .flags }}`",
+          "queryType": "range"
+        }
+      ],
+      "description": "client, type, name, flags. Flags: + recursion desired, E EDNS, S signed, T TCP, D DO, C CD, K cookie",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": false,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 15,
+      "type": "logs",
+      "title": "Blocked log",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 56,
+        "w": 12,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{container=\"bind9\", instance=~\"$instance\"} |= \"rpz: info: client\" | regexp `client @\\S+ (?P<client>[^#]+)#\\d+ \\(\\S+\\): rpz (?P<trigger>\\S+) (?P<action>\\S+) rewrite (?P<qname>[^/]+)/(?P<qtype>[^/]+)/\\S+ via (?P<rule>\\S+)` | action!=\"PASSTHRU\" | client=~\"$client\" | qname=~\"(?i).*$domain.*\" | line_format `{{ printf \"%-16s\" .client }} {{ printf \"%-6s\" .qtype }} {{ .qname }}  via {{ .rule }}`",
+          "queryType": "range"
+        }
+      ],
+      "description": "Names rewritten by rpz.block",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": false,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 16,
+      "type": "logs",
+      "title": "Failure detail",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 56,
+        "w": 12,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{container=\"bind9\", instance=~\"$instance\"} |= \"query-errors:\" |~ \"(?i)$domain\"",
+          "queryType": "range"
+        }
+      ],
+      "description": "Raw query-errors lines, including the fetch steps that explain a SERVFAIL",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": false,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "instance",
+        "label": "Resolver",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "refId": "instance",
+          "type": 1,
+          "label": "instance",
+          "stream": "{container=\"bind9\"}"
+        },
+        "definition": "label_values({container=\"bind9\"}, instance)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 2,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "client",
+        "label": "Client",
+        "description": "Regex on the client address",
+        "query": ".*",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "domain",
+        "label": "Domain contains",
+        "description": "Case-insensitive regex, matched anywhere in the name",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      }
+    ]
+  }
+}
