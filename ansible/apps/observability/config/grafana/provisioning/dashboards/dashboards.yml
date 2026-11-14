@@ -1,0 +1,10 @@
+apiVersion: 1
+
+providers:
+  - name: homelab
+    folder: Homelab
+    type: file
+    # edits made in the UI are lost on the next image rebuild; change the JSON here instead
+    allowUiUpdates: false
+    options:
+      path: /etc/grafana/provisioning/dashboards/homelab
