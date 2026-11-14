@@ -1,0 +1,552 @@
+{
+  "uid": "units",
+  "title": "Units",
+  "tags": [
+    "cadvisor",
+    "systemd"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "id": 1,
+      "type": "bargauge",
+      "title": "Top CPU",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(10, sum by (instance, unit) (rate(container_cpu_usage_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[5m])))",
+          "legendFormat": "{{instance}} {{unit}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "CPU in cores (1 = one core fully used), 5 min average",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "text",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 2,
+      "type": "bargauge",
+      "title": "Top memory",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(10, max by (instance, unit) (container_memory_working_set_bytes{instance=~\"$instance\", unit=~\"$unit\"}))",
+          "legendFormat": "{{instance}} {{unit}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "Working set: memory the unit cannot give back without swapping",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "text",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 3,
+      "type": "bargauge",
+      "title": "Top memory pressure",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "topk(10, sum by (instance, unit) (rate(container_pressure_memory_waiting_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[5m])))",
+          "legendFormat": "{{instance}} {{unit}}",
+          "instant": true,
+          "range": false
+        }
+      ],
+      "description": "Share of time the unit's tasks waited for memory",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayMode": "basic",
+        "orientation": "horizontal",
+        "showUnfilled": true,
+        "valueMode": "text",
+        "namePlacement": "left",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      }
+    },
+    {
+      "id": 4,
+      "type": "timeseries",
+      "title": "CPU",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_cpu_usage_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "CPU in cores per unit",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Memory",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 8,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (instance, unit) (container_memory_working_set_bytes{instance=~\"$instance\", unit=~\"$unit\"})",
+          "legendFormat": "{{instance}} {{unit}}",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "Working set per unit",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Network",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_network_receive_bytes_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} rx",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "-sum by (instance, unit) (rate(container_network_transmit_bytes_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} tx",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "Receive above zero, transmit below. Units on the host network show the host's traffic",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Disk I/O",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 16,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_blkio_device_usage_total{instance=~\"$instance\", unit=~\"$unit\", operation=\"Read\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} read",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "-sum by (instance, unit) (rate(container_blkio_device_usage_total{instance=~\"$instance\", unit=~\"$unit\", operation=\"Write\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} write",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "Read above zero, write below",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "Bps",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "Pressure",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_pressure_cpu_waiting_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} cpu",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_pressure_memory_waiting_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} memory",
+          "instant": false,
+          "range": true
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (instance, unit) (rate(container_pressure_io_waiting_seconds_total{instance=~\"$instance\", unit=~\"$unit\"}[$__rate_interval]))",
+          "legendFormat": "{{instance}} {{unit}} io",
+          "instant": false,
+          "range": true
+        }
+      ],
+      "description": "Share of time the unit's tasks were stalled waiting for a resource",
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "custom": {
+            "fillOpacity": 10,
+            "showPoints": "never"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "instance",
+        "label": "Host",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "refId": "instance",
+          "query": "label_values(container_cpu_usage_seconds_total, instance)",
+          "qryType": 1
+        },
+        "definition": "label_values(container_cpu_usage_seconds_total, instance)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "type": "query",
+        "name": "unit",
+        "label": "Unit",
+        "datasource": {
+          "type": "prometheus",
+          "uid": "prometheus"
+        },
+        "query": {
+          "refId": "unit",
+          "query": "label_values(container_cpu_usage_seconds_total{instance=~\"$instance\"}, unit)",
+          "qryType": 1
+        },
+        "definition": "label_values(container_cpu_usage_seconds_total{instance=~\"$instance\"}, unit)",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".*",
+        "refresh": 2,
+        "sort": 1,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  }
+}
