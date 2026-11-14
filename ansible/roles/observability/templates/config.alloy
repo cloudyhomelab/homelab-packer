@@ -13,6 +13,49 @@ prometheus.scrape "host" {
 	forward_to      = [prometheus.remote_write.central.receiver]
 }
 
+{% if observability_unit_cgroups | length > 0 %}
+// cgroups are read directly, so no container runtime socket is needed; docker_only limits
+// collection to the allowlisted prefixes instead of every cgroup on the host
+prometheus.exporter.cadvisor "units" {
+	docker_only                 = true
+	raw_cgroup_prefix_allowlist = [{{ observability_unit_cgroups | map('to_json') | join(', ') }}]
+	enabled_metrics             = ["cpu", "memory", "network", "diskIO", "pressure"]
+	store_container_labels      = false
+	housekeeping_interval       = "30s"
+}
+
+prometheus.scrape "units" {
+	targets         = prometheus.exporter.cadvisor.units.targets
+	scrape_interval = "60s"
+	forward_to      = [prometheus.relabel.units.receiver]
+}
+
+prometheus.relabel "units" {
+	forward_to = [prometheus.remote_write.central.receiver]
+
+	// only the units themselves: a unit's cgroup already includes its container's, and the root
+	// duplicates the host metrics
+	rule {
+		source_labels = ["id"]
+		regex         = "({{ observability_unit_cgroups | map('regex_escape') | join('|') | replace('\\', '\\\\') }})[^/]+"
+		action        = "keep"
+	}
+
+	rule {
+		source_labels = ["id"]
+		regex         = ".*/([^/]+)"
+		target_label  = "unit"
+	}
+
+	// the journal's service_name, so a unit's metrics and logs share one label
+	rule {
+		source_labels = ["unit"]
+		regex         = "(.+?)(\\.service)?"
+		target_label  = "service_name"
+	}
+}
+
+{% endif %}
 prometheus.remote_write "central" {
 	endpoint {
 		url = "{{ observability_prometheus_url }}"
