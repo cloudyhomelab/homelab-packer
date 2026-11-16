@@ -33,11 +33,6 @@ jobs:
           permission-pull-requests: write
           permission-issues: write
 
-      # the runner image has no Node; installing per run keeps Renovate's release pace out of it
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: 24
-
       - name: renovate
         env:
           RENOVATE_TOKEN: ${{ steps.bot-token.outputs.token }}
@@ -46,4 +41,4 @@ jobs:
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
           LOG_LEVEL: ${{ inputs.log_level || 'info' }}
-        run: npx --yes renovate@44.190.0
+        run: npx --yes renovate@44.242.0
