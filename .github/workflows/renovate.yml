@@ -26,6 +26,7 @@ jobs:
           private-key: ${{ secrets.CLOUDYHOME_BOT_PRIVATE_KEY }}
           permission-contents: write
           permission-pull-requests: write
+          permission-issues: write
 
       # the runner image has no Node; installing per run keeps Renovate's release pace out of it
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
