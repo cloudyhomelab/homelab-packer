@@ -4,6 +4,11 @@ on:
   schedule:
     - cron: "0 5 * * *"
   workflow_dispatch:
+    inputs:
+      log_level:
+        type: choice
+        options: [info, debug]
+        default: info
 
 permissions: {}
 
@@ -40,4 +45,5 @@ jobs:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
           RENOVATE_ONBOARDING: "false"
           RENOVATE_REQUIRE_CONFIG: required
+          LOG_LEVEL: ${{ inputs.log_level || 'info' }}
         run: npx --yes renovate@44.190.0
