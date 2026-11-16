@@ -32,6 +32,7 @@ jobs:
           permission-contents: write
           permission-pull-requests: write
           permission-issues: write
+          permission-statuses: write
 
       - name: renovate
         env:
