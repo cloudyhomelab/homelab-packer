@@ -1,3 +1,6 @@
 ---
 # the local journal only bridges shipper outages; history lives in the central store
 observability_journal_max_use: 200M
+
+# cgroup prefixes (e.g. "/apps.slice/") whose direct child units get per-unit metrics; empty disables it
+observability_unit_cgroups: []

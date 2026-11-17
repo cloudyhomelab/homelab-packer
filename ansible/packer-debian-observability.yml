@@ -44,6 +44,10 @@
       systemd_app_kind: source
       systemd_app_name: caddy-observability
 
+    - role: syslog_receiver
+
+    - role: nftables_dropins
+
     # one hostname per Caddy ingress, through the edge, so the served certificate is what is checked
     - role: tls_probe
       tls_probe_targets:

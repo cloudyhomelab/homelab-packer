@@ -17,3 +17,12 @@ observability_loki_url: https://loki.example/loki/api/v1/push
 ```
 
 The endpoints need not exist when a host boots: Alloy retries until they do.
+
+Optional:
+
+```yaml
+# per-unit CPU, memory, network, disk I/O and pressure (cAdvisor) for each direct child unit
+observability_unit_cgroups: ["/apps.slice/"]
+```
+
+Series carry `unit` and `service_name` (the unit without `.service`), matching the journal labels.
