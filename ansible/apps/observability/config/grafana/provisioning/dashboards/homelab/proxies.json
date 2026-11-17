@@ -385,7 +385,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum(count_over_time({service_name=\"systemd-haproxy-edge\"} | json | backend=\"reject_backend\" [24h]))",
+          "expr": "sum(count_over_time({service_name=\"systemd-haproxy-edge\"} | json | __error__=\"\" | backend=\"reject_backend\" [24h]))",
           "queryType": "instant"
         }
       ],
@@ -970,7 +970,7 @@
             "type": "loki",
             "uid": "loki"
           },
-          "expr": "sum by (backend, termination_state) (count_over_time({service_name=\"systemd-haproxy-edge\"} | json | termination_state!=\"--\" | termination_state!=\"CD\" [$__auto]))",
+          "expr": "sum by (backend, termination_state) (count_over_time({service_name=\"systemd-haproxy-edge\"} | json | __error__=\"\" | termination_state!=\"--\" | termination_state!=\"CD\" [$__auto]))",
           "queryType": "range",
           "legendFormat": "{{backend}} {{termination_state}}"
         }
