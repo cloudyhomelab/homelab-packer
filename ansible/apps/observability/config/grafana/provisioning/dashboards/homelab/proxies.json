@@ -1,0 +1,1327 @@
+{
+  "uid": "proxies",
+  "title": "Proxies",
+  "description": "All panels query Loki: Caddy access logs and the edge's connection log. If the 7d panels get slow, move counts, error rates and latency to Caddy's Prometheus metrics (global `metrics { per_host }`, collected by each VM's Alloy); clients, paths and user agents stay on Loki.",
+  "tags": [
+    "proxy",
+    "caddy",
+    "haproxy"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Requests (1h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [1h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Requests in the last 1h, whatever the time picker says",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 1
+    },
+    {
+      "type": "stat",
+      "title": "Requests (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 3,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [24h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Requests in the last 24h, whatever the time picker says",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 2
+    },
+    {
+      "type": "stat",
+      "title": "Requests (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [7d]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Requests in the last 7d, whatever the time picker says",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "5xx (1h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 9,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 500 [1h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Server errors in the last 1h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 4
+    },
+    {
+      "type": "stat",
+      "title": "5xx (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 500 [24h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Server errors in the last 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 5
+    },
+    {
+      "type": "stat",
+      "title": "5xx (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 15,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 500 [7d]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Server errors in the last 7d",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 6
+    },
+    {
+      "type": "stat",
+      "title": "Clients (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (client) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [24h])))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Distinct client addresses in the last 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 7
+    },
+    {
+      "type": "stat",
+      "title": "Unknown host (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 21,
+        "y": 0,
+        "w": 3,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({service_name=\"systemd-haproxy-edge\"} | json | backend=\"reject_backend\" [24h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Connections the edge refused for an SNI it does not route, last 24h",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 8
+    },
+    {
+      "type": "row",
+      "title": "Traffic",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 9
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests by site",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (host) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{host}}"
+        }
+      ],
+      "description": "Requests per interval, by site",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 10
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests by status",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (class) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | label_format class=`{{ substr 0 1 .status }}xx` [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{class}}"
+        }
+      ],
+      "description": "Requests per interval, by status class",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 11
+    },
+    {
+      "type": "row",
+      "title": "Top (time range)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 12
+    },
+    {
+      "type": "table",
+      "title": "Top sites",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 6,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (host) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Requests per site",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 13
+    },
+    {
+      "type": "table",
+      "title": "Top clients",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 14,
+        "w": 6,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (client) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Requests per client address",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 14
+    },
+    {
+      "type": "table",
+      "title": "Top paths",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 6,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (host, path) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | label_format path=`{{ regexReplaceAll \"[?].*\" .uri \"\" }}` [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Requests per site and path, query string removed",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 15
+    },
+    {
+      "type": "table",
+      "title": "Top user agents",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 14,
+        "w": 6,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (ua) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Requests per User-Agent; scripts and bots stand out here",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 16
+    },
+    {
+      "type": "row",
+      "title": "Errors",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 17
+    },
+    {
+      "type": "timeseries",
+      "title": "4xx and 5xx by site",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (host, status) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 400 [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{host}} {{status}}"
+        }
+      ],
+      "description": "Error responses per interval, by site and status",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 18
+    },
+    {
+      "type": "timeseries",
+      "title": "Edge connection failures",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 25,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (backend, termination_state) (count_over_time({service_name=\"systemd-haproxy-edge\"} | json | termination_state!=\"--\" | termination_state!=\"CD\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{backend}} {{termination_state}}"
+        }
+      ],
+      "description": "Edge connections that did not close cleanly, by backend and HAProxy termination state. CD (client went away) is left out: browsers drop spare connections all the time. SC with no server means the edge had no healthy Caddy for that backend.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 19
+    },
+    {
+      "type": "table",
+      "title": "Top errors",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 33,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(50, sum by (host, path, status, client) (count_over_time({container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 400 | label_format path=`{{ regexReplaceAll \"[?].*\" .uri \"\" }}` [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Error responses by site, path, status and client",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Requests"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 20
+    },
+    {
+      "type": "row",
+      "title": "Latency",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 43,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 21
+    },
+    {
+      "type": "timeseries",
+      "title": "p50 by site",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "quantile_over_time(0.5, {container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | unwrap dur [$__auto]) by (host)",
+          "queryType": "range",
+          "legendFormat": "{{host}}"
+        }
+      ],
+      "description": "Median time Caddy took to answer, including the upstream",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 22
+    },
+    {
+      "type": "timeseries",
+      "title": "p95 by site",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 44,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "quantile_over_time(0.95, {container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | unwrap dur [$__auto]) by (host)",
+          "queryType": "range",
+          "legendFormat": "{{host}}"
+        }
+      ],
+      "description": "95th percentile time Caddy took to answer, including the upstream",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "s"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "mean",
+            "max"
+          ],
+          "sortBy": "Max",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 23
+    },
+    {
+      "type": "row",
+      "title": "Logs",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 52,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 24
+    },
+    {
+      "type": "logs",
+      "title": "Error responses",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 53,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{container=~\"$caddy\"} |= \"handled request\" | json host=`request.host`, client=`request.client_ip`, method=`request.method`, uri=`request.uri`, status=`status`, dur=`duration`, size=`size`, ua=`request.headers[\"User-Agent\"][0]` | host=~\"(?i).*$site.*\" | client=~\"$client\" | status >= 400 | label_format path=`{{ regexReplaceAll \"[?].*\" .uri \"\" }}` | line_format `{{ printf \"%-16s\" .client }} {{ .status }} {{ printf \"%-6s\" .method }} {{ .host }}{{ .path }}  {{ .dur }}s`",
+          "queryType": "range"
+        }
+      ],
+      "description": "client, status, method, site and path, time taken",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": false,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      },
+      "id": 25
+    },
+    {
+      "type": "logs",
+      "title": "Caddy messages",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 65,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{container=~\"$caddy\"} != \"handled request\" | json | level=~\"warn|error\"",
+          "queryType": "range"
+        }
+      ],
+      "description": "Caddy's own warnings and errors: certificates, upstreams, config",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": false,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      },
+      "id": 26
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "type": "custom",
+        "name": "caddy",
+        "label": "Caddy",
+        "query": "caddy-mgmt,caddy-lab,caddy-iot,caddy-observability",
+        "multi": true,
+        "includeAll": true,
+        "allValue": "caddy-(mgmt|lab|iot|observability)",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "site",
+        "label": "Site contains",
+        "description": "Case-insensitive regex, matched anywhere in the host",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "client",
+        "label": "Client",
+        "description": "Regex on the client address",
+        "query": ".*",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        }
+      }
+    ]
+  }
+}
