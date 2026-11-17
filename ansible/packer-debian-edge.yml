@@ -21,3 +21,7 @@
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: haproxy-edge
+
+    - role: alloy_scrape
+      alloy_scrape_name: haproxy
+      alloy_scrape_address: 127.0.0.1:8405

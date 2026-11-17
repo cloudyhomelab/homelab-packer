@@ -1,0 +1,8 @@
+// instance is the hostname, as on the host metrics, so an alert names the machine
+prometheus.scrape "{{ alloy_scrape_name }}" {
+	targets         = [{"__address__" = "{{ alloy_scrape_address }}", "instance" = constants.hostname}]
+	job_name        = "{{ alloy_scrape_name }}"
+	metrics_path    = "{{ alloy_scrape_path }}"
+	scrape_interval = "{{ alloy_scrape_interval }}"
+	forward_to      = [prometheus.remote_write.central.receiver]
+}

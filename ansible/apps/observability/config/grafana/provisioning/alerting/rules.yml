@@ -161,7 +161,7 @@ groups:
   - orgId: 1
     name: proxies
     folder: Homelab
-    interval: 5m
+    interval: 1m
     rules:
       # the check runs hourly and logs only on a mismatch; 90m keeps this firing between runs
       - uid: proxy-trust-mismatch
@@ -187,3 +187,27 @@ groups:
               expression: A
               conditions:
                 - evaluator: {type: gt, params: [0]}
+
+      # one per edge backend server; MAINT covers an address that never resolved (init-addr none)
+      - uid: proxy-backend-down
+        title: Edge backend down
+        condition: C
+        for: 2m
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: haproxy_server_status{state="UP"}
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: lt, params: [1]}

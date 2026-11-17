@@ -1,0 +1,9 @@
+---
+# Alloy component label and Prometheus job name; letters, digits and underscores only
+alloy_scrape_name: ""
+# host:port of the local exporter
+alloy_scrape_address: ""
+# path the exporter serves its metrics on
+alloy_scrape_path: /metrics
+# how often the exporter is scraped
+alloy_scrape_interval: 60s
