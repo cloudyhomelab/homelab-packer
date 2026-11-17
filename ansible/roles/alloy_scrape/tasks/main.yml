@@ -1,0 +1,15 @@
+---
+- name: check that the scrape name and address are set
+  ansible.builtin.assert:
+    that:
+      - alloy_scrape_name is match('^[A-Za-z_][A-Za-z0-9_]*$')
+      - alloy_scrape_address | length > 0
+    fail_msg: alloy_scrape_name must be an identifier and alloy_scrape_address must be set
+
+- name: add the scrape to alloy
+  ansible.builtin.template:
+    src: scrape.alloy
+    dest: "/etc/alloy/{{ alloy_scrape_name }}.alloy"
+    owner: root
+    group: alloy
+    mode: '0640'
