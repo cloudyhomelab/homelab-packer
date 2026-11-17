@@ -12,3 +12,7 @@ podman_packages:
   - passt
   - podman
   - uidmap
+
+# Registry repositories podman may pull from, e.g. docker.io/library/caddy. Empty here, so an image
+# with no apps accepts nothing; quadlet_prepull fills it from the host's .image files.
+podman_allowed_repositories: []

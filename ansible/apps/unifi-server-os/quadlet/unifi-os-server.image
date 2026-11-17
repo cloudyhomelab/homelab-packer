@@ -1,2 +1,2 @@
 [Image]
-Image=ghcr.io/lemker/unifi-os-server:latest
+Image=ghcr.io/lemker/unifi-os-server:latest@sha256:c0136d42d238b9574d93676aada3f61971ffb6bcbe2a3050627a9fa7ced7c878

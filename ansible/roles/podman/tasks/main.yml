@@ -8,6 +8,7 @@
   loop:
     - /etc/containers
     - /etc/containers/containers.conf.d
+    - /etc/containers/registries.conf.d
     - /etc/containers/systemd
     - /etc/containers/systemd/container.d
 
@@ -43,3 +44,7 @@
     state: present
     autoremove: true
     install_recommends: false
+
+# after the packages: containers-common ships its own policy.json as a conffile
+- name: restrict which images podman accepts
+  ansible.builtin.include_tasks: policy.yml

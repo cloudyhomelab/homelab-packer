@@ -1,0 +1,15 @@
+- name: allow pulls only from the listed repositories
+  ansible.builtin.template:
+    src: policy.json
+    dest: /etc/containers/policy.json
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: refuse short image names
+  ansible.builtin.template:
+    src: 10-short-names.conf
+    dest: /etc/containers/registries.conf.d/
+    owner: root
+    group: root
+    mode: "0644"
