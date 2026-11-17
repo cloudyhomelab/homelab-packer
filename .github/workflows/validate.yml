@@ -52,3 +52,70 @@ jobs:
             "${RUNNER_TEMP}/cpctl" logs "${JOB_ID}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+  # GitHub-hosted: it needs a container runtime, public images only, and no internal network
+  proxy-configs:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # the image ref comes from the app's .image file, so a Renovate bump is checked against the new version
+      - name: check haproxy configs
+        run: |
+          status=0
+          for cfg in ansible/apps/*/config/haproxy.cfg; do
+            app=$(basename "$(dirname "$(dirname "$cfg")")")
+            image=$(sed -n 's/^Image=//p' "ansible/apps/$app/quadlet/$app.image")
+            echo "::group::$app ($image)"
+            if ! docker run --rm --network none -v "$PWD/$cfg:/check/haproxy.cfg:ro" "$image" \
+                haproxy -c -f /check/haproxy.cfg; then
+              echo "::error file=$cfg::haproxy -c failed"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"
+
+      # adapt, not validate: validate loads the tls certificate files, which exist only on the VMs
+      - name: check Caddyfiles
+        run: |
+          status=0
+          for cfg in ansible/apps/*/config/Caddyfile; do
+            app=$(basename "$(dirname "$(dirname "$cfg")")")
+            image=$(sed -n 's/^Image=//p' "ansible/apps/$app/quadlet/$app.image")
+            echo "::group::$app ($image)"
+            if ! docker run --rm --network none -v "$PWD/$cfg:/check/Caddyfile:ro" "$image" \
+                caddy adapt --config /check/Caddyfile --adapter caddyfile > /dev/null; then
+              echo "::error file=$cfg::caddy adapt failed"
+              status=1
+            fi
+            formatted=$(docker run --rm --network none -v "$PWD/$cfg:/check/Caddyfile:ro" "$image" \
+                caddy fmt /check/Caddyfile)
+            if ! diff -u "$cfg" <(printf '%s\n' "$formatted"); then
+              echo "::error file=$cfg::not formatted as caddy fmt would; apply the diff above"
+              status=1
+            fi
+            echo "::endgroup::"
+          done
+          exit "$status"
+
+  # the single required check for merging; skipped or failed jobs above fail it
+  all-checks-passed:
+    name: all checks passed
+    if: ${{ always() }}
+    needs: [validate, proxy-configs]
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: fail unless every job succeeded
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "results: $RESULTS"
+          for result in $RESULTS; do
+            [ "$result" = success ] || exit 1
+          done

@@ -1,42 +1,42 @@
 {
-    servers :443 {
-        # edge-ctl; a PROXY header from any other source is ignored, not trusted
-        listener_wrappers {
-            proxy_protocol {
-                allow 10.88.0.211/32
-            }
-            tls
-        }
-    }
+	servers :443 {
+		# edge-ctl; a PROXY header from any other source is ignored, not trusted
+		listener_wrappers {
+			proxy_protocol {
+				allow 10.88.0.211/32
+			}
+			tls
+		}
+	}
 }
 
 # issued centrally by the acme app and fetched by caddy-iot-cert
 (wildcard) {
-    tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
+	tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
 }
 
 (upstream) {
-    header_up Host {host}
+	header_up Host {host}
 }
 
 (access_log) {
-    log
+	log
 }
 
 # the edge routes by SNI, but browsers reuse an HTTP/2 connection for any host the wildcard
 # certificate covers; 421 makes them retry on a new connection that reaches the right caddy
 *.cloudyhome.net {
-    import wildcard
-    import access_log
+	import wildcard
+	import access_log
 
-    respond 421
+	respond 421
 }
 
 homeassistant.cloudyhome.net {
-    import wildcard
-    import access_log
+	import wildcard
+	import access_log
 
-    reverse_proxy http://homeassistant.ip.cloudyhome.net:8123 {
-        import upstream
-    }
+	reverse_proxy http://homeassistant.ip.cloudyhome.net:8123 {
+		import upstream
+	}
 }
