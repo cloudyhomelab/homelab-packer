@@ -1,0 +1,37 @@
+---
+- name: check that the config and name are set
+  ansible.builtin.assert:
+    that:
+      - proxy_trust_check_config | length > 0
+      - proxy_trust_check_name | length > 0
+    fail_msg: proxy_trust_check_config and proxy_trust_check_name must be set
+
+- name: install the proxy trust check script
+  ansible.builtin.copy:
+    src: proxy-trust-check
+    dest: /usr/local/sbin/proxy-trust-check
+    owner: root
+    group: root
+    mode: "755"
+
+- name: install the proxy trust check service
+  ansible.builtin.template:
+    src: proxy-trust-check.service
+    dest: /etc/systemd/system/proxy-trust-check.service
+    owner: root
+    group: root
+    mode: "644"
+
+- name: install the proxy trust check timer
+  ansible.builtin.copy:
+    src: proxy-trust-check.timer
+    dest: /etc/systemd/system/proxy-trust-check.timer
+    owner: root
+    group: root
+    mode: "644"
+
+- name: enable the proxy trust check timer
+  ansible.builtin.systemd_service:
+    name: proxy-trust-check.timer
+    enabled: true
+    daemon_reload: true

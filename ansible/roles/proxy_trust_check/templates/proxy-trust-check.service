@@ -1,0 +1,12 @@
+[Unit]
+Description=Check the trusted PROXY protocol sources against DNS
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/proxy-trust-check {{ proxy_trust_check_config }} {{ proxy_trust_check_name }}
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true

@@ -26,6 +26,10 @@
       systemd_app_kind: source
       systemd_app_name: caddy-mgmt
 
+    - role: proxy_trust_check
+      proxy_trust_check_config: /var/app/caddy-mgmt/config/Caddyfile
+      proxy_trust_check_name: edge-ctl.ip.cloudyhome.net
+
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
       systemd_app_name: acme
