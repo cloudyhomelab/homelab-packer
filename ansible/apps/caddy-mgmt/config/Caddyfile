@@ -1,3 +1,15 @@
+{
+    servers :443 {
+        # edge-ctl; a PROXY header from any other source is ignored, not trusted
+        listener_wrappers {
+            proxy_protocol {
+                allow 10.88.0.211/32
+            }
+            tls
+        }
+    }
+}
+
 # issued centrally by the acme app and fetched by caddy-mgmt-cert
 (wildcard) {
     tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
@@ -7,16 +19,22 @@
     header_up Host {host}
 }
 
+(access_log) {
+    log
+}
+
 # the edge routes by SNI, but browsers reuse an HTTP/2 connection for any host the wildcard
 # certificate covers; 421 makes them retry on a new connection that reaches the right caddy
 *.cloudyhome.net {
     import wildcard
+    import access_log
 
     respond 421
 }
 
 gateway.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://gateway.ip.cloudyhome.net:8443 {
         import upstream
@@ -29,6 +47,7 @@ gateway.cloudyhome.net {
 
 sw1.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://sw1.ip.cloudyhome.net:443 {
         import upstream
@@ -41,6 +60,7 @@ sw1.cloudyhome.net {
 
 uos.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://uos.ip.cloudyhome.net:11443 {
         import upstream
@@ -53,6 +73,7 @@ uos.cloudyhome.net {
 
 proxmox.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://pve1.ip.cloudyhome.net:8006 \
                   https://pve2.ip.cloudyhome.net:8006 \
@@ -73,6 +94,7 @@ proxmox.cloudyhome.net {
 
 pve-edge.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://pve-lab-1.ip.cloudyhome.net:8006 {
         import upstream
@@ -81,6 +103,7 @@ pve-edge.cloudyhome.net {
 
 pve-infra.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy https://pve-infra-1.ip.cloudyhome.net:8006 {
         import upstream
@@ -89,6 +112,7 @@ pve-infra.cloudyhome.net {
 
 s3.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy moria.ip.cloudyhome.net:9002 {
         import upstream
@@ -97,6 +121,7 @@ s3.cloudyhome.net {
 
 s3-api.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy moria.ip.cloudyhome.net:9000 {
         import upstream
@@ -105,6 +130,7 @@ s3-api.cloudyhome.net {
 
 nas.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy moria.ip.cloudyhome.net:80 {
         import upstream
@@ -113,6 +139,7 @@ nas.cloudyhome.net {
 
 netbox.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy netbox.ip.cloudyhome.net:8080 {
         import upstream

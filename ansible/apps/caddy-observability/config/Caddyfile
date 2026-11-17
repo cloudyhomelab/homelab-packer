@@ -1,3 +1,15 @@
+{
+    servers :443 {
+        # edge-ctl; a PROXY header from any other source is ignored, not trusted
+        listener_wrappers {
+            proxy_protocol {
+                allow 10.88.0.211/32
+            }
+            tls
+        }
+    }
+}
+
 # issued centrally by the acme app and fetched by caddy-observability-cert
 (wildcard) {
     tls /data/wildcard/_.cloudyhome.net.crt /data/wildcard/_.cloudyhome.net.key
@@ -7,16 +19,22 @@
     header_up Host {host}
 }
 
+(access_log) {
+    log
+}
+
 # the edge routes by SNI, but browsers reuse an HTTP/2 connection for any host the wildcard
 # certificate covers; 421 makes them retry on a new connection that reaches the right caddy
 *.cloudyhome.net {
     import wildcard
+    import access_log
 
     respond 421
 }
 
 grafana.cloudyhome.net {
     import wildcard
+    import access_log
 
     reverse_proxy grafana:3000 {
         import upstream
@@ -25,11 +43,15 @@ grafana.cloudyhome.net {
 
 prometheus.cloudyhome.net {
     import wildcard
+    import access_log
 
     @ingest {
         method POST
         path /api/v1/write
     }
+
+    # every host pushes continuously; a line per push would flood loki with itself
+    log_skip @ingest
 
     handle @ingest {
         reverse_proxy prometheus:9090 {
@@ -42,11 +64,15 @@ prometheus.cloudyhome.net {
 
 loki.cloudyhome.net {
     import wildcard
+    import access_log
 
     @ingest {
         method POST
         path /loki/api/v1/push
     }
+
+    # every host pushes continuously; a line per push would flood loki with itself
+    log_skip @ingest
 
     handle @ingest {
         reverse_proxy loki:3100 {
