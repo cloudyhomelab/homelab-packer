@@ -1,0 +1,5 @@
+---
+# file whose `allow <address>[/32]` lines list the trusted PROXY protocol sources
+proxy_trust_check_config: ""
+# DNS name that must resolve to exactly the allowed addresses
+proxy_trust_check_name: ""

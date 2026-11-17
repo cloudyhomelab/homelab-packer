@@ -1,0 +1,24 @@
+#!/bin/sh
+# Usage: proxy-trust-check <config> <name>
+# Silent on a match; a warning on a mismatch; exits non-zero when it cannot compare at all.
+set -eu
+
+config=$1
+name=$2
+
+allowed=$(awk '$1 == "allow" { for (i = 2; i <= NF; i++) { sub("/32$", "", $i); print $i } }' "$config" | sort -u)
+if [ -z "$allowed" ]; then
+    echo "no allow entries in $config" >&2
+    exit 1
+fi
+
+resolved=$(getent ahostsv4 "$name" | awk '{ print $1 }' | sort -u)
+if [ -z "$resolved" ]; then
+    echo "cannot resolve $name" >&2
+    exit 1
+fi
+
+if [ "$allowed" != "$resolved" ]; then
+    # <4> is the journal's warning priority
+    echo "<4>mismatch: $config allows" $allowed "but $name resolves to" $resolved
+fi
