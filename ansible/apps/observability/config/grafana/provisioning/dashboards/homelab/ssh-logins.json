@@ -1,0 +1,964 @@
+{
+  "uid": "ssh-logins",
+  "title": "SSH logins",
+  "description": "All panels query Loki: sshd's journal on every VM. A rejected line is one sshd logs at its default INFO level, so single failed key offers within MaxAuthTries do not show up; bare pre-auth disconnects (port scans, TCP health checks) are left out.",
+  "tags": [
+    "ssh",
+    "security"
+  ],
+  "editable": true,
+  "schemaVersion": 41,
+  "time": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      {
+        "type": "query",
+        "name": "host",
+        "label": "Host",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": "label_values({unit=~\"sshd?\\\\.service\"}, instance)",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "user",
+        "label": "User",
+        "description": "Regex on the account name",
+        "query": ".*",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        }
+      },
+      {
+        "type": "textbox",
+        "name": "client",
+        "label": "Client",
+        "description": "Regex on the client address",
+        "query": ".*",
+        "current": {
+          "text": ".*",
+          "value": ".*"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "type": "stat",
+      "title": "Logins (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [24h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Successful logins in the last 24h, whatever the time picker says",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 1
+    },
+    {
+      "type": "stat",
+      "title": "Logins (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [7d]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Successful logins in the last 7d, whatever the time picker says",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 2
+    },
+    {
+      "type": "stat",
+      "title": "Users (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (user) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [7d])))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Distinct accounts that logged in during the last 7d",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 3
+    },
+    {
+      "type": "stat",
+      "title": "Source IPs (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (client) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [7d])))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Distinct client addresses with a successful login in the last 7d",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 4
+    },
+    {
+      "type": "stat",
+      "title": "Rejected (24h)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |~ \"Invalid user |authenticating user |maximum authentication attempts|Certificate invalid|Failed \" | regexp `(?:user|for) (?P<user>\\S+) (?:from )?(?P<client>\\S+) port \\d+` | user=~\"$user|\" | client=~\"$client|\" [24h]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Authentication failures in the last 24h: unknown user, bad or expired certificate, too many attempts",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 5
+    },
+    {
+      "type": "stat",
+      "title": "Rejected (7d)",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 0,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |~ \"Invalid user |authenticating user |maximum authentication attempts|Certificate invalid|Failed \" | regexp `(?:user|for) (?P<user>\\S+) (?:from )?(?P<client>\\S+) port \\d+` | user=~\"$user|\" | client=~\"$client|\" [7d]))",
+          "queryType": "instant"
+        }
+      ],
+      "description": "Authentication failures in the last 7d",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          },
+          "noValue": "0",
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "id": 6
+    },
+    {
+      "type": "row",
+      "title": "Logins",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 7
+    },
+    {
+      "type": "timeseries",
+      "title": "Logins by host",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (instance) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "description": "Successful logins per interval, by VM",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 8
+    },
+    {
+      "type": "timeseries",
+      "title": "Logins by user",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (user) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{user}}"
+        }
+      ],
+      "description": "Successful logins per interval, by account",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 9
+    },
+    {
+      "type": "table",
+      "title": "By user and host",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 13,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (user, instance) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [$__range]))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Logins per account on each VM",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Logins"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 10
+    },
+    {
+      "type": "table",
+      "title": "By source",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 13,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (client, user) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [$__range]))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Logins per client address and account",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Logins"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 11
+    },
+    {
+      "type": "table",
+      "title": "By certificate",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 13,
+        "w": 8,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (key_id, serial, user) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" [$__range]))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Logins per certificate key ID and serial; one serial is one issued certificate",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Logins"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 12
+    },
+    {
+      "type": "row",
+      "title": "Rejected",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 23,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 13
+    },
+    {
+      "type": "timeseries",
+      "title": "Rejected by host",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 24,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (instance) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |~ \"Invalid user |authenticating user |maximum authentication attempts|Certificate invalid|Failed \" | regexp `(?:user|for) (?P<user>\\S+) (?:from )?(?P<client>\\S+) port \\d+` | user=~\"$user|\" | client=~\"$client|\" [$__auto]))",
+          "queryType": "range",
+          "legendFormat": "{{instance}}"
+        }
+      ],
+      "description": "Authentication failures per interval, by VM",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "stacking": {
+              "mode": "normal"
+            }
+          },
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ],
+          "sortBy": "Total",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "id": 14
+    },
+    {
+      "type": "table",
+      "title": "Rejected by source",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 24,
+        "w": 12,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(50, sum by (client, user, instance) (count_over_time({unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |~ \"Invalid user |authenticating user |maximum authentication attempts|Certificate invalid|Failed \" | regexp `(?:user|for) (?P<user>\\S+) (?:from )?(?P<client>\\S+) port \\d+` | user=~\"$user|\" | client=~\"$client|\" [$__range])))",
+          "queryType": "instant",
+          "format": "table"
+        }
+      ],
+      "description": "Authentication failures per client address, attempted account and VM; empty where sshd logs no address",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-BlYlRd"
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byType",
+              "options": "number"
+            },
+            "properties": [
+              {
+                "id": "displayName",
+                "value": "Failures"
+              },
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic",
+                  "valueDisplayMode": "text"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "transformations": [
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Value #A",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "id": 15
+    },
+    {
+      "type": "row",
+      "title": "Logs",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 34,
+        "w": 24,
+        "h": 1
+      },
+      "panels": [],
+      "id": 16
+    },
+    {
+      "type": "logs",
+      "title": "Logins",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 35,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |= \"Accepted \" | regexp `Accepted (?P<method>\\S+) for (?P<user>\\S+) from (?P<client>\\S+) port \\d+ [^\\s:]+(?:: \\S+ \\S+(?: ID (?P<key_id>.*) \\(serial (?P<serial>\\d+)\\))?)?` | user=~\"$user\" | client=~\"$client\" | line_format `{{ printf \"%-16s\" .instance }} {{ printf \"%-12s\" .user }} from {{ printf \"%-16s\" .client }} {{ .method }} {{ with .key_id }}ID {{ . }} serial {{ $.serial }}{{ end }}`",
+          "queryType": "range"
+        }
+      ],
+      "description": "Every successful login, newest first",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true
+      },
+      "id": 17
+    },
+    {
+      "type": "logs",
+      "title": "Rejected",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 47,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{unit=~\"sshd?\\\\.service\", instance=~\"$host\"} |~ \"Invalid user |authenticating user |maximum authentication attempts|Certificate invalid|Failed \" | regexp `(?:user|for) (?P<user>\\S+) (?:from )?(?P<client>\\S+) port \\d+` | user=~\"$user|\" | client=~\"$client|\"",
+          "queryType": "range"
+        }
+      ],
+      "description": "Raw sshd lines for every authentication failure",
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true
+      },
+      "id": 18
+    }
+  ]
+}
