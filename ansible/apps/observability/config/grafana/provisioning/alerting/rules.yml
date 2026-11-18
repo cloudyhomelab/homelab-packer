@@ -211,3 +211,164 @@ groups:
               expression: A
               conditions:
                 - evaluator: {type: lt, params: [1]}
+
+  - orgId: 1
+    name: disks
+    folder: Homelab
+    interval: 1m
+    rules:
+      - uid: disk-smart-failed
+        title: Disk SMART health failed
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: smartctl_device_smart_status
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: lt, params: [1]}
+
+      # any growth rather than a count: old disks carry a stable number for years, while a rising one
+      # is failing; the 24h window keeps it firing for a day after the change
+      - uid: disk-defects-growing
+        title: Disk defect count growing
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                delta(smartctl_device_attribute{attribute_value_type="raw",
+                attribute_name=~"Reallocated_Sector_Ct|Reallocated_Event_Count|Current_Pending_Sector|Offline_Uncorrectable|Reported_Uncorrect|Added_Bad_Flash_Blk_Ct|Program_Fail_Cnt_Total|Erase_Fail_Count_Total|Uncorrectable_Error_Cnt|Used_Rsvd_Blk_Cnt_Tot"}[24h])
+                or delta(smartctl_device_media_errors[24h])
+                or delta(smartctl_scsi_grown_defect_list[24h])
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
+
+      - uid: disk-nvme-warning
+        title: NVMe critical warning
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: smartctl_device_critical_warning
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
+
+      # percent of rated endurance; leaves time to buy a replacement. SATA SSDs have no such figure:
+      # the normalized Wear_Leveling_Count counts down from 100 as life remaining
+      - uid: disk-worn
+        title: SSD wear high
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                smartctl_device_percentage_used
+                or smartctl_scsi_percentage_used_endurance_indicator
+                or (100 - smartctl_device_attribute{attribute_name="Wear_Leveling_Count", attribute_value_type="value"})
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [80]}
+
+      # spinning disks wear faster above 50 °C; flash is rated hotter
+      - uid: disk-hot
+        title: Disk running hot
+        condition: C
+        for: 15m
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                (smartctl_device_temperature{temperature_type="current"} > 50
+                and on (instance, device) smartctl_device_rotation_rate > 0)
+                or smartctl_device_temperature{temperature_type="current"} > 70
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
+
+      # as host-down: lists sources that reported SMART data in the last 24h but not in the last 5m
+      - uid: disk-smart-missing
+        title: SMART data stopped
+        condition: C
+        for: 30m
+        noDataState: OK
+        execErrState: Error
+        data:
+          - refId: A
+            relativeTimeRange: {from: 600, to: 0}
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: >-
+                group by (instance) (max_over_time(smartctl_devices[24h]))
+                unless group by (instance) (smartctl_devices)
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: {type: gt, params: [0]}
