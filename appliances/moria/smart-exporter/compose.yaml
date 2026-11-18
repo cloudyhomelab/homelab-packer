@@ -1,0 +1,41 @@
+services:
+  smartctl-exporter:
+    image: quay.io/prometheuscommunity/smartctl-exporter:v0.15.0@sha256:a76e08dbf5db4781fefd1ed81c65ad46ae8d2849dae6b6d3acebcde2fc4e59d6
+    # privileged instead of a device list: the exporter rescans, so a replaced disk is picked up
+    # without editing the app
+    privileged: true
+    user: root
+    restart: unless-stopped
+
+  # pushes instead of being scraped, so nothing on the NAS listens for the network
+  alloy:
+    image: docker.io/grafana/alloy:v1.22.0@sha256:9acc2529bc1edb7f5b2bd801dd8334ebc80c158e3a9e5526ecd7c9a273d43189
+    restart: unless-stopped
+    depends_on:
+      - smartctl-exporter
+    configs:
+      - source: alloy
+        target: /etc/alloy/config.alloy
+
+# inline, so the app is this one file pasted into TrueNAS, with nothing to copy onto a dataset
+configs:
+  alloy:
+    content: |
+      logging {
+        level  = "warn"
+        format = "json"
+      }
+
+      // instance names the NAS, as the VMs' hostnames do; the container's hostname is its ID
+      prometheus.scrape "smartctl" {
+        targets         = [{"__address__" = "smartctl-exporter:9633", "instance" = "moria"}]
+        job_name        = "smartctl"
+        scrape_interval = "60s"
+        forward_to      = [prometheus.remote_write.central.receiver]
+      }
+
+      prometheus.remote_write "central" {
+        endpoint {
+          url = "https://prometheus.cloudyhome.net/api/v1/write"
+        }
+      }

@@ -14,6 +14,7 @@ change to an image does not need to stay compatible with earlier builds or clean
 - `upstream/<os>/`: the Packer template, build-time cloud-init, guest scripts and test seed per OS.
 - `ansible/`: the playbooks (`packer-<os>-<image>.yml`), roles, and container apps (`apps/`).
 - `src/imagectl/`: the driver.
+- `appliances/<host>/`: config for hand-managed hosts outside the image tree, applied through their own UI.
 
 ## Host tools
 
