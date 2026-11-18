@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/dialmaster/youtarr:v1.92.0@sha256:6f5c22bc46e5fc3fee42b6a721b2721d926e4de554bd92d2ec8b905d0f7f11f6
+Image=docker.io/dialmaster/youtarr:v1.93.0@sha256:2d2c9980e2f2a01ca9da79fb7de6fe68e62f56ad2ff88cc702ad6dcc2a01b711
