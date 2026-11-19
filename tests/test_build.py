@@ -285,3 +285,51 @@ def test_build_stops_before_packer_on_a_storage_or_range_problem(catalog, monkey
     options = build.BuildOptions()
     with pytest.raises(BuildError, match="debian-edge: bad"):
         build.run_build(catalog, catalog.get("debian-edge"), lambda image: None, options)
+
+
+@pytest.fixture
+def stop(monkeypatch):
+    fresh = build.Stop()
+    monkeypatch.setattr(build, "stop", fresh)
+    return fresh
+
+
+def test_stop_cancels_a_running_packer(tmp_path, stop):
+    log = tmp_path / "packer.log"
+    # the shell exits on SIGINT, as packer does once it has cleaned up
+    cmd = ["sh", "-c", "echo started; sleep 30"]
+    threading.Timer(0.5, stop._handle, (build.signal.SIGINT, None)).start()
+    started = time.monotonic()
+    with pytest.raises(build.Interrupted):
+        build.run_logged(cmd, tmp_path, {"PATH": "/usr/bin:/bin"}, log, False, "x")
+    assert time.monotonic() - started < 10
+    assert "started" in log.read_text()
+
+
+def test_stop_starts_no_new_packer(tmp_path, stop):
+    stop.requested.set()
+    marker = tmp_path / "ran"
+    with pytest.raises(build.Interrupted):
+        build.run_logged(
+            ["touch", str(marker)],
+            tmp_path,
+            {"PATH": "/usr/bin:/bin"},
+            tmp_path / "log",
+            False,
+            "x",
+        )
+    assert not marker.exists()
+
+
+def test_stop_skips_images_not_yet_started(catalog, stop):
+    started = []
+
+    def fake(image):
+        started.append(image.name)
+        stop.requested.set()
+
+    due = [i.name for i in catalog.ordered()]
+    outcomes = run_scheduled(catalog, due, fake, jobs=1)
+    assert len(started) == 1
+    skipped = [name for name, o in outcomes.items() if o == build.Outcome("skipped", "interrupted")]
+    assert len(skipped) == len(due) - 1

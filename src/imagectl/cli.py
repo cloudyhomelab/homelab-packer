@@ -339,6 +339,7 @@ def cmd_build(
     target = catalog.get(image)
     env = packer.environment(root, build.packer_cache_dir(root), build.install_collections(root))
     build.packer_init(root, [target], env)
+    build.stop.install()
     try:
         build_dir = build.run_build(
             catalog,
@@ -346,6 +347,9 @@ def cmd_build(
             lambda img: preflight.fetch_latest(catalog, img),
             build.BuildOptions(verbose=verbose, keep=keep),
         )
+    except build.Interrupted as e:
+        fail(str(e))
+        return build.INTERRUPTED_EXIT
     except build.BuildError as e:
         return fail(str(e))
     if keep:
@@ -427,11 +431,14 @@ def cmd_publish(
             catalog, image, store.latest, build.BuildOptions(verbose=verbose), publisher
         )
 
+    build.stop.install()
     outcomes = build.run_scheduled(catalog, [d.image for d in due], build_one, jobs)
     print()
     rows = [["IMAGE", "RESULT", "DETAIL"]]
     rows += [[name, o.status, o.detail] for name, o in outcomes.items()]
     print(table(rows))
+    if build.stop.requested.is_set():
+        return build.INTERRUPTED_EXIT
     failed = any(o.status != "ok" for o in outcomes.values())
     return 1 if failed or hashes.errors else 0
 

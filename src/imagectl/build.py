@@ -7,9 +7,11 @@ import hashlib
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import urllib.request
 from collections.abc import Callable, Iterator
 from concurrent.futures import FIRST_COMPLETED, Future, ThreadPoolExecutor, wait
@@ -31,8 +33,81 @@ Publisher = Callable[[Build, Path, Path | None], None]
 Download = Callable[[str, Path], None]
 
 
+# the shell convention for a process ended by SIGINT
+INTERRUPTED_EXIT = 128 + signal.SIGINT
+STOP_SIGNALS = (signal.SIGINT, signal.SIGTERM)
+
+
 class BuildError(Exception):
     pass
+
+
+class Interrupted(BuildError):
+    pass
+
+
+class Stop:
+    """SIGINT/SIGTERM handling for packer runs.
+
+    The first signal cancels every packer, starts nothing new and skips publishing, but lets an
+    upload in progress finish. A second one kills the packers and exits at once.
+    """
+
+    def __init__(self) -> None:
+        self.requested = threading.Event()
+        # reentrant: the handler runs on the main thread, possibly while it holds the lock
+        self._lock = threading.RLock()
+        self._children: set[subprocess.Popen] = set()
+
+    def install(self) -> None:
+        for sig in STOP_SIGNALS:
+            signal.signal(sig, self._handle)
+
+    def check(self) -> None:
+        if self.requested.is_set():
+            raise Interrupted("interrupted")
+
+    @contextmanager
+    def track(self, proc: subprocess.Popen) -> Iterator[None]:
+        with self._lock:
+            self._children.add(proc)
+            # a signal between Popen and here would otherwise miss this packer
+            if self.requested.is_set():
+                self._signal(proc, signal.SIGINT)
+        try:
+            yield
+        finally:
+            with self._lock:
+                self._children.discard(proc)
+
+    def _handle(self, signum: int, frame: object) -> None:
+        if self.requested.is_set():
+            print("imagectl: killing packer and exiting", file=sys.stderr, flush=True)
+            self._signal_all(signal.SIGKILL)
+            # an upload runs in a worker thread, which nothing else can stop
+            os._exit(INTERRUPTED_EXIT)
+        self.requested.set()
+        name = signal.Signals(signum).name
+        print(
+            f"imagectl: {name}, cancelling builds; send it again to kill packer",
+            file=sys.stderr,
+            flush=True,
+        )
+        self._signal_all(signal.SIGINT)
+
+    def _signal_all(self, sig: int) -> None:
+        with self._lock:
+            for proc in self._children:
+                self._signal(proc, sig)
+
+    @staticmethod
+    def _signal(proc: subprocess.Popen, sig: int) -> None:
+        # the whole group, as a terminal would: packer, its plugins, QEMU and ansible
+        with suppress(ProcessLookupError):
+            os.killpg(proc.pid, sig)
+
+
+stop = Stop()
 
 
 def build_root(root: Path) -> Path:
@@ -77,6 +152,8 @@ def run_logged(
     with log_path.open("a", encoding="utf-8") as log:
         log.write(f"$ {' '.join(cmd[:2])} ...\n")
         log.flush()
+        stop.check()
+        # its own session, so only Stop signals it and it can kill the whole group
         proc = subprocess.Popen(
             cmd,
             cwd=cwd,
@@ -85,15 +162,18 @@ def run_logged(
             stderr=subprocess.STDOUT,
             text=True,
             errors="replace",
+            start_new_session=True,
         )
-        assert proc.stdout is not None
-        for line in proc.stdout:
-            log.write(line)
-            if verbose:
-                sys.stdout.write(f"[{prefix}] {line}")
-                sys.stdout.flush()
-        code = proc.wait()
+        with stop.track(proc):
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                log.write(line)
+                if verbose:
+                    sys.stdout.write(f"[{prefix}] {line}")
+                    sys.stdout.flush()
+            code = proc.wait()
     if code != 0:
+        stop.check()
         raise BuildError(f"{cmd[0]} {cmd[1]} failed with exit code {code}, see {log_path}")
 
 
@@ -213,6 +293,7 @@ def run_upstream(
             raise BuildError(f"{source.url}: {e}") from None
         verify(image_path, source.checksum)
         if publisher is not None:
+            stop.check()
             git = packer.git_info(root)
             publisher(Build(image, source, clock, "", git), image_path, None)
         if not options.keep:
@@ -277,6 +358,7 @@ def run_build(
         if not inputs.sbom_file.is_file():
             raise BuildError(f"packer finished but {inputs.sbom_file} does not exist")
         if publisher is not None:
+            stop.check()
             datasets = storage.image_datasets(catalog, image)
             published = tuple(d.published() for d in datasets)
             result = Build(image, source, clock, image_hash, git, published)
@@ -331,6 +413,10 @@ def run_scheduled(
 
     with ThreadPoolExecutor(max_workers=jobs) as pool:
         while pending or running:
+            if stop.requested.is_set():
+                for name in pending:
+                    results[name] = Outcome("skipped", "interrupted")
+                pending.clear()
             for name in list(pending):
                 parent = catalog.get(name).parent
                 if parent in due_set:
