@@ -4,6 +4,10 @@ podman_default_subnet_pools:
   - base: 172.31.0.0/16
     size: 24
 
+# seconds between SIGTERM and SIGKILL; below the units' 90s stop timeout, so podman ends a hung
+# container before systemd does
+podman_stop_timeout: 60
+
 podman_packages:
   - aardvark-dns
   - catatonit
