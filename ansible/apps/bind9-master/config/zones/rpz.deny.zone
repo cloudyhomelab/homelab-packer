@@ -1,0 +1,8 @@
+$TTL 300
+@ SOA ns1.cloudyhome.net. hostmaster.cloudyhome.net. 1 12h 15m 3w 300
+  NS  ns1.cloudyhome.net.
+;
+; Names here are blocked even when rpz.allow lists them.
+; An entry covers only its exact name; block subdomains with a wildcard as well:
+;   example.com    CNAME .
+;   *.example.com  CNAME .
