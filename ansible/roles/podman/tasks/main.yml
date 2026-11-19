@@ -38,6 +38,14 @@
     group: root
     mode: "0644"
 
+- name: give containers time to stop cleanly
+  ansible.builtin.template:
+    src: 30-stop-timeout.conf
+    dest: /etc/containers/containers.conf.d/
+    owner: root
+    group: root
+    mode: "0644"
+
 - name: install podman and related packages
   ansible.builtin.apt:
     name: "{{ podman_packages }}"
