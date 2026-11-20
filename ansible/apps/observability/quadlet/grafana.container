@@ -20,7 +20,7 @@ Environment=GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
 Environment=GF_LOG_CONSOLE_FORMAT=json
 # alert messages link here
 Environment=GF_SERVER_ROOT_URL=https://grafana.cloudyhome.net
-# GF_SECURITY_ADMIN_PASSWORD, TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID, decrypted on the VM from private/grafana.sops.env
+# the secrets, decrypted on the VM from private/grafana.sops.env
 EnvironmentFile=/run/app/observability/private/grafana.env
 LogDriver=journald
 
