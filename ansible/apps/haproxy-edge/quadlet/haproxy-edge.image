@@ -1,2 +1,2 @@
 [Image]
-Image=docker.io/library/haproxy:3.4@sha256:f6d2ee87b47192d9cc8c22e88fef405122ff339859644883edc2a7d1827f87b3
+Image=docker.io/library/haproxy:3.4@sha256:2d4b1f47a36ad0bc7425adf3fea6079023ae2ce3a964c2a084f454645d6be223
