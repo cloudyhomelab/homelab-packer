@@ -1,0 +1,8 @@
+---
+# Quadlet .image file whose Grafana runs the installs, so each plugin is the newest release that
+# Grafana supports
+grafana_plugins_image_file: ""
+# plugin IDs as grafana.com lists them
+grafana_plugins_ids: []
+# outside the persistent data, so every image build replaces the plugins
+grafana_plugins_dir: /usr/local/share/grafana/plugins

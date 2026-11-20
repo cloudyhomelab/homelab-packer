@@ -1,0 +1,48 @@
+---
+- name: check that the image file and plugins are set
+  ansible.builtin.assert:
+    that:
+      - grafana_plugins_image_file | length > 0
+      - grafana_plugins_ids | length > 0
+    fail_msg: grafana_plugins_image_file and grafana_plugins_ids must be set
+
+- name: create the plugin directory
+  ansible.builtin.file:
+    path: "{{ grafana_plugins_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+# root in the container, so it can write the root-owned directory; the image must already be pulled,
+# since the podman policy refuses pulls until quadlet_prepull allows them
+- name: install the Grafana plugins
+  vars:
+    grafana_plugins_image: >-
+      {{ lookup('ansible.builtin.file', grafana_plugins_image_file) | quadlet_image }}
+  ansible.builtin.command:
+    argv:
+      - podman
+      - run
+      - --rm
+      - --user=0
+      - --entrypoint=grafana
+      - --volume={{ grafana_plugins_dir }}:/plugins
+      - "{{ grafana_plugins_image }}"
+      - cli
+      - --pluginsDir=/plugins
+      - plugins
+      - install
+      - "{{ item }}"
+    creates: "{{ grafana_plugins_dir }}/{{ item }}/plugin.json"
+  loop: "{{ grafana_plugins_ids }}"
+
+# the Grafana container runs as a non-root user
+- name: let every user read the plugins
+  ansible.builtin.file:
+    path: "{{ grafana_plugins_dir }}"
+    state: directory
+    recurse: true
+    owner: root
+    group: root
+    mode: u=rwX,go=rX

@@ -143,3 +143,15 @@ def test_podman_image_policy_without_repositories_accepts_nothing():
         "default": [{"type": "reject"}],
         "transports": {"docker": {}},
     }
+
+
+def test_quadlet_image():
+    quadlet_image = load_filters("grafana_plugins", "grafana_plugins")["quadlet_image"]
+    content = "[Image]\nImage=docker.io/grafana/grafana:13.3.1@sha256:abc\n"
+    assert quadlet_image(content) == "docker.io/grafana/grafana:13.3.1@sha256:abc"
+
+
+def test_quadlet_image_needs_one_image_line():
+    quadlet_image = load_filters("grafana_plugins", "grafana_plugins")["quadlet_image"]
+    with pytest.raises(AnsibleFilterError, match="found 0"):
+        quadlet_image("[Image]\n")

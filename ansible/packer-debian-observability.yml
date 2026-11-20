@@ -44,6 +44,25 @@
       systemd_app_kind: source
       systemd_app_name: caddy-observability
 
+    # before grafana_plugins: the install runs the Grafana image, which only this pull may fetch
+    - role: quadlet_prepull
+
+    - role: grafana_plugins
+      grafana_plugins_image_file: "{{ playbook_dir }}/apps/observability/quadlet/grafana.image"
+      # what Grafana installs by default, minus those its image bundles
+      grafana_plugins_ids:
+        - cloudwatch
+        - elasticsearch
+        - grafana-advisor-app
+        - grafana-exploretraces-app
+        - grafana-lokiexplore-app
+        - grafana-metricsdrilldown-app
+        - grafana-pyroscope-app
+        - influxdb
+        - prometheus
+        - stackdriver
+        - zipkin
+
     - role: proxy_trust_check
       proxy_trust_check_config: /var/app/caddy-observability/config/Caddyfile
       proxy_trust_check_name: edge-ctl.ip.cloudyhome.net
