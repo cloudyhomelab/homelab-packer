@@ -11,6 +11,9 @@ Image=grafana.image
 Network=observability.network
 Volume=/var/app/observability/config/grafana/provisioning:/etc/grafana/provisioning:ro
 Volume=/srv/grafana:/var/lib/grafana
+# installed at image build; Grafana must not replace them at start
+Volume=/usr/local/share/grafana/plugins:/var/lib/grafana/plugins:ro
+Environment=GF_PLUGINS_PREINSTALL_AUTO_UPDATE=false
 Environment=GF_ANALYTICS_REPORTING_ENABLED=false
 Environment=GF_ANALYTICS_CHECK_FOR_UPDATES=false
 Environment=GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES=false
