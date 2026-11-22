@@ -13,6 +13,8 @@
       system_timezone: "Europe/Helsinki"
       system_install_packages:
         - age
+        # DynamicUser= units: D-Bus drops a client whose UID it cannot resolve
+        - libnss-systemd
         - nfs-common
         - nftables
         - python3-debian # required by ansible.builtin.deb822_repository module
