@@ -9,7 +9,11 @@ StandardOutput=socket
 StandardError=journal
 RuntimeMaxSec=5s
 
-DynamicUser=yes
+# not DynamicUser=: systemd sets SYSTEMD_NSS_DYNAMIC_BYPASS=1 on dbus-daemon, which then drops
+# the connection of a UID it cannot resolve
+User=cloudyhome_readiness
+Group=cloudyhome_readiness
+RemoveIPC=yes
 CapabilityBoundingSet=
 LockPersonality=yes
 MemoryDenyWriteExecute=yes
