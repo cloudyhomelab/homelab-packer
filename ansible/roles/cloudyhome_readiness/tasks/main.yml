@@ -1,0 +1,62 @@
+---
+- name: install the readiness response script
+  ansible.builtin.copy:
+    src: cloudyhome_readiness-response
+    dest: /usr/local/libexec/cloudyhome_readiness-response
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: install the readiness units
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  loop:
+    - cloudyhome_readiness.target
+    - cloudyhome_readiness@.service
+
+- name: install the readiness socket
+  ansible.builtin.template:
+    src: cloudyhome_readiness.socket
+    dest: /etc/systemd/system/cloudyhome_readiness.socket
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: create the readiness target drop-in directory
+  ansible.builtin.file:
+    path: /etc/systemd/system/cloudyhome_readiness.target.d
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: add the image's units to the readiness target
+  ansible.builtin.template:
+    src: unit.conf
+    dest: "/etc/systemd/system/cloudyhome_readiness.target.d/{{ item }}.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ cloudyhome_readiness_units }}"
+
+- name: open the readiness port
+  ansible.builtin.template:
+    src: 20-cloudyhome_readiness.nft
+    dest: /etc/nftables.d/20-cloudyhome_readiness.nft
+    owner: root
+    group: root
+    mode: '0644'
+
+# enable only: nothing needs to answer during the build
+- name: enable the readiness target and socket
+  ansible.builtin.systemd_service:
+    name: "{{ item }}"
+    enabled: true
+    daemon_reload: true
+  loop:
+    - cloudyhome_readiness.target
+    - cloudyhome_readiness.socket

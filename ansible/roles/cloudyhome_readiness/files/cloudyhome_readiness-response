@@ -1,0 +1,58 @@
+#!/bin/bash
+# One HTTP response on stdin/stdout, which systemd connects to the accepted socket.
+set -u
+
+readonly TARGET=cloudyhome_readiness.target
+readonly READ_TIMEOUT_S=2
+readonly MAX_LINE_BYTES=1024
+readonly MAX_HEADER_LINES=64
+
+# drained, never parsed: closing with unread input makes the kernel reset the connection,
+# which can drop the response before the client reads it
+for ((i = 0; i < MAX_HEADER_LINES; i++)); do
+    IFS= read -r -t "$READ_TIMEOUT_S" -n "$MAX_LINE_BYTES" line || break
+    [[ "${line%$'\r'}" == "" ]] && break
+done
+
+blocking=""
+declare -A seen
+
+# a target stays active whatever its Wants do, so a target stands for the units it wants
+check() {
+    local unit=$1 state skipped dep
+    [[ -n "${seen[$unit]:-}" ]] && return
+    seen[$unit]=1
+
+    state=$(systemctl is-active "$unit")
+    if [[ "$state" != active ]]; then
+        # a unit whose conditions failed stays inactive for good and is meant to: e.g. the
+        # wait-online unit of a network stack the host does not use
+        skipped=$(systemctl show --property=ConditionResult,ConditionTimestampMonotonic "$unit")
+        if [[ "$skipped" != *ConditionResult=no* || "$skipped" == *ConditionTimestampMonotonic=0* ]]; then
+            blocking+="${unit}: ${state}"$'\n'
+        fi
+    fi
+
+    if [[ "$unit" == *.target ]]; then
+        for dep in $(systemctl show --property=Wants --value "$unit"); do
+            check "$dep"
+        done
+    fi
+}
+
+check "$TARGET"
+
+# NTPSynchronized, not time-sync.target: the target is only meaningful when a wait-sync unit is enabled
+synced=$(timedatectl show --property=NTPSynchronized --value)
+[[ "$synced" == yes ]] || blocking+="clock: not synchronized"$'\n'
+
+if [[ -z "$blocking" ]]; then
+    status="200 OK"
+    body="ready"$'\n'
+else
+    status="503 Service Unavailable"
+    body="$blocking"
+fi
+
+printf 'HTTP/1.0 %s\r\nContent-Type: text/plain\r\nContent-Length: %d\r\nConnection: close\r\n\r\n%s' \
+    "$status" "${#body}" "$body"

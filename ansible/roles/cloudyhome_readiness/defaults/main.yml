@@ -1,0 +1,4 @@
+---
+cloudyhome_readiness_port: 65535
+# units the image adds to cloudyhome_readiness.target; each must be active only while it serves
+cloudyhome_readiness_units: []

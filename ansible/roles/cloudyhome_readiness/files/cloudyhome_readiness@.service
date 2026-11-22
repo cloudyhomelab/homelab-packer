@@ -1,0 +1,38 @@
+[Unit]
+Description=Readiness response
+CollectMode=inactive-or-failed
+
+[Service]
+ExecStart=/usr/local/libexec/cloudyhome_readiness-response
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeMaxSec=5s
+
+DynamicUser=yes
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+MemoryMax=32M
+NoNewPrivileges=yes
+# the accepted connection is inherited, so no network namespace access is needed
+PrivateNetwork=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+# AF_UNIX for D-Bus, which systemctl and timedatectl use when not root
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged
