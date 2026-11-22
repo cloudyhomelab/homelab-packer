@@ -55,3 +55,8 @@
       keepalived_track_unit: bind9.service
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - bind9.service
+        - keepalived.service

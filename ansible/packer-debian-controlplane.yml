@@ -27,6 +27,10 @@
 
     - role: nftables_dropins
 
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - controlplane.service
+
   post_tasks:
     # enabled, not started: it needs the age key, which the vm gets at boot
     - name: enable the control plane at boot

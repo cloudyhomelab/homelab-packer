@@ -37,3 +37,10 @@
       systemd_app_name: audiobookshelf
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - youtarr-database.service
+        - youtarr.service
+        - jellyfin.service
+        - audiobookshelf.service

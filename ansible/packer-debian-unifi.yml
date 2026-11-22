@@ -28,3 +28,7 @@
         - path: var-lib-unifi
         - path: var-lib-mongodb
         - path: etc-rabbitmq-ssl
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - unifi-os-server.service

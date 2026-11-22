@@ -27,3 +27,11 @@
       systemd_app_name: immich
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - immich-database.service
+        - immich-redis.service
+        - immich-server.service
+        - immich-machine-learning.service
+        - immich-frame.service
