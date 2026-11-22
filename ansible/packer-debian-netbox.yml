@@ -26,4 +26,9 @@
       systemd_app_kind: source
       systemd_app_name: netbox
 
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - netbox.service
+        - netbox-worker.service
+
     - role: nftables_dropins

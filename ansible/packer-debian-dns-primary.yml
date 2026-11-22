@@ -47,6 +47,10 @@
           owner: "53"
           group: "53"
 
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - bind9.service
+
     - role: nftables_dropins
 
   post_tasks:

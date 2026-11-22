@@ -27,3 +27,12 @@
       systemd_app_name: homeassistant
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - homeassistant-database.service
+        - homeassistant.service
+        - homeassistant-matter.service
+        - homeassistant-mosquitto.service
+        - homeassistant-music.service
+        - homeassistant-zigbee2mqtt.service

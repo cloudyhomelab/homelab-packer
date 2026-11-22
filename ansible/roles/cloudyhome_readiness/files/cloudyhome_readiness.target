@@ -1,0 +1,9 @@
+[Unit]
+Description=Units that must be active for the host to answer ready
+# a grouping only: without this the target orders after its Wants, and multi-user.target after it,
+# so a slow unit would hold the boot; the endpoint checks each unit's live state instead
+DefaultDependencies=no
+Wants=network-online.target cloud-config.service nftables.service
+
+[Install]
+WantedBy=multi-user.target

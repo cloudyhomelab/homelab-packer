@@ -18,3 +18,7 @@
     - role: kubernetes
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - containerd.service

@@ -29,6 +29,10 @@
       proxy_trust_check_config: /var/app/caddy-iot/config/Caddyfile
       proxy_trust_check_name: edge-ctl.ip.cloudyhome.net
 
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - caddy-iot.service
+
   post_tasks:
     # enabled, not started: the fetch needs the age key, which the vm gets at boot
     - name: enable the caddy-iot certificate fetch timer at boot

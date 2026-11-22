@@ -1,0 +1,42 @@
+[Unit]
+Description=Readiness response
+CollectMode=inactive-or-failed
+
+[Service]
+ExecStart=/usr/local/libexec/cloudyhome_readiness-response
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+RuntimeMaxSec=5s
+
+# not DynamicUser=: systemd sets SYSTEMD_NSS_DYNAMIC_BYPASS=1 on dbus-daemon, which then drops
+# the connection of a UID it cannot resolve
+User=cloudyhome_readiness
+Group=cloudyhome_readiness
+RemoveIPC=yes
+CapabilityBoundingSet=
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+MemoryMax=32M
+NoNewPrivileges=yes
+# the accepted connection is inherited, so no network namespace access is needed
+PrivateNetwork=yes
+PrivateDevices=yes
+PrivateTmp=yes
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectHome=yes
+ProtectHostname=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectProc=invisible
+ProtectSystem=strict
+# AF_UNIX for D-Bus, which systemctl and timedatectl use when not root
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallFilter=~@privileged

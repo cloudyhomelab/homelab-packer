@@ -48,3 +48,7 @@
           group: "53"
 
     - role: nftables_dropins
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - bind9.service

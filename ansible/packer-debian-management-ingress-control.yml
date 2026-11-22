@@ -34,6 +34,10 @@
       systemd_app_kind: source
       systemd_app_name: acme
 
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - caddy-mgmt.service
+
   post_tasks:
     # enabled, not started: the certificate units need the age key, which the vm gets at boot
     - name: enable the certificate renewal timer at boot

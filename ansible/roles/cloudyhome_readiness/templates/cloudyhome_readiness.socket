@@ -1,0 +1,14 @@
+[Unit]
+Description=Readiness endpoint
+
+[Socket]
+ListenStream={{ cloudyhome_readiness_port }}
+Accept=yes
+MaxConnections=16
+MaxConnectionsPerSource=4
+# below the default trigger limit, which fails the socket for good; the poll limit only pauses it
+PollLimitIntervalSec=2s
+PollLimitBurst=50
+
+[Install]
+WantedBy=sockets.target

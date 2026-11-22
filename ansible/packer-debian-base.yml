@@ -49,6 +49,8 @@
 
     - role: nftables
 
+    - role: cloudyhome_readiness
+
     - role: zram
 
     - role: observability
