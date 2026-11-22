@@ -1,0 +1,23 @@
+[Unit]
+Description=Fill the zone files the primary lacks, from the secondary or the baked files
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=bind9-seed
+Image=bind9.image
+# transfers leave from 10.88.53.11, the address the secondary allows
+Network=host
+Volume=/var/app/bind9-master/config/seed-zones.sh:/seed-zones.sh:ro
+Volume=/var/app/bind9-master/config/zone-master.conf:/etc/bind/zone-master.conf:ro
+Volume=/var/app/bind9-master/config/zones:/seed:ro
+Volume=/var/app/bind9-master/records:/var/lib/bind
+Volume=/var/app/bind9-master/cache:/var/cache/bind
+ReadOnly=true
+LogDriver=journald
+Entrypoint=/bin/sh
+Exec=/seed-zones.sh
+
+[Service]
+Type=oneshot
+TimeoutStartSec=5min
