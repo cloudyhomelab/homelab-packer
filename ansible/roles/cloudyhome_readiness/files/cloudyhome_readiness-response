@@ -23,7 +23,7 @@ check() {
     [[ -n "${seen[$unit]:-}" ]] && return
     seen[$unit]=1
 
-    state=$(systemctl is-active "$unit")
+    state=$(systemctl is-active "$unit" 2>&1)
     if [[ "$state" != active ]]; then
         # a unit whose conditions failed stays inactive for good and is meant to: e.g. the
         # wait-online unit of a network stack the host does not use
@@ -43,8 +43,12 @@ check() {
 check "$TARGET"
 
 # NTPSynchronized, not time-sync.target: the target is only meaningful when a wait-sync unit is enabled
-synced=$(timedatectl show --property=NTPSynchronized --value)
-[[ "$synced" == yes ]] || blocking+="clock: not synchronized"$'\n'
+synced=$(timedatectl show --property=NTPSynchronized --value 2>&1)
+case "$synced" in
+    yes) ;;
+    no) blocking+="clock: not synchronized"$'\n' ;;
+    *) blocking+="clock: ${synced}"$'\n' ;;
+esac
 
 if [[ -z "$blocking" ]]; then
     status="200 OK"
