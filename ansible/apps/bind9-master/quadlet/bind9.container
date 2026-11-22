@@ -26,6 +26,8 @@ ExecStartPre=/bin/chown 53:53 /run/app/bind9-master/private/tsig.keys
 ExecStartPre=/bin/sh -c 'for f in /var/app/bind9-master/config/zones/*.zone; do cp --update=none "$$f" /var/app/bind9-master/records/; done'
 # a first boot has no blocklist until the fetch timer runs; an empty one keeps the zone loadable
 ExecStartPre=/bin/sh -c 'test -f /var/app/bind9-master/cache/rpz.block.zone || cp /var/app/bind9-master/config/rpz.empty.zone /var/app/bind9-master/cache/rpz.block.zone'
+# active only once every zone answers: named serves before its zones finish loading
+ExecStartPost=/usr/bin/podman exec bind9 sh -c 'for z in $$(named-checkconf -l /etc/bind/named.conf | cut -d" " -f1); do until dig @127.0.0.1 +norec +short SOA "$$z" | grep -q .; do sleep 1; done; done'
 Restart=always
 RestartSec=5
 
