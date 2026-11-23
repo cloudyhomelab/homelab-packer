@@ -4,6 +4,7 @@ import json
 
 import boto3
 import pytest
+from botocore import UNSIGNED
 from botocore.exceptions import ClientError
 from botocore.stub import ANY, Stubber
 
@@ -403,3 +404,29 @@ def test_delete_objects_batches_by_1000_and_raises_on_errors(catalog, client):
         )
         with pytest.raises(publish.PublishError, match="AccessDenied"):
             Store(catalog, client).delete_objects(objects[:1])
+
+
+def test_protected_builds_group_consumers_per_build(catalog):
+    def protect(image, version):
+        return {"image_url": f"{BASE_URL}/debian/{image}/{version}/{image}-{version}.qcow2"}
+
+    protected = {
+        "protected/infra.json": protect("debian-base", "20260910-0000"),
+        "protected/edge/vm1.json": protect("debian-container", "20260901-0000"),
+        "protected/edge/vm2.json": protect("debian-container", "20260927-0000"),
+        "protected/lab/a/b/c/vm3.json": protect("debian-container", "20260901-0000"),
+        "protected/lab/gone.json": {"image_url": f"{BASE_URL}/debian/debian-cont/1/x.qcow2"},
+    }
+    builds, unmatched = publish.protected_builds(catalog, ProtectedStore([], protected))
+    assert [(b.image.name, b.version, b.consumers) for b in builds] == [
+        ("debian-base", "20260910-0000", ("infra",)),
+        ("debian-container", "20260927-0000", ("edge/vm2",)),
+        ("debian-container", "20260901-0000", ("edge/vm1", "lab/a/b/c/vm3")),
+    ]
+    assert unmatched == {f"{BASE_URL}/debian/debian-cont/1/x.qcow2": ["lab/gone"]}
+
+
+def test_anonymous_client_signs_nothing(catalog):
+    client = publish.anonymous_client(catalog)
+    assert client.meta.config.signature_version is UNSIGNED
+    assert client.meta.config.s3 == {"addressing_style": "path"}

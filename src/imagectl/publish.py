@@ -12,6 +12,7 @@ from pathlib import Path
 
 import boto3
 from boto3.s3.transfer import TransferConfig
+from botocore import UNSIGNED
 from botocore.config import Config
 from botocore.exceptions import ClientError
 
@@ -47,6 +48,14 @@ def s3_client(catalog: Catalog):
         aws_access_key_id=os.environ["S3_ACCESS_KEY_ID"],
         aws_secret_access_key=os.environ["S3_SECRET_ACCESS_KEY"],
         config=CLIENT_CONFIG,
+    )
+
+
+def anonymous_client(catalog: Catalog):
+    """boto3 client that signs nothing, for what the bucket policy lets anyone read."""
+    config = CLIENT_CONFIG.merge(Config(signature_version=UNSIGNED))
+    return boto3.session.Session().client(
+        "s3", endpoint_url=catalog.s3.endpoint, region_name=catalog.s3.region, config=config
     )
 
 
@@ -239,6 +248,46 @@ def protected_files(store: Store) -> dict[str, str]:
 
 def protected_urls(store: Store) -> set[str]:
     return set(protected_files(store).values())
+
+
+@dataclass(frozen=True)
+class ProtectedBuild:
+    image: Image
+    version: str
+    consumers: tuple[str, ...]
+
+
+def locate_build(catalog: Catalog, url: str) -> tuple[Image, str] | None:
+    """The image and build version a published URL belongs to."""
+    for image in catalog.ordered():
+        prefix = catalog.public_url(catalog.image_prefix(image) + "/")
+        rest = url[len(prefix) :] if url.startswith(prefix) else ""
+        if "/" in rest:
+            return image, rest.split("/", 1)[0]
+    return None
+
+
+def protected_builds(
+    catalog: Catalog, store: Store
+) -> tuple[list[ProtectedBuild], dict[str, list[str]]]:
+    """Builds the protected files name, in catalog order and newest first, and the URLs that
+    match no image, with the files naming them."""
+    consumers_by_build: dict[tuple[str, str], set[str]] = {}
+    unmatched: dict[str, list[str]] = {}
+    for consumer, url in protected_files(store).items():
+        located = locate_build(catalog, url)
+        if located is None:
+            unmatched.setdefault(url, []).append(consumer)
+            continue
+        image, version = located
+        consumers_by_build.setdefault((image.name, version), set()).add(consumer)
+    builds = []
+    for image in catalog.ordered():
+        versions = [v for name, v in consumers_by_build if name == image.name]
+        for version in sorted(versions, key=natural_key, reverse=True):
+            consumers = tuple(sorted(consumers_by_build[(image.name, version)]))
+            builds.append(ProtectedBuild(image, version, consumers))
+    return builds, {url: sorted(c) for url, c in unmatched.items()}
 
 
 def prune(catalog: Catalog, store: Store, image: Image) -> list[str]:
