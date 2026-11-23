@@ -475,7 +475,7 @@ def cmd_index(
 def cmd_purge(
     yes: Annotated[bool, typer.Option("--yes", help="Delete without asking.")] = False,
 ) -> int:
-    """Delete every object in the bucket, old versions and delete markers included.
+    """Delete every object in the bucket, old versions and protected builds included.
 
     Unpublishes every image: consumers have nothing to read until the next `publish`, which
     builds the whole tree again. The bucket and its policy stay. Needs S3_ACCESS_KEY_ID and
@@ -490,6 +490,11 @@ def cmd_purge(
         return 0
     keys = {v["Key"] for v in versions}
     print(f"{bucket}: {len(keys)} objects, {len(versions)} versions and delete markers")
+    print(
+        f"warning: this wipes everything in {bucket}, protected images and "
+        f"{publish.PROTECTED_PREFIX} files included",
+        file=sys.stderr,
+    )
     if not yes:
         answer = typer.prompt(f"type {bucket} to delete them all", default="", show_default=False)
         if answer != bucket:

@@ -180,3 +180,10 @@ def test_purge_yes_skips_the_prompt(s3_stub):
     expect_delete(s3_stub)
     assert imagectl("purge", "--yes").exit_code == 0
     s3_stub.assert_no_pending_responses()
+
+
+def test_purge_warns_that_protected_images_go_too(s3_stub):
+    expect_delete(s3_stub)
+    result = imagectl("purge", "--yes")
+    assert "protected images" in result.stderr
+    s3_stub.assert_no_pending_responses()
