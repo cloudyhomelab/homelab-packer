@@ -21,6 +21,7 @@ from .upstream import natural_key
 
 CREDENTIAL_VARS = ("S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")
 SBOM_CONTENT_TYPE = "application/vnd.cyclonedx+json"
+IN_USE_PREFIX = "in-use/"
 CLIENT_CONFIG = Config(
     s3={"addressing_style": "path"},
     retries={"mode": "standard"},
@@ -222,8 +223,20 @@ def builds_to_prune(
     return sorted(doomed)
 
 
+def in_use_urls(store: Store) -> set[str]:
+    """IMAGE_URLS from every consumer's in-use/<consumer>.json."""
+    urls = set()
+    for key in store.list_keys(IN_USE_PREFIX):
+        listed = store.get_json(key).get("IMAGE_URLS")
+        # an unreadable file must stop the prune, not protect nothing
+        if not isinstance(listed, list) or not all(isinstance(u, str) for u in listed):
+            raise PublishError(f"{key}: IMAGE_URLS must be a list of strings")
+        urls.update(listed)
+    return urls
+
+
 def prune(catalog: Catalog, store: Store, image: Image) -> list[str]:
-    protected = set()
+    protected = in_use_urls(store)
     for other in catalog.ordered():
         latest = store.latest(other)
         if latest and latest.get("PARENT_URL"):
