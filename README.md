@@ -36,6 +36,7 @@ uv run imagectl plan                          # images that are due, and why
 uv run imagectl build [--keep] IMAGE          # local build, never published; --keep keeps the build dir
 uv run imagectl publish [-j N]                # build and publish everything due (CI), needs S3_*
 uv run imagectl index [IMAGE...]              # rebuild index.json from S3, needs S3_*
+uv run imagectl protected                     # builds consumers protect: version, current, age
 uv run imagectl purge [--yes]                 # empty the bucket, old versions and protected builds too, needs S3_*
 uv run imagectl test IMAGE --local            # boot the newest kept local build
 uv run imagectl test IMAGE                    # boot the latest published build
@@ -212,9 +213,10 @@ such as Terraform, read it. `publish` rewrites it after pruning, and it is never
 Pruning keeps the newest `retain_images` builds of an image, plus any build that is still used:
 
 - the parent named by any image's `latest.json`
-- any build whose image URL a consumer lists in `<bucket>/protected/<consumer>.json`, as
-  `{"IMAGE_URLS": ["<IMAGE_URL>", ...]}`. Each consumer owns its file and rewrites it with the
-  builds it actually runs; a malformed file stops pruning.
+- any build named by the `image_url` of a `.json` file anywhere under `<bucket>/protected/`,
+  e.g. `protected/<consumer>/<vm>.json` as `{"image_url": "<IMAGE_URL>", ...}`; other fields
+  are ignored. Each consumer owns its files and keeps one per build it actually runs; a file
+  without a string `image_url` stops pruning.
 Inside the image, `/etc/os-image-metadata` holds the same facts, without `STORAGE`.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.

@@ -471,6 +471,48 @@ def cmd_index(
     return 1 if failed else 0
 
 
+def age(build_date: str, now: datetime) -> str:
+    built = datetime.strptime(build_date, packer.BUILD_DATE_FORMAT)
+    hours = max(int((now - built).total_seconds() // 3600), 0)
+    days, hours = divmod(hours, 24)
+    return f"{days}d {hours}h" if days else f"{hours}h"
+
+
+@command("protected")
+def cmd_protected() -> int:
+    """List the builds consumers protect from pruning, against each image's current build.
+
+    Reads every .json under `protected/` and the builds' metadata from S3 anonymously, so it
+    needs no credentials.
+    """
+    catalog = project()
+    store = publish.Store(catalog, publish.anonymous_client(catalog))
+    builds, unmatched = publish.protected_builds(catalog, store)
+    for url, consumers in unmatched.items():
+        print(f"warning: {url} ({', '.join(consumers)}) matches no image", file=sys.stderr)
+    if not builds:
+        print("no protected builds")
+        return 0
+    now = datetime.now(UTC)
+    latest = {b.image.name: store.latest(b.image) for b in builds}
+    rows = [["IMAGE", "PROTECTED", "CURRENT", "AGE", "CONSUMERS"]]
+    for b in builds:
+        meta_key = f"{catalog.image_prefix(b.image)}/{b.version}/metadata.json"
+        meta = store.get_json_optional(meta_key)
+        current = latest[b.image.name]
+        rows.append(
+            [
+                b.image.name,
+                b.version,
+                current["BUILD_VERSION"] if current else "none",
+                age(meta["BUILD_DATE"], now) if meta else "missing",
+                ", ".join(b.consumers),
+            ]
+        )
+    print(table(rows))
+    return 0
+
+
 @command("purge")
 def cmd_purge(
     yes: Annotated[bool, typer.Option("--yes", help="Delete without asking.")] = False,
