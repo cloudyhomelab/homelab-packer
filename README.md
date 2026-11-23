@@ -208,6 +208,13 @@ of the newest `metadata.json`. `<bucket>/<os>/<image>/index.json` lists every bu
 image, newest first, as
 `{"IMAGE": ..., "BUILDS": [<metadata.json>, ...]}`; consumers that mirror the published builds,
 such as Terraform, read it. `publish` rewrites it after pruning, and it is never written empty.
+
+Pruning keeps the newest `retain_images` builds of an image, plus any build that is still used:
+
+- the parent named by any image's `latest.json`
+- any build whose image URL a consumer lists in `<bucket>/protected/<consumer>.json`, as
+  `{"IMAGE_URLS": ["<IMAGE_URL>", ...]}`. Each consumer owns its file and rewrites it with the
+  builds it actually runs; a malformed file stops pruning.
 Inside the image, `/etc/os-image-metadata` holds the same facts, without `STORAGE`.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.

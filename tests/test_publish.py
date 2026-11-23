@@ -243,12 +243,66 @@ def test_prune_reads_every_latest_json_for_protection(catalog, client):
             return {"PARENT_URL": old_url} if other.name == "debian-edge" else None
 
         def list_keys(self, prefix):
+            if prefix == publish.PROTECTED_PREFIX:
+                return []
             return build_keys("debian/debian-container", versions)
 
         def delete(self, keys):
             raise AssertionError("nothing should be deleted")
 
     assert publish.prune(catalog, FakeStore(), image) == []
+
+
+class ProtectedStore:
+    """Store double: builds of one image plus consumer protected files."""
+
+    def __init__(self, build_keys, protected):
+        self.build_keys = build_keys
+        self.protected = protected
+        self.deleted = []
+
+    def latest(self, other):
+        return None
+
+    def list_keys(self, prefix):
+        if prefix == publish.PROTECTED_PREFIX:
+            return list(self.protected)
+        return self.build_keys
+
+    def get_json(self, key):
+        return self.protected[key]
+
+    def delete(self, keys):
+        self.deleted.extend(keys)
+
+
+def test_prune_keeps_builds_a_consumer_lists(catalog):
+    image = catalog.get("debian-container")
+    image.retain_images = 1
+    versions = ["20260901-0000", "20260910-0000", "20260927-0000"]
+    protected = {
+        "protected/infra.json": {
+            "IMAGE_URLS": [
+                f"{BASE_URL}/debian/debian-container/20260901-0000/debian-container-20260901-0000.qcow2"
+            ]
+        }
+    }
+    store = ProtectedStore(build_keys("debian/debian-container", versions), protected)
+    doomed = publish.prune(catalog, store, image)
+    assert {k.split("/")[2] for k in doomed} == {"20260910-0000"}
+
+
+@pytest.mark.parametrize("body", [{}, {"IMAGE_URLS": "url"}, {"IMAGE_URLS": [1]}])
+def test_prune_stops_on_a_malformed_protected_file(catalog, body):
+    image = catalog.get("debian-container")
+    image.retain_images = 1
+    versions = ["20260901-0000", "20260927-0000"]
+    store = ProtectedStore(
+        build_keys("debian/debian-container", versions), {"protected/x.json": body}
+    )
+    with pytest.raises(publish.PublishError, match="protected/x.json"):
+        publish.prune(catalog, store, image)
+    assert store.deleted == []
 
 
 class IndexStore:
