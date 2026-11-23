@@ -212,7 +212,7 @@ such as Terraform, read it. `publish` rewrites it after pruning, and it is never
 Pruning keeps the newest `retain_images` builds of an image, plus any build that is still used:
 
 - the parent named by any image's `latest.json`
-- any build whose image URL a consumer lists in `<bucket>/in-use/<consumer>.json`, as
+- any build whose image URL a consumer lists in `<bucket>/protected/<consumer>.json`, as
   `{"IMAGE_URLS": ["<IMAGE_URL>", ...]}`. Each consumer owns its file and rewrites it with the
   builds it actually runs; a malformed file stops pruning.
 Inside the image, `/etc/os-image-metadata` holds the same facts, without `STORAGE`.
