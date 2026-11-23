@@ -212,9 +212,10 @@ such as Terraform, read it. `publish` rewrites it after pruning, and it is never
 Pruning keeps the newest `retain_images` builds of an image, plus any build that is still used:
 
 - the parent named by any image's `latest.json`
-- any build whose image URL a consumer lists in `<bucket>/protected/<consumer>.json`, as
-  `{"IMAGE_URLS": ["<IMAGE_URL>", ...]}`. Each consumer owns its file and rewrites it with the
-  builds it actually runs; a malformed file stops pruning.
+- any build named by the `image_url` of a `.json` file anywhere under `<bucket>/protected/`,
+  e.g. `protected/<consumer>/<vm>.json` as `{"image_url": "<IMAGE_URL>", ...}`; other fields
+  are ignored. Each consumer owns its files and keeps one per build it actually runs; a file
+  without a string `image_url` stops pruning.
 Inside the image, `/etc/os-image-metadata` holds the same facts, without `STORAGE`.
 
 The SBOM comes from syft, run in the build VM by `ansible/sbom.yml` after the image's playbook.

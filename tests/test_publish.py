@@ -281,18 +281,20 @@ def test_prune_keeps_builds_a_consumer_lists(catalog):
     image.retain_images = 1
     versions = ["20260901-0000", "20260910-0000", "20260927-0000"]
     protected = {
-        "protected/infra.json": {
-            "IMAGE_URLS": [
-                f"{BASE_URL}/debian/debian-container/20260901-0000/debian-container-20260901-0000.qcow2"
-            ]
-        }
+        "protected/infra/vm1.json": {
+            "image": "debian/debian-container",
+            "image_url": f"{BASE_URL}/debian/debian-container/20260901-0000/"
+            "debian-container-20260901-0000.qcow2",
+            "image_version": "20260901-0000",
+        },
+        "protected/infra/README.md": "not json",
     }
     store = ProtectedStore(build_keys("debian/debian-container", versions), protected)
     doomed = publish.prune(catalog, store, image)
     assert {k.split("/")[2] for k in doomed} == {"20260910-0000"}
 
 
-@pytest.mark.parametrize("body", [{}, {"IMAGE_URLS": "url"}, {"IMAGE_URLS": [1]}])
+@pytest.mark.parametrize("body", [{}, {"image_url": ""}, {"image_url": ["url"]}])
 def test_prune_stops_on_a_malformed_protected_file(catalog, body):
     image = catalog.get("debian-container")
     image.retain_images = 1

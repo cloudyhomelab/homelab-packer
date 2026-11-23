@@ -223,16 +223,22 @@ def builds_to_prune(
     return sorted(doomed)
 
 
-def protected_urls(store: Store) -> set[str]:
-    """IMAGE_URLS from every protected/<consumer>.json."""
-    urls = set()
+def protected_files(store: Store) -> dict[str, str]:
+    """image_url of every .json under protected/, at any depth, by its path without .json."""
+    files = {}
     for key in store.list_keys(PROTECTED_PREFIX):
-        listed = store.get_json(key).get("IMAGE_URLS")
+        if not key.endswith(".json"):
+            continue
+        url = store.get_json(key).get("image_url")
         # an unreadable file must stop the prune, not protect nothing
-        if not isinstance(listed, list) or not all(isinstance(u, str) for u in listed):
-            raise PublishError(f"{key}: IMAGE_URLS must be a list of strings")
-        urls.update(listed)
-    return urls
+        if not isinstance(url, str) or not url:
+            raise PublishError(f"{key}: image_url must be a non-empty string")
+        files[key[len(PROTECTED_PREFIX) :].removesuffix(".json")] = url
+    return files
+
+
+def protected_urls(store: Store) -> set[str]:
+    return set(protected_files(store).values())
 
 
 def prune(catalog: Catalog, store: Store, image: Image) -> list[str]:
