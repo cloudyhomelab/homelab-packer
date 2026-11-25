@@ -1,0 +1,18 @@
+[Unit]
+Description=Hermes agent gateway
+After=hermes-storage.service
+Requires=hermes-storage.service
+
+[Container]
+SubUIDMap=hermes
+SubGIDMap=hermes
+ContainerName=hermes
+Image=hermes.image
+Exec=gateway run
+Volume=/srv/hermes/home:/opt/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

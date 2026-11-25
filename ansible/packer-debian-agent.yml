@@ -1,0 +1,18 @@
+- name: configure the agent
+  hosts: all
+  become: true
+  vars:
+    systemd_app_apps_dir: "{{ playbook_dir }}/apps"
+    systemd_app_slice: cloudyhome
+  roles:
+    - role: app_storage
+      app_storage_apps:
+        - hermes
+
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: hermes
+
+    - role: cloudyhome_readiness
+      cloudyhome_readiness_units:
+        - hermes.service

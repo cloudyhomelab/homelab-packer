@@ -26,6 +26,8 @@ images:
                     - kubernetes-worker
               - container:
                   children:
+                    - agent:
+                        disk_size: 20G
                     - arr-stack
                     - controlplane
                     - dns-primary
