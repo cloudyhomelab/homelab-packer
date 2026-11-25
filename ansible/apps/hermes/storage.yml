@@ -1,3 +1,5 @@
 datasets:
   home:
     owner: "10000:10000"
+    # the image's startup enters /opt/data as container root before dropping to 10000
+    mode: "0711"
