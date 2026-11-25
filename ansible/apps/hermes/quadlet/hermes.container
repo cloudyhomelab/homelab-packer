@@ -10,6 +10,12 @@ ContainerName=hermes
 Image=hermes.image
 Exec=gateway run
 Volume=/srv/hermes/home:/opt/data
+Volume=/var/app/hermes/config/managed:/etc/hermes-managed:ro
+Environment=HERMES_MANAGED_DIR=/etc/hermes-managed
+Environment=HERMES_DASHBOARD=1
+EnvironmentFile=/run/app/hermes/private/dashboard.env
+PublishPort=9119:9119
+PublishPort=9120:9120
 
 [Service]
 Restart=always
