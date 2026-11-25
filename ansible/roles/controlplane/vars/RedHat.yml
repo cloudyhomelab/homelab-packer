@@ -1,0 +1,5 @@
+---
+controlplane_package_version: "{{ controlplane_version }}-{{ controlplane_rpm_release }}"
+controlplane_package_file: >-
+  controlplane-{{ controlplane_version }}-{{ controlplane_rpm_release }}.{{ ansible_facts['architecture'] }}.rpm
+controlplane_package_sha256: "{{ controlplane_sha256.rpm[ansible_facts['architecture']] }}"

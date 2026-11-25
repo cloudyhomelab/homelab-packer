@@ -1,6 +1,11 @@
 ---
-controlplane_version: "0.2.1"
+controlplane_version: "0.4.0"
+controlplane_rpm_release: "1"
+# keyed by the architecture in the release's package file name
 controlplane_sha256:
-  amd64:
-    controlplane: "f757bfd3c709b5bcef82a40005ee52e13724f410068402beb772bb7507b6c256"
-    cpctl: "8075f30330f16f0ad7300c53035918583cb409abbdb7c2f96418db2c9ad82470"
+  deb:
+    amd64: "e418b542d93e6ebcb768ff39f26eb1e592f28c7b552540f42df748faa21492bf"
+    arm64: "6d3406e6aee49b7c5c1a885cac2ebcb9f71721e2b4e7e3561544f3bab8cc04ad"
+  rpm:
+    x86_64: "83771f3a04b3f79ee9bcc6ae589c6fa276970e22b9dd04bf4664d06b18b0aecb"
+    aarch64: "485b820d9f9c2ccdb88e4f7dbdb3d7cb09ffa22aae182ef23f24fcfe45e50906"
