@@ -10,7 +10,8 @@ ContainerName=bind9
 Image=bind9.image
 Network=host
 # -f, not -g: -g ignores the logging block. -d 1 only feeds the debug channel, every other one stays at info
-Exec=-f -d 1 -c /etc/bind/named.conf
+# -4: no IPv6 uplink; IPv6-only name servers on a cold cache fail at once and the lookup SERVFAILs
+Exec=-4 -f -d 1 -c /etc/bind/named.conf
 Volume=/var/app/bind9-resolver/config/named.conf:/etc/bind/named.conf:ro
 Volume=/var/app/bind9-resolver/cache:/var/cache/bind
 LogDriver=journald
