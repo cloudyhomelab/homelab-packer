@@ -14,14 +14,11 @@
 
 # creates the controlplane user and installs the unit, neither enabled nor started
 - name: install the controlplane package
-  ansible.builtin.include_role:
-    name: binarycodes.homelab.external_packages
-  vars:
-    external_packages_list:
-      - name: controlplane
-        version: "{{ controlplane_package_version }}"
-        url: "https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/{{ controlplane_package_file }}"
-        checksum: "sha256:{{ controlplane_package_sha256 }}"
+  binarycodes.homelab.external_package:
+    name: controlplane
+    version: "{{ controlplane_package_version }}"
+    url: "https://github.com/cloudyhomelab/control-plane/releases/download/v{{ controlplane_version }}/{{ controlplane_package_file }}"
+    checksum: "sha256:{{ controlplane_package_sha256 }}"
 
 - name: create the kvm group
   ansible.builtin.group:
