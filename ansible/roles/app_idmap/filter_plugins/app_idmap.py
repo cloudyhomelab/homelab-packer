@@ -15,13 +15,20 @@ def app_id_ranges(idmap: dict, apps: list[str]) -> dict[str, dict[str, int]]:
     return {app: {"base": idmap["start"] + slots[app] * size, "count": size} for app in apps}
 
 
-def app_id_lines(ranges: dict[str, dict[str, int]], apps: list[str]) -> list[dict[str, str]]:
+def app_id_lines(
+    ranges: dict[str, dict[str, int]], apps: list[str], rootless: list[str] | None = None
+) -> list[dict[str, str]]:
     """The apps' /etc/subuid and /etc/subgid lines, sorted by app so the files do not depend on
-    the order a playbook lists the apps in."""
-    return [
-        {"app": app, "line": f"{app}:{ranges[app]['base']}:{ranges[app]['count']}"}
-        for app in sorted(apps)
-    ]
+    the order a playbook lists the apps in. A rootless app's user is the base itself, and Podman
+    maps container ID 0 to it, so its line starts one ID higher to keep container ID n at
+    base + n."""
+    rootless = rootless or []
+    out = []
+    for app in sorted(apps):
+        skip = 1 if app in rootless else 0
+        first, count = ranges[app]["base"] + skip, ranges[app]["count"] - skip
+        out.append({"app": app, "line": f"{app}:{first}:{count}"})
+    return out
 
 
 class FilterModule:
