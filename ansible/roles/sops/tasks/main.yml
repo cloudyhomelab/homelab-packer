@@ -1,10 +1,7 @@
 ---
 - name: install SOPS package
-  ansible.builtin.include_role:
-    name: binarycodes.homelab.external_packages
-  vars:
-    external_packages_list:
-      - name: sops
-        version: "{{ sops_version }}"
-        url: "https://github.com/getsops/sops/releases/download/v{{ sops_version }}/sops_{{ sops_version }}_amd64.deb"
-        checksum: "sha256:{{ sops_sha256 }}"
+  binarycodes.homelab.external_package:
+    name: sops
+    version: "{{ sops_version }}"
+    url: "https://github.com/getsops/sops/releases/download/v{{ sops_version }}/sops_{{ sops_version }}_amd64.deb"
+    checksum: "sha256:{{ sops_sha256 }}"
