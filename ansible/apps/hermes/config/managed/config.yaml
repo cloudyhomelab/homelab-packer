@@ -1,4 +1,5 @@
 model:
+  default: qwen-abliterated
   provider: custom
   base_url: http://llm.ip.cloudyhome.net:8080/v1
 
