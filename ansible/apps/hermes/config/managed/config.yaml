@@ -1,3 +1,7 @@
+model:
+  provider: custom
+  base_url: http://llm.ip.cloudyhome.net:8080/v1
+
 webapp:
   enabled: true
   host: 0.0.0.0
