@@ -1,8 +1,30 @@
+- name: check the rootless apps
+  ansible.builtin.assert:
+    that: app_idmap_rootless_apps | difference(app_idmap_apps) | length == 0
+    fail_msg: >-
+      app_idmap_rootless_apps must be in app_idmap_apps, got
+      {{ app_idmap_rootless_apps | difference(app_idmap_apps) | join(', ') }}
+    quiet: true
+
 - name: look up the apps' ID ranges
   ansible.builtin.set_fact:
     app_idmap_ranges: "{{ app_idmap_ranges | default({}) | combine(app_idmap_map | app_id_ranges(app_idmap_apps)) }}"
   vars:
     app_idmap_map: "{{ lookup('ansible.builtin.file', app_idmap_file) | from_yaml }}"
+
+- name: create the rootless apps' groups
+  ansible.builtin.group:
+    name: "{{ item }}"
+    gid: "{{ app_idmap_ranges[item].base }}"
+  loop: "{{ app_idmap_rootless_apps }}"
+
+# before the ID lines: useradd may add its own line for the user, which the next task replaces
+- name: create the rootless apps' users
+  ansible.builtin.user:
+    name: "{{ item }}"
+    uid: "{{ app_idmap_ranges[item].base }}"
+    group: "{{ item }}"
+  loop: "{{ app_idmap_rootless_apps }}"
 
 - name: give each app its ID range
   ansible.builtin.lineinfile:
@@ -13,6 +35,6 @@
     owner: root
     group: root
     mode: '0644'
-  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_idmap_ranges | app_id_lines(app_idmap_apps)) | list }}"
+  loop: "{{ ['/etc/subuid', '/etc/subgid'] | product(app_idmap_ranges | app_id_lines(app_idmap_apps, app_idmap_rootless_apps)) | list }}"
   loop_control:
     label: "{{ item.0 }} {{ item.1.app }}"

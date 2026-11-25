@@ -171,8 +171,13 @@ A container that writes to its storage runs as the dataset's owner (`User=` in t
 as root: the NFS server checks permissions itself, so root inside the container gets no override
 there and cannot read a directory it does not own.
 
-A slot is never reused or changed while data owned by it exists. A per-app rootless user later
-gets the same IDs with UID `start + slot * size` and its sub-IDs from the next one up.
+A slot is never reused or changed while data owned by it exists.
+
+An app that runs as its own rootless user, rather than in quadlets, is also listed in
+`app_idmap_rootless_apps`, a play variable. `app_idmap` then creates the user, named after the app,
+with UID and GID `start + slot * size`, and its `/etc/subuid` and `/etc/subgid` line starts one ID
+higher, since rootless Podman maps container ID 0 to the user itself. Container ID `n` stays
+`start + slot * size + n`, so its `storage.yml` owner is `"0:0"`.
 
 The image does not create datasets or exports. `metadata.json` lists every dataset a VM of the
 image mounts, its ancestors' included, under `STORAGE` (`app`, `dataset`, `recordsize`), and

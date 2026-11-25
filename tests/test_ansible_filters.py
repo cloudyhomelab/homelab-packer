@@ -79,6 +79,15 @@ def test_app_id_lines_are_sorted_by_app():
     ]
 
 
+def test_app_id_lines_of_a_rootless_app_start_after_its_user():
+    filters = load_filters("app_idmap", "app_idmap")
+    ranges = filters["app_id_ranges"](IDMAP, ["youtarr", "immich"])
+    assert filters["app_id_lines"](ranges, ["youtarr", "immich"], ["immich"]) == [
+        {"app": "immich", "line": "immich:2458753:65535"},
+        {"app": "youtarr", "line": "youtarr:2065536:65536"},
+    ]
+
+
 def slurped(files: dict[str, str]) -> list[dict]:
     """What a looped ansible.builtin.slurp registers for these files."""
     return [

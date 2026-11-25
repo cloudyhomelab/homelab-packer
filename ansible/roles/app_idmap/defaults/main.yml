@@ -2,4 +2,7 @@
 # app_idmap_apps: the apps whose containers name their range with SubUIDMap and SubGIDMap; the
 # role also records each range in app_idmap_ranges[app] as {base, count}
 app_idmap_apps: []
+# app_idmap_rootless_apps: of app_idmap_apps, those that run as their own rootless user, named
+# after the app, with UID and GID = base
+app_idmap_rootless_apps: []
 app_idmap_file: "{{ playbook_dir }}/apps/idmap.yml"
