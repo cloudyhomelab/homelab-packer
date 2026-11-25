@@ -1,0 +1,15 @@
+model:
+  provider: custom
+  base_url: http://llm.ip.cloudyhome.net:8080/v1
+
+webapp:
+  enabled: true
+  host: 0.0.0.0
+  port: 9120
+  public_url: https://hermes.cloudyhome.net
+
+dashboard:
+  public_url: https://hermes-dashboard.cloudyhome.net
+  # lab-ctl, the lab caddy
+  trusted_proxies:
+    - 10.88.16.102

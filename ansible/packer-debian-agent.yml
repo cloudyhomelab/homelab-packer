@@ -13,6 +13,8 @@
       systemd_app_kind: source
       systemd_app_name: hermes
 
+    - role: nftables_dropins
+
     - role: cloudyhome_readiness
       cloudyhome_readiness_units:
         - hermes.service
