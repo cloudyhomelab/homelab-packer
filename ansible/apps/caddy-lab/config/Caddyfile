@@ -103,3 +103,12 @@ hermes-dashboard.cloudyhome.net {
 		import upstream
 	}
 }
+
+auth.cloudyhome.net {
+	import wildcard
+	import access_log
+
+	reverse_proxy identity.ip.cloudyhome.net:1411 {
+		import upstream
+	}
+}
