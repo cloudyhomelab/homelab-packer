@@ -1,7 +1,21 @@
+updates:
+  check: false
+
+security:
+  redact_secrets: true
+
 model:
   default: qwen-abliterated
   provider: custom
   base_url: http://llm.ip.cloudyhome.net:8080/v1
+  context_length: 131027
+
+stt:
+  provider: openai
+  openai:
+    base_url: http://llm.ip.cloudyhome.net:8080/v1
+    model: whisper-large-v3-turbo
+    api_key: unused
 
 webapp:
   enabled: true
@@ -11,6 +25,5 @@ webapp:
 
 dashboard:
   public_url: https://hermes-dashboard.cloudyhome.net
-  # lab-ctl, the lab caddy
   trusted_proxies:
     - 10.88.16.102
