@@ -16,7 +16,8 @@ Volume=/srv/miniflux/db:/var/lib/postgresql
 EnvironmentFile=/var/app/miniflux/config/miniflux.env
 EnvironmentFile=/run/app/miniflux/private/db.env
 ShmSize=128m
-HealthCmd=/bin/sh -c 'pg_isready -q -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}" || exit 1'
+# TCP, not the socket: the entrypoint's first-boot initdb server already answers on the socket
+HealthCmd=/bin/sh -c 'pg_isready -q -h 127.0.0.1 -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}" || exit 1'
 HealthInterval=10s
 HealthStartPeriod=20s
 HealthRetries=10
