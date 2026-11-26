@@ -1,0 +1,29 @@
+[Unit]
+Description=Miniflux PostgreSQL
+After=miniflux-storage.service
+Requires=miniflux-storage.service
+
+[Container]
+SubUIDMap=miniflux
+SubGIDMap=miniflux
+# root in the container gets no override on NFS; the server checks the real owner
+User=70:70
+ContainerName=miniflux_postgres
+Image=miniflux-database.image
+Network=miniflux.network
+NetworkAlias=database
+Volume=/srv/miniflux/db:/var/lib/postgresql
+EnvironmentFile=/var/app/miniflux/config/miniflux.env
+EnvironmentFile=/run/app/miniflux/private/db.env
+ShmSize=128m
+HealthCmd=/bin/sh -c 'pg_isready -q -d "$${POSTGRES_DB}" -U "$${POSTGRES_USER}" || exit 1'
+HealthInterval=10s
+HealthStartPeriod=20s
+HealthRetries=10
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

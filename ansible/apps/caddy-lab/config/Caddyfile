@@ -77,6 +77,15 @@ audiobookshelf.cloudyhome.net {
 	}
 }
 
+rss.cloudyhome.net {
+	import wildcard
+	import access_log
+
+	reverse_proxy arr-stack.ip.cloudyhome.net:8080 {
+		import upstream
+	}
+}
+
 hermes.cloudyhome.net {
 	import wildcard
 	import access_log
