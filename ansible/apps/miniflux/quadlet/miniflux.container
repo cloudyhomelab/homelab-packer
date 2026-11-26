@@ -13,6 +13,7 @@ Network=miniflux.network
 PublishPort=8080:8080
 EnvironmentFile=/var/app/miniflux/config/miniflux.env
 EnvironmentFile=/run/app/miniflux/private/db.env
+EnvironmentFile=/run/app/miniflux/private/oauth2.env
 HealthCmd=/usr/bin/miniflux -healthcheck auto
 HealthInterval=30s
 HealthStartPeriod=1m
