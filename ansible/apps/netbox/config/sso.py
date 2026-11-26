@@ -4,6 +4,8 @@ ADMIN_GROUP = "admin"
 
 LOGIN_FORM_HIDDEN = True
 SOCIAL_AUTH_BACKEND_ATTRS = {"oidc": ("Pocket ID", "login")}
+# off by default in social-core's OIDC backend; the pocket-id client requires it
+SOCIAL_AUTH_OIDC_USE_PKCE = True
 
 # NetBox's default pipeline plus sync_superuser; re-check against netbox/settings.py on a NetBox
 # upgrade, since replacing the setting drops any step NetBox adds to its default.
