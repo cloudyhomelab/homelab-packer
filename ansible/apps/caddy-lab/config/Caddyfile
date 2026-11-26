@@ -77,6 +77,15 @@ audiobookshelf.cloudyhome.net {
 	}
 }
 
+rss.cloudyhome.net {
+	import wildcard
+	import access_log
+
+	reverse_proxy arr-stack.ip.cloudyhome.net:8080 {
+		import upstream
+	}
+}
+
 hermes.cloudyhome.net {
 	import wildcard
 	import access_log
@@ -91,6 +100,15 @@ hermes-dashboard.cloudyhome.net {
 	import access_log
 
 	reverse_proxy agent.ip.cloudyhome.net:9119 {
+		import upstream
+	}
+}
+
+auth.cloudyhome.net {
+	import wildcard
+	import access_log
+
+	reverse_proxy identity.ip.cloudyhome.net:1411 {
 		import upstream
 	}
 }

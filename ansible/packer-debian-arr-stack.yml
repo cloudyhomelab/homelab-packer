@@ -23,6 +23,7 @@
         - youtarr
         - jellyfin
         - audiobookshelf
+        - miniflux
 
     - role: binarycodes.homelab.systemd_app
       systemd_app_kind: source
@@ -36,6 +37,10 @@
       systemd_app_kind: source
       systemd_app_name: audiobookshelf
 
+    - role: binarycodes.homelab.systemd_app
+      systemd_app_kind: source
+      systemd_app_name: miniflux
+
     - role: nftables_dropins
 
     - role: cloudyhome_readiness
@@ -44,3 +49,5 @@
         - youtarr.service
         - jellyfin.service
         - audiobookshelf.service
+        - miniflux-database.service
+        - miniflux.service

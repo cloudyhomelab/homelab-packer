@@ -35,6 +35,7 @@ images:
                     - dns-secondary
                     - edge
                     - homeassistant
+                    - identity
                     - iot-ingress-control
                     - lab-ingress-control
                     - management-ingress-control

@@ -1,0 +1,27 @@
+[Unit]
+Description=Pocket ID
+After=pocket-id-storage.service
+Requires=pocket-id-storage.service
+
+[Container]
+SubUIDMap=pocket-id
+SubGIDMap=pocket-id
+# as non-root the entrypoint skips its chown of /app/data and execs the binary directly
+User=1000:1000
+ContainerName=pocket-id
+Image=pocket-id.image
+Volume=/srv/pocket-id/data:/app/data
+PublishPort=1411:1411
+EnvironmentFile=/var/app/pocket-id/config/pocket-id.env
+EnvironmentFile=/run/app/pocket-id/private/pocket-id.env
+HealthCmd=/app/pocket-id healthcheck
+HealthInterval=30s
+HealthStartPeriod=1m
+HealthRetries=5
+Notify=healthy
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
